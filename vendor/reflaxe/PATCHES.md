@@ -505,11 +505,53 @@ Local fix:
 - When the next request has added, removed, or renamed a module, bypass the
   rebuilt-class filter for that request and regenerate all currently live
   modules once.
-- Fingerprint the exact source bytes for every source file that contributes a
+- Remember the exact source text for every source file that contributes a
   visible enum, typedef, or abstract. If one changes, bypass the class-only
-  filter and regenerate all currently live modules once.
+  filter and regenerate all currently live modules once. The server keeps the
+  text itself and compares it with native string equality. An earlier version
+  kept a SHA-256 digest, which Haxe computes in the macro interpreter: about
+  0.5 s for each warm request of a consumer backend. Two texts are equal
+  exactly when their bytes are equal, so the same edits cause a full
+  regeneration; the cost is one in-memory copy of those source files.
 - Commit both successful baselines only after output succeeds, so a failed
   target build cannot poison the next request.
+- Compare that source text without its classes and module-level fields. Many
+  source files declare a typedef or an enum beside a class or beside
+  module-level functions (a "mixed file"). With the complete file text, an edit
+  in a function body of a mixed file regenerated every module. Now a class in a
+  mixed file has the same rule as a class in a file of its own: Haxe types it
+  again and reports it, and Reflaxe builds it and the classes that Haxe typed
+  again with it.
+
+  What is cut: `class Name { ... }` and `interface Name { ... }` from the
+  keyword to the last brace, and each module-level function or variable from
+  its first modifier to the end of its body. Each cut leaves one zero byte.
+  What stays: every enum, typedef and abstract, imports, the text between
+  declarations, and the metadata and documentation in front of a class (Haxe
+  does not include them in the class position). An edit in any of these still
+  regenerates every module.
+
+  A Haxe position counts characters, not bytes: a byte order mark, `é` and an
+  emoji are one character each. The cut therefore works on the decoded text,
+  which Haxe's macro interpreter also indexes by character. The first version
+  of this patch cut raw bytes. With non-ASCII text in front of a class, the cut
+  started too early and could remove an enum or an abstract from the
+  comparison, so a warm build could keep stale output and report success.
+
+  Each position is checked against the text on disk: it must lie inside the
+  file and not overlap another position, the text must start with that
+  declaration, a class must end with `}`, and the text must not contain the
+  start of an enum, typedef or abstract. When one check fails, nothing is cut
+  from that file and its complete text is compared, as before this patch. A
+  failed check can therefore only cause an extra full regeneration. The hidden
+  class that holds the methods of an abstract is never cut, because its
+  position is the abstract itself.
+
+  Why this keeps the earlier guarantee: the text of every non-class
+  declaration, with its metadata, is still compared byte for byte. The only
+  edits that no longer force a full regeneration are edits inside a class or
+  inside a module-level field. Those are the edits that already took the
+  class-only path when the class had a file of its own.
 
 Current decision:
 
@@ -524,6 +566,22 @@ Upstream action:
 Good upstream candidate after the warm-server regression is also reproduced in
 Reflaxe's own target-neutral test suite. Do not open a PR without explicit user
 authorization.
+
+The `mixed-file` cases in `test:reflaxe-server-cache` edit a class body, a
+module-level function body, a typedef and an abstract in mixed files. They
+require a partial build for the first two and a full build for the last two,
+and compare each warm output with a fresh build. The `mixed-registry` case
+keeps a `@:phxHookNames` registry beside a class: a class edit must pass, and a
+registry edit must still make the warm build reject the removed hook name.
+The `byte-order-mark`, `e-acute` and `emoji` cases repeat the class edit and
+the abstract edit with non-ASCII text in front of the class. The
+`decoy-registry` case uses a file in which byte offsets and character offsets
+disagree so that a byte cut would cover the registry; the warm build must
+reject the renamed hook.
+
+Not done (`haxe.elixir.codex-c0o.4`): an edit to the enum, typedef or abstract
+itself still regenerates every module. A class edit in a module that many
+modules import still builds each module that Haxe typed again.
 
 Validation before removal:
 

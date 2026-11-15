@@ -17,6 +17,29 @@ This document is the canonical “how the compiler is structured today” overvi
    ownership/collisions, then transactionally publishes files and commits a content-hashed
    `_GeneratedFiles.json` last.
 
+### Ownership check on a Haxe compilation server
+
+Before the compiler changes a generated file, it reads every file that
+`_GeneratedFiles.json` owns and compares its SHA-256 digest with the manifest. A
+file that someone edited by hand stops the build, and nothing is overwritten.
+The compiler does this two times for each build: before staging, and again after
+the formatter hook.
+
+Haxe runs this check in its macro interpreter, where SHA-256 is slow. For 185
+generated files the two checks took about 2 seconds of each warm build. On a
+compilation server (`haxe --wait`) the compiler now keeps, for each owned path,
+the bytes that it last hashed and their digest. The check still reads each file
+from disk each time. If all bytes equal the remembered bytes, the remembered
+digest is used; any other content is hashed again. A file time, a file size, or a
+shorter hash is never trusted. The result of each check is therefore the same as
+before, and a hand edit that keeps the size and the file time is still refused.
+
+Nothing is remembered on disk. A new compiler process, and a server after a
+compiler source change, hashes each file. `-D reflaxe_elixir_full_ownership_check`
+makes each check compute SHA-256, which is useful to compare the two paths. The
+`tampered-output` case of `npm run test:reflaxe-server-cache` edits a generated
+file on a warm server and requires the refusal.
+
 ## Accepted staged evolution: structure before text
 
 The unified pipeline remains the architecture. Before adding another node family, generic child and

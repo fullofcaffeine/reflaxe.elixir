@@ -32,6 +32,12 @@ private typedef OwnershipState = {
 	var digests:Map<String, String>;
 }
 
+/** File bytes that this compiler process already hashed, and their SHA-256 digest. */
+private typedef RememberedDigest = {
+	var bytes:Bytes;
+	var digest:String;
+}
+
 private typedef TransactionPath = {
 	var path:String;
 	var tempPath:String;
@@ -69,6 +75,10 @@ private typedef TransactionJournal = {
  * - Backups, staged files, and a strict journal live under reserved control paths.
  * - If the final manifest is absent after interruption, recovery rolls the files
  *   back. If the final manifest is present, recovery only removes transaction data.
+ * - On a Haxe compilation server, the digest of an owned file is computed one time
+ *   for each distinct content. See `digestFor`: a later check reads the file again
+ *   and compares all of its bytes with the bytes that were hashed. The decision is
+ *   the same as a new SHA-256 run; only the repeated computation is removed.
  *
  * EXAMPLE
  * - A generated `lib/app_web/page_live.ex` may be updated when version 2 owns it and
@@ -93,6 +103,20 @@ class GeneratedOutputOwnership {
 	static inline var BACKUP_DIRECTORY = "backups";
 	static inline var OWNER_MARKER = "reflaxe.elixir generated-output transaction v2\n";
 	static inline var OUTPUT_TEMP_SUFFIX = ".__reflaxe_output_new__";
+
+	// One owned path keeps its last two contents: the published bytes and the
+	// candidate that replaces them. A full rebuild that changes every file then
+	// still finds each content again in the same request.
+	static inline var REMEMBERED_CONTENTS_PER_PATH = 2;
+	// When new content would take the remembered bytes past this size, all of
+	// them are dropped first and each digest is computed again. This keeps a
+	// long-lived server that writes many output folders from growing without limit.
+	static inline var REMEMBERED_BYTES_LIMIT = 268435456;
+
+	// `@:persistent` keeps these values between requests on a compilation server.
+	// A new compiler process starts with nothing remembered.
+	@:persistent static var rememberedDigests:Null<Map<String, Array<RememberedDigest>>> = null;
+	@:persistent static var rememberedByteCount:Int = 0;
 
 	/**
 	 * Recovers a previously activated publication transaction, or removes a prepare
@@ -226,7 +250,7 @@ class GeneratedOutputOwnership {
 						fail('Missing pending output contents for `$path`.');
 					if (usePartialStaging) {
 						var candidateHashStarted = phaseTimings.start();
-						var candidateDigest = hashContent(content);
+						var candidateDigest = digestFor(targetPath(root, path), contentBytes(content));
 						phaseTimings.finish("output_candidate_content_hashing", candidateHashStarted);
 						candidateDigests.set(path, candidateDigest);
 						if (oldSet.exists(path) && previous.digests.get(path) == candidateDigest)
@@ -281,7 +305,7 @@ class GeneratedOutputOwnership {
 							fail('Prepared output is missing changed candidate `$path`.');
 						ensureCanonicalWithin(stagedRoot, staged, "prepared output");
 						var stagedHashStarted = phaseTimings.start();
-						var stagedDigest = hashFile(staged);
+						var stagedDigest = digestFor(targetPath(root, path), File.getBytes(staged));
 						phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
 						if (stagedDigest != digest)
 							fail('Prepared output bytes do not match the generated candidate for `$path`.');
@@ -291,7 +315,7 @@ class GeneratedOutputOwnership {
 						fail('Prepared output hook removed or replaced generated file `$path`.');
 					ensureCanonicalWithin(stagedRoot, staged, "prepared output");
 					var stagedHashStarted = phaseTimings.start();
-					digest = hashFile(staged);
+					digest = digestFor(targetPath(root, path), File.getBytes(staged));
 					phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
 				}
 				newDigests.set(path, digest);
@@ -331,7 +355,7 @@ class GeneratedOutputOwnership {
 					|| previous.digests.get(path) != digest;
 				} else {
 					var target = targetPath(root, path);
-					legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashFile(target) != digest;
+					legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashOwnedFile(target) != digest;
 				};
 				if (changed)
 					affected.push(path);
@@ -359,7 +383,7 @@ class GeneratedOutputOwnership {
 					path: path,
 					tempPath: tempPath,
 					hadPrevious: hadPrevious,
-					previousDigest: hadPrevious ? (adoptedDigest != null ? adoptedDigest : (verifiedPreviousDigest != null ? verifiedPreviousDigest : hashFile(target))) : null,
+					previousDigest: hadPrevious ? (adoptedDigest != null ? adoptedDigest : (verifiedPreviousDigest != null ? verifiedPreviousDigest : hashOwnedFile(target))) : null,
 					nextDigest: nextDigest
 				});
 			}
@@ -397,7 +421,7 @@ class GeneratedOutputOwnership {
 				var entry = transactionPaths[index];
 				var target = targetPath(root, entry.path);
 				if (entry.hadPrevious) {
-					if (!FileSystem.exists(target) || entry.previousDigest == null || hashFile(target) != entry.previousDigest)
+					if (!FileSystem.exists(target) || entry.previousDigest == null || hashOwnedFile(target) != entry.previousDigest)
 						fail('Generated output changed while publication was being prepared: $target');
 				} else if (FileSystem.exists(target)) {
 					fail('Unowned output collision appeared while publication was being prepared: $target');
@@ -541,7 +565,7 @@ class GeneratedOutputOwnership {
 			ensureCanonicalWithin(root, target, "owned generated output");
 			if (!ownership.legacy) {
 				var expected = ownership.digests.get(path);
-				if (expected == null || hashFile(target) != expected)
+				if (expected == null || hashOwnedFile(target) != expected)
 					fail('Owned generated output was modified outside the compiler: $target\nRefusing to overwrite or delete it until the change is reconciled explicitly.');
 			}
 		}
@@ -665,7 +689,7 @@ class GeneratedOutputOwnership {
 			if (!FileSystem.exists(target)
 				|| FileSystem.isDirectory(target)
 				|| entry.previousDigest == null
-				|| hashFile(target) != entry.previousDigest) {
+				|| hashOwnedFile(target) != entry.previousDigest) {
 				fail('Generated output changed immediately before publication: $target');
 			}
 		} else if (FileSystem.exists(target)) {
@@ -1029,11 +1053,86 @@ class GeneratedOutputOwnership {
 		return hashBytes(File.getBytes(path));
 	}
 
-	static function hashContent(content:StringOrBytes):String {
+	static function contentBytes(content:StringOrBytes):Bytes {
 		return switch (content.data()) {
-			case String(value): hashBytes(haxe.io.Bytes.ofString(value));
-			case Bytes(value): hashBytes(value);
+			case String(value): haxe.io.Bytes.ofString(value);
+			// The compiler owns these bytes and could change them later. Remember a copy.
+			case Bytes(value): value.sub(0, value.length);
 		};
+	}
+
+	/** Reads a live generated file now and returns the SHA-256 digest of those bytes. */
+	static function hashOwnedFile(target:String):String {
+		return digestFor(target, File.getBytes(target));
+	}
+
+	/**
+	 * Returns the SHA-256 digest of `bytes`, and computes it only when this
+	 * compiler process has not hashed exactly these bytes for `target` before.
+	 *
+	 * WHY
+	 * - Haxe runs this class in its macro interpreter, where SHA-256 is slow. A
+	 *   project with 185 generated files spent about two seconds of each warm
+	 *   build to hash files that had not changed.
+	 *
+	 * HOW
+	 * - `target` is the absolute live path of a generated file. For that path the
+	 *   compiler keeps the last bytes that it hashed, and the digest.
+	 * - The caller always reads the present bytes from disk or from the new
+	 *   candidate. If they equal the remembered bytes, byte for byte, the
+	 *   remembered digest is the correct digest and it is returned.
+	 * - Any other content is hashed with SHA-256 as before.
+	 *
+	 * SAFETY
+	 * - SHA-256 gives one result for one sequence of bytes. The comparison is of
+	 *   the full bytes, not of a file time, a size, or a shorter hash. Thus this
+	 *   function returns the same value as `hashBytes(bytes)` for each input, and
+	 *   each ownership decision is the same as before.
+	 * - Nothing is written to disk. A new compiler process, and a server after a
+	 *   compiler source change, remembers nothing and hashes each file.
+	 * - `-D reflaxe_elixir_full_ownership_check` makes each call compute SHA-256.
+	 *
+	 * EXAMPLE
+	 * - A person edits `lib/app_web/page_live.ex` by hand and keeps its size and
+	 *   file time. The bytes read from disk are not equal to the remembered bytes.
+	 *   SHA-256 runs, the digest differs from the manifest, and the build stops.
+	 */
+	static function digestFor(target:String, bytes:Bytes):String {
+		#if reflaxe_elixir_full_ownership_check
+		return hashBytes(bytes);
+		#else
+		var all = rememberedDigests;
+		var known = all == null ? null : all.get(target);
+		if (known != null) {
+			for (entry in known) {
+				if (entry.bytes.length == bytes.length && entry.bytes.compare(bytes) == 0)
+					return entry.digest;
+			}
+		}
+		var digest = hashBytes(bytes);
+		// Keep the limit before the new bytes are added, so the remembered total
+		// never passes it. Content larger than the limit is never remembered.
+		if (bytes.length > REMEMBERED_BYTES_LIMIT)
+			return digest;
+		if (all == null || rememberedByteCount + bytes.length > REMEMBERED_BYTES_LIMIT) {
+			all = new Map();
+			rememberedDigests = all;
+			rememberedByteCount = 0;
+			known = null;
+		}
+		if (known == null) {
+			known = [];
+			all.set(target, known);
+		}
+		known.unshift({bytes: bytes, digest: digest});
+		rememberedByteCount += bytes.length;
+		while (known.length > REMEMBERED_CONTENTS_PER_PATH) {
+			var dropped = known.pop();
+			if (dropped != null)
+				rememberedByteCount -= dropped.bytes.length;
+		}
+		return digest;
+		#end
 	}
 
 	static function hashBytes(bytes:Bytes):String {

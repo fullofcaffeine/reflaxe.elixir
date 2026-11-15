@@ -18,7 +18,6 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 
 #if eval
-import haxe.crypto.Sha256;
 import sys.FileSystem;
 import sys.io.File;
 #end
@@ -41,6 +40,19 @@ using reflaxe.helpers.ModuleTypeHelper;
 using reflaxe.helpers.NameMetaHelper;
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.TypeHelper;
+
+/**
+	One part of a source file where Haxe says a class or a module-level field
+	is written. `min` and `max` count characters, as Haxe positions do.
+	`start` must match the text at `min`. See
+	`ReflectCompiler.nonClassSourceText`.
+**/
+private typedef ClassSourceSpan = {
+	final min: Int;
+	final max: Int;
+	final start: EReg;
+	final endsWithBrace: Bool;
+}
 
 /**
 	The heart of Reflaxe.
@@ -121,9 +133,9 @@ class ReflectCompiler {
 	#if !reflaxe.disallow_build_cache_check
 	@:persistent static var isCachedRun = false;
 	@:persistent static var previousSuccessfulModuleIds: Null<Array<String>> = null;
-	@:persistent static var previousSuccessfulNonClassSourceDigests: Null<Array<String>> = null;
+	@:persistent static var previousSuccessfulNonClassSourceTexts: Null<Array<String>> = null;
 	static var currentModuleIds: Null<Array<String>> = null;
-	static var currentNonClassSourceDigests: Null<Array<String>> = null;
+	static var currentNonClassSourceTexts: Null<Array<String>> = null;
 	#end
 
 	public static function checkServerCache() {
@@ -342,11 +354,11 @@ class ReflectCompiler {
 		#if !reflaxe.disallow_build_cache_check
 		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
 		currentModuleIds.sort(Reflect.compare);
-		currentNonClassSourceDigests = collectNonClassSourceDigests(moduleTypes);
+		currentNonClassSourceTexts = collectNonClassSourceTexts(moduleTypes);
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
-		final nonClassSourceChanged = previousSuccessfulNonClassSourceDigests != null
-			&& !previousSuccessfulNonClassSourceDigests.equals(currentNonClassSourceDigests);
+		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
+			&& !previousSuccessfulNonClassSourceTexts.equals(currentNonClassSourceTexts);
 
 		if(rebuiltClasses != null && !liveModuleSetChanged && !nonClassSourceChanged) {
 			final result = moduleTypes.filter(mt -> {
@@ -413,41 +425,87 @@ class ReflectCompiler {
 	}
 
 	/**
-		Returns stable content fingerprints for source files that define enums,
-		typedefs, or abstracts visible to this target build.
+		Returns, for each source file that defines an enum, typedef, or abstract
+		visible to this target build, the file path and the file text without
+		its classes and module-level fields.
 
 		Haxe build macros can tell Reflaxe which classes were rebuilt, but build
 		macros do not run on non-class declarations. Rebuilding only a changed enum
 		or abstract is unsafe because it can provide facts used by otherwise
 		unchanged classes. For example, changing an unreferenced `@:phxHookNames`
 		abstract must revalidate every HXX template that uses the global hook
-		registry. Without this fingerprint, a warm build can accept a hook that a
+		registry. Without this comparison, a warm build can accept a hook that a
 		clean build correctly rejects.
 
-		When one of these source files changes, `applyBuildCacheCheckFilter` performs
-		one full target regeneration. Reading exact bytes avoids trusting timestamps;
-		duplicate declarations from the same source file are hashed only once.
+		When one of these texts changes, `applyBuildCacheCheckFilter` performs one
+		full target regeneration. Reading exact bytes avoids trusting timestamps;
+		duplicate declarations from the same source file are read only once.
+
+		Each entry holds the text itself, not a hash of it. Haxe compares two
+		strings with native code, but it runs SHA-256 in the macro interpreter,
+		which cost about half a second for each warm request of a 400-file
+		project. The cost is memory: the server keeps one copy of these texts.
+
+		Why the classes are cut out: many source files declare a typedef or an
+		enum beside a class or beside module-level functions. With the complete
+		file text, an edit in a function body of such a file caused a full
+		regeneration (36 to 74 s for a consumer backend), although the enum and
+		the typedef did not change. A class in such a file now has the same rule
+		as a class in a file of its own: Haxe types it again and reports it, and
+		Reflaxe builds it again. `nonClassSourceText` explains what is cut and
+		what stays.
 	**/
-	static function collectNonClassSourceDigests(moduleTypes:Array<ModuleType>):Array<String> {
+	static function collectNonClassSourceTexts(moduleTypes:Array<ModuleType>):Array<String> {
 		#if eval
+		final fullPaths = new Map<String, String>();
+		function fullPath(sourceFile:String):String {
+			final known = fullPaths.get(sourceFile);
+			if(known != null) {
+				return known;
+			}
+			final resolved = try FileSystem.fullPath(sourceFile) catch(_) sourceFile;
+			fullPaths.set(sourceFile, resolved);
+			return resolved;
+		}
+
 		final sourceFiles = new Map<String, Bool>();
+		final classTypes:Array<ClassType> = [];
 		for(moduleType in moduleTypes) {
 			switch(moduleType) {
-				case TClassDecl(_):
+				case TClassDecl(_.get() => classType):
+					classTypes.push(classType);
 				case _:
 					final sourceFile = Context.getPosInfos(moduleType.getCommonData().pos).file;
 					if(sourceFile == null || sourceFile.length == 0) {
 						continue;
 					}
-					final normalized = try FileSystem.fullPath(sourceFile) catch(_) sourceFile;
-					sourceFiles.set(normalized, true);
+					sourceFiles.set(fullPath(sourceFile), true);
 			}
+		}
+
+		// Only a class that shares its file with a non-class declaration matters.
+		final classSpans = new Map<String, Array<ClassSourceSpan>>();
+		for(classType in classTypes) {
+			final sourceFile = Context.getPosInfos(classType.pos).file;
+			if(sourceFile == null || sourceFile.length == 0) {
+				continue;
+			}
+			final resolved = fullPath(sourceFile);
+			if(!sourceFiles.exists(resolved)) {
+				continue;
+			}
+			var spans = classSpans.get(resolved);
+			if(spans == null) {
+				spans = [];
+				classSpans.set(resolved, spans);
+			}
+			addClassSourceSpans(classType, sourceFile, spans);
 		}
 
 		final result = [];
 		for(sourceFile in sourceFiles.keys()) {
-			final digest = try Sha256.make(File.getBytes(sourceFile)).toHex() catch(_) "<unreadable>";
-			result.push(sourceFile + "\u0000" + digest);
+			final text = try nonClassSourceText(File.getBytes(sourceFile).toString(), classSpans.get(sourceFile)) catch(_) "<unreadable>";
+			result.push(sourceFile + "\u0000" + text);
 		}
 		result.sort(Reflect.compare);
 		return result;
@@ -455,6 +513,134 @@ class ReflectCompiler {
 		return [];
 		#end
 	}
+
+	#if eval
+	/**
+		Adds the places in `sourceFile` where Haxe says that `classType` is
+		written: the declaration of an ordinary class or interface, or each
+		function and variable of a module-level field class.
+
+		Other kinds of class are ignored, and their text stays. The most
+		important one is the hidden class that holds the methods of an abstract:
+		its position is the abstract itself, which is a non-class declaration.
+	**/
+	static function addClassSourceSpans(classType:ClassType, sourceFile:String, spans:Array<ClassSourceSpan>) {
+		switch(classType.kind) {
+			case KNormal:
+				// Haxe renames a class with `@:native` and keeps the source path in `@:realPath`.
+				final realPath = classType.meta.extractStringFromFirstMeta(":realPath");
+				final sourceName = realPath != null ? realPath.substr(realPath.lastIndexOf(".") + 1) : classType.name;
+				final position = Context.getPosInfos(classType.pos);
+				spans.push({
+					min: position.min,
+					max: position.max,
+					start: new EReg("^(class|interface)\\s+" + EReg.escape(sourceName) + "\\b", ""),
+					endsWithBrace: true
+				});
+			case KModuleFields(_):
+				for(field in classType.statics.get()) {
+					final position = Context.getPosInfos(field.pos);
+					if(position.file != sourceFile) {
+						continue;
+					}
+					spans.push({
+						min: position.min,
+						max: position.max,
+						start: new EReg("^((public|private|static|inline|dynamic|extern|final|macro|overload)\\s+)*(function|var|final)\\s+" + EReg.escape(field.name) + "\\b", ""),
+						endsWithBrace: false
+					});
+				}
+			case _:
+		}
+	}
+
+	/**
+		Returns the text of one source file without its classes and module-level
+		fields, or the complete text when any position cannot be trusted.
+
+		What is removed: for `class Name { ... }` and `interface Name { ... }`,
+		the text from the keyword to the last brace. For a module-level
+		`function name(...) ...` or `var name ...`, the text from its first
+		modifier to the end of its body. Each removed part leaves one zero
+		character, so two files are equal only when they have the same parts in
+		the same places.
+
+		What stays: every enum, typedef and abstract; imports; text between
+		declarations; and the metadata, documentation and modifiers in front of
+		a class, because Haxe does not include them in the class position. An
+		edit in any of these still causes a full regeneration.
+
+		Units: a Haxe position counts characters, not bytes. A byte order mark
+		is one character, and so is `é` or an emoji. `text` is the decoded file,
+		and Haxe's macro interpreter also indexes a string by character, so the
+		positions are used on `text` directly. An earlier version cut the raw
+		bytes. In a file with non-ASCII text before a class, the cut then
+		started too early and could reach over an enum or an abstract, and a
+		change there was not seen.
+
+		Each position is checked before anything is removed:
+		- it lies inside the text and does not overlap another position (two
+		  equal positions count once: a macro can define a second class at the
+		  position of the first);
+		- the text there starts with the declaration that Haxe named;
+		- a class ends with `}`;
+		- the text does not contain the start of an enum, typedef or abstract.
+		  Haxe has no nested type declarations, so such a start inside a class
+		  can only be in a string or a comment.
+
+		When any check fails, nothing is removed from this file and the complete
+		text is returned. The file then behaves as before this function existed:
+		each edit in it causes a full regeneration. A failed check can thus only
+		cost time. It covers classes that a macro defines with a borrowed
+		position, and positions that are older than the file on disk.
+
+		A class or field that Haxe removed as unused is not in the list, so its
+		text stays.
+
+		Example: a file holds `typedef Options = {...}` and
+		`function render(options:Options) { return "a"; }`. A change of `"a"` to
+		`"b"` gives the same result, and only the changed function's module is
+		built again. A change in `Options` gives a different result.
+	**/
+	static function nonClassSourceText(text:String, spans:Null<Array<ClassSourceSpan>>):String {
+		final complete = "all\u0000" + text;
+		if(spans == null || spans.length == 0) {
+			return complete;
+		}
+		spans.sort((left, right) -> left.min != right.min ? left.min - right.min : left.max - right.max);
+		final nonClassStart = ~/(^|[^A-Za-z0-9_.$])(enum|typedef|abstract)\s+(abstract\s+)?[A-Z_]/;
+		final result = new StringBuf();
+		result.add("cut\u0000");
+		var cursor = 0;
+		var previousMin = -1;
+		var previousMax = -1;
+		for(span in spans) {
+			if(span.min == previousMin && span.max == previousMax) {
+				continue;
+			}
+			if(span.min < cursor || span.max <= span.min || span.max > text.length) {
+				return complete;
+			}
+			final removed = text.substring(span.min, span.max);
+			if(!span.start.match(removed)) {
+				return complete;
+			}
+			if(span.endsWithBrace && !StringTools.endsWith(removed, "}")) {
+				return complete;
+			}
+			if(nonClassStart.match(removed)) {
+				return complete;
+			}
+			result.add(text.substring(cursor, span.min));
+			result.add("\u0000");
+			cursor = span.max;
+			previousMin = span.min;
+			previousMax = span.max;
+		}
+		result.add(text.substring(cursor));
+		return result.toString();
+	}
+	#end
 
 	/**
 		Remembers the live Haxe modules only after target output was published.
@@ -474,8 +660,8 @@ class ReflectCompiler {
 		if(currentModuleIds != null) {
 			previousSuccessfulModuleIds = currentModuleIds.copy();
 		}
-		if(currentNonClassSourceDigests != null) {
-			previousSuccessfulNonClassSourceDigests = currentNonClassSourceDigests.copy();
+		if(currentNonClassSourceTexts != null) {
+			previousSuccessfulNonClassSourceTexts = currentNonClassSourceTexts.copy();
 		}
 		#end
 	}

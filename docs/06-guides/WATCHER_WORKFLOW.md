@@ -382,7 +382,7 @@ The Haxe server caches parsed files and typed modules in memory. It checks file
 changes, classpath shadowing, compiler-define signatures, and typed dependencies
 before reuse. Reflaxe layers target-module work selection on that result.
 
-Changing a source file that defines an enum, typedef, or abstract intentionally
+Changing an enum, typedef, or abstract intentionally
 causes one full target regeneration. These declarations can affect otherwise
 unchanged classes through constructor sets, inline abstract code, representation
 choices, or shared metadata. A concrete example is an unreferenced
@@ -391,6 +391,25 @@ template that relies on that global registry. Rebuilding only the abstract could
 leave an unchanged template validated against the old hook list. Reflaxe detects
 the exact source-content change and regenerates the complete current target once;
 ordinary class-only edits retain the narrower cached path.
+
+A file can declare a class or module-level functions beside an enum, typedef, or
+abstract. In such a file, only an edit outside the classes and module-level
+functions causes the full regeneration. Reflaxe compares the file text without
+`class Name { ... }`, `interface Name { ... }`, and each module-level function or
+variable. An edit inside one of these takes the class-only path. For example, a
+file holds `typedef Options = {...}` and `function render(options:Options)`. A
+change in the body of `render` builds that module and the modules that Haxe typed
+again with it. A change in `Options` builds everything. Metadata and documentation
+in front of a class are outside the class text that Haxe reports, so an edit there
+also builds everything.
+
+Reflaxe checks each class position against the file before it leaves the class
+out. If a check fails, the whole file is compared and every edit in it builds
+everything, as for a file without this rule. One case is easy to meet: a class or
+module-level function whose text contains something that looks like the start of
+a type declaration, for example a comment with the words `enum Status` or
+`typedef Options`. Non-ASCII text, a byte order mark, and CRLF line ends do not
+cause this.
 
 Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
