@@ -60,6 +60,12 @@ class CompilerInit {
 			return;
 		compilerRegistered = true;
 
+		// Must run before the first request for a type below. On a compilation
+		// server, Haxe decides whether a cached module is still valid when it
+		// loads the module, and it cannot see a file that changed two times
+		// within one second.
+		ServerSourceFreshness.start();
+
 		// `reflaxe` is vendored under `vendor/reflaxe` and injected onto the classpath
 		// by `CompilerBootstrap.Start()`. We still need to initialize Reflaxe's compiler hooks.
 		ReflectCompiler.Start();

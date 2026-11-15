@@ -262,6 +262,149 @@ run_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$name-A-restored"
 }
 
+# Replaces one text in a source file and gives the file its old file time
+# back. For Haxe this is the same as a second save within one second: Haxe
+# reads file times in whole seconds, so it cannot see this change by itself.
+edit_keeping_file_time() {
+	python3 - "$1" "$2" "$3" <<'PY'
+import os
+import sys
+
+path, old, new = sys.argv[1], sys.argv[2].encode(), sys.argv[3].encode()
+before = os.stat(path)
+data = open(path, "rb").read()
+changed = data.replace(old, new, 1)
+if changed == data:
+    raise SystemExit(f"same-second fixture could not find {sys.argv[2]!r} in {path}")
+open(path, "wb").write(changed)
+os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+PY
+}
+
+run_same_second_edit_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+
+	# One more request without an edit. After it, the server has compared every
+	# source file of the baseline with its content at the start of a request.
+	compile_server "$SERVER_OUTPUT"
+
+	# A class body changes and the file time stays the same.
+	edit_keeping_file_time "$PROJECT_DIR/src/Main.hx" "return Ready;" "return Waiting;"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-class"
+	compare_generated_output "$TMP_ROOT/direct-same-second-class" "$SERVER_OUTPUT" "same-second-class"
+	grep -Fq '{:waiting}' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_PARITY:same-second-class kept the stale class body" >&2
+		return 1
+	}
+
+	# An enum gets a constructor and the file time stays the same.
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheStatus.hx" "Waiting;" "Waiting; Archived;"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-enum"
+	compare_generated_output "$TMP_ROOT/direct-same-second-enum" "$SERVER_OUTPUT" "same-second-enum"
+	grep -Fq 'def archived()' "$SERVER_OUTPUT/cache_status.ex" || {
+		echo "SERVER_CACHE_PARITY:same-second-enum kept the stale enum" >&2
+		return 1
+	}
+
+	# A file that the server reads for the first time right after it was
+	# written, and that changes again with the same file time.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheNative.hx" "native-before" "native-after"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-new-file"
+	compare_generated_output "$TMP_ROOT/direct-same-second-new-file" "$SERVER_OUTPUT" "same-second-new-file"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:same-second-new-file kept the stale class body" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_SAME_SECOND_EDIT:PASS"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-removed"
+}
+
+# A "first-time file" is a source file that no build on this server has
+# recorded yet. The server has no earlier copy of it to compare with, so it
+# has its own two rules. Both cases below wait three seconds, which is longer
+# than the two-second margin of those rules.
+run_same_second_first_time_file_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local log="$TMP_ROOT/same-second-first-time.log"
+	local display_log="$TMP_ROOT/same-second-display.log"
+	local display_position unchanged_count
+
+	# Rule 1: a file that was last written well before the first build that
+	# reads it is trusted. The next build without an edit must build no class
+	# module again, and a later change with the same file time must be found.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	sleep 3
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	unchanged_count="$(built_class_count "$log")"
+	if ((unchanged_count != 0)); then
+		echo "SERVER_CACHE_REUSE:same-second-settled-file built $unchanged_count class modules again without an edit" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:same-second-settled-file:PASS"
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheNative.hx" "native-before" "native-after"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-settled-file"
+	compare_generated_output "$TMP_ROOT/direct-same-second-settled-file" "$SERVER_OUTPUT" "same-second-settled-file"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:same-second-settled-file kept the stale class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-settled-file-removed"
+
+	# Rule 2: an editor (display) request reads a new file before any build
+	# does, and Haxe keeps what it parsed. The file then changes with the same
+	# file time. The first build may still use the old text, because the server
+	# learns about the file only in that build. The second build must not.
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	display_position="$(python3 - "$PROJECT_DIR/src/Main.hx" <<'PY'
+import sys
+
+text = open(sys.argv[1], "rb").read()
+print(text.index(b"CacheNative.label") + len(b"CacheNative.") + 2)
+PY
+)"
+	"$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		--display "src/Main.hx@$display_position@type" >"$display_log" 2>&1 || true
+	grep -Fq 'String' "$display_log" || {
+		echo "SERVER_CACHE_PARITY:same-second-after-display: the display request did not type CacheNative.label" >&2
+		sed -n '1,40p' "$display_log" >&2
+		return 1
+	}
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheNative.hx" "native-before" "native-after"
+	sleep 3
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-same-second-after-display"
+	compare_generated_output "$TMP_ROOT/direct-same-second-after-display" "$SERVER_OUTPUT" "same-second-after-display"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:same-second-after-display kept the stale class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-after-display-removed"
+}
+
 run_module_rename_variant() {
 	local direct_legacy="$TMP_ROOT/direct-module-legacy"
 	local direct_renamed="$TMP_ROOT/direct-module-renamed"
@@ -1083,6 +1226,10 @@ compile_server "$SERVER_OUTPUT"
 compile_direct "$DIRECT_BASELINE"
 compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "baseline-A"
 BASELINE_FD_COUNT="$(open_fd_count "$SERVER_PID")"
+
+# First, because every later variant relies on the server seeing each edit.
+run_same_second_edit_variant
+run_same_second_first_time_file_variant
 
 run_variant \
 	"enum" \
