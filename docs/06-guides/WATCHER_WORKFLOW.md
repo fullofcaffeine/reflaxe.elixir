@@ -382,6 +382,44 @@ The Haxe server caches parsed files and typed modules in memory. It checks file
 changes, classpath shadowing, compiler-define signatures, and typed dependencies
 before reuse. Reflaxe layers target-module work selection on that result.
 
+### Two saves within one second
+
+Haxe 4.3 reads a file time in whole seconds. When a file is saved two times
+within one second, or a tool writes a file and restores its file time, Haxe
+cannot see the second change. Without help, the server keeps the old class or
+enum and the build reports success with old output.
+
+Reflaxe.Elixir closes this for the `.hx` files that define the types of your
+build. When a server request starts, it reads each of these files again and
+compares the bytes with the previous request. It tells Haxe to forget each file
+that differs, and Haxe types that file again in the same request. For example,
+a formatter that rewrites `TodoLive.hx` half a second after you save it no
+longer leaves the unformatted version in the generated Elixir.
+
+A file that the server reads for the first time less than two seconds after it
+was written is read once more on the next request. The server has no earlier
+copy of such a file to compare with.
+
+The check does not know these files, so the one-second limit of Haxe still
+applies to them:
+
+- a `.hx` file that only macro code imports;
+- an `import.hx` file;
+- a file that a macro registers with `Context.registerModuleDependency` (see
+  [External files read by macros](#external-files-read-by-macros));
+- a module that a `--macro` line of your HXML asks for before
+  `-lib reflaxe.elixir`, for example `--macro haxe.macro.Context.getType("A")`.
+
+If a tool can write one of these two times within one second, restart the
+watcher after that change, or make the tool wait one second between the writes.
+
+The check also needs two requests in a row with the same defines. Haxe resets
+what a macro remembers when the defines change, so the first request after a
+change of defines compares nothing. `mix haxe.watch` gives each HXML file its
+own server and is not affected. If you send two HXML files with different
+defines to one server by hand, the one-second limit still applies to an edit
+that you make between a request of one file and the next request of the other.
+
 Changing an enum, typedef, or abstract intentionally
 causes one full target regeneration. These declarations can affect otherwise
 unchanged classes through constructor sets, inline abstract code, representation
