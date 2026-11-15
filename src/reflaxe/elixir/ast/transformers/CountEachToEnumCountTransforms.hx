@@ -551,7 +551,7 @@ class CountEachToEnumCountTransforms {
 			if (exclude.indexOf(name) != -1)
 				return;
 			var c = name.charAt(0);
-			if (c == '_' || c.toLowerCase() != c)
+			if (c == '_' || !reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c))
 				return;
 			if (name.indexOf('.') != -1)
 				return; // module-like

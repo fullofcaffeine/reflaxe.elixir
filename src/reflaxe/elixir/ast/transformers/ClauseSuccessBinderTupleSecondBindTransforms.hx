@@ -234,7 +234,7 @@ class ClauseSuccessBinderTupleSecondBindTransforms {
 		if (name == null || name.length == 0)
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c && c != '_';
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c) && c != '_';
 	}
 
 	static function findTupleSecondVars(body:ElixirAST):Array<String> {

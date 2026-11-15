@@ -1511,8 +1511,8 @@ class ElixirASTPrinter {
 									// Only when target is a simple variable (lowercase start)
 									switch (target.def) {
 										case EVar(varName):
-											var first = varName.charAt(0);
-											if (first == first.toLowerCase()) {
+											// A module such as `:queue` is not a variable to rebind.
+											if (reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(varName.charAt(0))) {
 												// Use the first argument only
 												var printedArg = args.length > 0 ? printFunctionArg(args[0]) : "";
 												return varName + ' = Enum.concat(' + varName + ', [' + printedArg + '])';

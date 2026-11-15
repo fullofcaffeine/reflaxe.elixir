@@ -193,6 +193,35 @@ class ElixirNaming {
 	];
 
 	/**
+	 * Tells whether `name` can be the name of an Elixir local variable.
+	 *
+	 * WHY: An `EVar` node also carries module references: `Enum`, and Erlang
+	 * modules such as `:erlang` or `:binary`. A pass that looks for local
+	 * variables by name must not treat those as variables. A test such as
+	 * "the first character equals its lower-case form" accepts `:erlang`,
+	 * because `:` has no upper-case form. A pass then renamed a pattern
+	 * binder to it: `{:ok, value}` became `{:ok, :erlang}`.
+	 *
+	 * WHAT: True when the name starts with a lower-case letter or `_`.
+	 * It does not check the remaining characters or reserved words.
+	 *
+	 * Examples:
+	 * - "value" → true, "_g1" → true
+	 * - "Enum" → false, ":erlang" → false, "@moduledoc" → false, "1" → false
+	 */
+	public static function isVariableName(name:String):Bool {
+		return name != null && name.length > 0 && isVariableStart(name.charAt(0));
+	}
+
+	/**
+	 * Tells whether the character `first` can start an Elixir local variable:
+	 * a lower-case letter or `_`. See `isVariableName` for why `:` must fail.
+	 */
+	public static function isVariableStart(first:String):Bool {
+		return first == "_" || (first != null && first.length > 0 && first.toLowerCase() == first && first.toUpperCase() != first);
+	}
+
+	/**
 	 * Check if a name is an Elixir reserved keyword
 	 */
 	public static function isReserved(name:String):Bool {

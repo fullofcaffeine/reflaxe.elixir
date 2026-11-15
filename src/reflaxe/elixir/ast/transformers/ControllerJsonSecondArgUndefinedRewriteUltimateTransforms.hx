@@ -156,7 +156,11 @@ class ControllerJsonSecondArgUndefinedRewriteUltimateTransforms {
 				case EVar(v):
 					if (v != null && v.length > 0) {
 						var c = v.charAt(0);
-						if (c.toLowerCase() == c && v != "conn" && v != "params" && v != "socket" && v != "live_socket")
+						if (reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c)
+							&& v != "conn"
+							&& v != "params"
+							&& v != "socket"
+							&& v != "live_socket")
 							used.set(v, true);
 					}
 				default:

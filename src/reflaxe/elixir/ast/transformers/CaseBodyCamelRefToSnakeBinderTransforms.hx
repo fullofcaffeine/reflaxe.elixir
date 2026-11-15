@@ -61,7 +61,7 @@ class CaseBodyCamelRefToSnakeBinderTransforms {
 				case EVar(v):
 					var isCamel = (v != null
 						&& v.length > 0
-						&& v.charAt(0) == v.charAt(0).toLowerCase()
+						&& reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(v.charAt(0))
 						&& v.indexOf("_") == -1
 						&& ~/.*[A-Z].*/.match(v));
 					if (isCamel) {

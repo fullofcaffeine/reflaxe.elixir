@@ -79,7 +79,7 @@ class HandleInfoReturnSocketNormalizeTransforms {
 		if (v == null || v.length == 0)
 			return false;
 		var c = v.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	static function fixCalls(body:ElixirAST, socketVar:String):ElixirAST {

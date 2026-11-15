@@ -185,7 +185,7 @@ class HandleInfoCaseBinderCollisionRepairTransforms {
 		if (name == "socket" || name == "params" || name == "event" || name == "payload")
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c && c != '_';
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c) && c != '_';
 	}
 
 	static function collectDecls(ast:ElixirAST, out:Map<String, Bool>):Void {

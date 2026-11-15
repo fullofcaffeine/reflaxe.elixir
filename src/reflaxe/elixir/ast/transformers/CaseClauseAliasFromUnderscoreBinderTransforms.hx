@@ -255,8 +255,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
 	static inline function looksLower(name:String):Bool {
 		if (name == null || name.length == 0)
 			return false;
-		var c = name.charAt(0);
-		return c == c.toLowerCase();
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(name.charAt(0));
 	}
 
 	static function markInterpolations(s:String, used:Map<String, Bool>):Void {

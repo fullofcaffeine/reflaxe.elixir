@@ -93,7 +93,7 @@ class ControllerJsonDataArgPickSingleVarTransforms {
 		if (v == "conn" || v == "params" || v == "socket" || v == "live_socket")
 			return false;
 		var c = v.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 }
 #end

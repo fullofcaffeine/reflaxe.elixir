@@ -93,7 +93,7 @@ class HygieneVarAlignFastTransforms {
 			if (base == null || base.length == 0)
 				return null;
 			var c = base.charAt(0);
-			return (c == c.toLowerCase() && c != "_") ? base : null;
+			return (reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c) && c != "_") ? base : null;
 		}
 
 		var canonical = new Map<String, String>();

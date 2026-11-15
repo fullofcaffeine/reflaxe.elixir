@@ -195,7 +195,7 @@ class ClauseUnusedBinderUnderscoreTransforms {
 		if (s == null || s.length == 0)
 			return false;
 		var c = s.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	static function collectDeclaredVars(body:ElixirAST):Array<String> {

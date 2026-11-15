@@ -231,8 +231,8 @@ class ClauseUndefinedVarBindToBinderTransforms {
 				return false;
 			default:
 		}
-		var c = name.charAt(0);
-		return c.toLowerCase() == c;
+		// `:erlang` in `:erlang.term_to_binary(x)` is a module, not an unbound local.
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableName(name);
 	}
 
 	static function extractBinder(p:EPattern):Null<String> {

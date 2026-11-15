@@ -176,7 +176,7 @@ class CaseTupleBinderUnshadowTransforms {
 		if (name == "socket" || name == "params" || name == "_params" || name == "event")
 			return false;
 		var c = name.charAt(0);
-		return c.toLowerCase() == c;
+		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableStart(c);
 	}
 
 	static function collectDeclared(p:EPattern, body:ElixirAST):Map<String, Bool> {
