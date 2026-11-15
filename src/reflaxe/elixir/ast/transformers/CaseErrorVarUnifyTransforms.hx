@@ -297,9 +297,15 @@ class CaseErrorVarUnifyTransforms {
 	 * - Count the binders of nested `case`, `receive`, `with`, `for`, `fn`,
 	 *   `rescue` and `catch` patterns, and of every match, whatever the shape of
 	 *   its left side. The test ignores where in the body the binding is: a name
-	 *   bound in one place is never rewritten in another. That can leave a real
-	 *   missing variable alone, which Elixir then reports at compile time; it
-	 *   cannot change which value a bound name reads.
+	 *   bound in one place is never rewritten in another, so the value that a
+	 *   bound name reads does not change.
+	 * - More bound names also mean fewer unbound ones. A clause that had two
+	 *   unbound names, and was left alone, can now have one, and the rewrite in
+	 *   `processClause` then applies to it. A typed `catch` in the clause showed
+	 *   this: its binder now counts as bound, and `__STACKTRACE__` in
+	 *   `reraise(haxe_exception, __STACKTRACE__)` was the one name left. It
+	 *   became the payload, and `reraise` returned `:badarg` instead of raising.
+	 *   `isLower` therefore rejects every name that is not a local variable.
 	 */
 	static function collectDeclared(p:EPattern, body:ElixirAST):Map<String, Bool> {
 		var d = new Map<String, Bool>();
@@ -392,7 +398,8 @@ class CaseErrorVarUnifyTransforms {
 	}
 
 	static inline function isLower(s:String):Bool {
-		// `:erlang` in `:erlang.term_to_binary(x)` is a module, not an unbound local.
+		// `:erlang` in `:erlang.term_to_binary(x)` is a module, and `__STACKTRACE__`
+		// is a special form; neither is an unbound local.
 		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableName(s);
 	}
 }

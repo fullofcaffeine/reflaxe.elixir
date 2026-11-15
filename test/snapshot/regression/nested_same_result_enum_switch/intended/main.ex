@@ -24,6 +24,149 @@ defmodule Main do
         IO.puts(v)
       end)
     end)
+    r = {:ok, "o"}
+    code = 0
+    report_throw("rethrowInErrorArm", fn -> rethrow_in_error_arm(r, code) end)
+    report_throw("rethrowInErrorArmStatement", fn -> rethrow_in_error_arm_statement(r, code) end)
+    report_throw("rethrowThenReadPayload", fn -> rethrow_then_read_payload(r, code) end)
+    report_throw("rethrowInOkArm", fn -> rethrow_in_ok_arm(r, code) end)
+    code = 5
+    report_throw("rethrowInErrorArm", fn -> rethrow_in_error_arm(r, code) end)
+    report_throw("rethrowInErrorArmStatement", fn -> rethrow_in_error_arm_statement(r, code) end)
+    report_throw("rethrowThenReadPayload", fn -> rethrow_then_read_payload(r, code) end)
+    report_throw("rethrowInOkArm", fn -> rethrow_in_ok_arm(r, code) end)
+    r = {:error, "x"}
+    code = 0
+    report_throw("rethrowInErrorArm", fn -> rethrow_in_error_arm(r, code) end)
+    report_throw("rethrowInErrorArmStatement", fn -> rethrow_in_error_arm_statement(r, code) end)
+    report_throw("rethrowThenReadPayload", fn -> rethrow_then_read_payload(r, code) end)
+    report_throw("rethrowInOkArm", fn -> rethrow_in_ok_arm(r, code) end)
+    code = 5
+    report_throw("rethrowInErrorArm", fn -> rethrow_in_error_arm(r, code) end)
+    report_throw("rethrowInErrorArmStatement", fn -> rethrow_in_error_arm_statement(r, code) end)
+    report_throw("rethrowThenReadPayload", fn -> rethrow_then_read_payload(r, code) end)
+    report_throw("rethrowInOkArm", fn -> rethrow_in_ok_arm(r, code) end)
+  end
+  defp report_throw(label, run) do
+    try do
+      v = label <> " returned " <> run.()
+      IO.puts(v)
+    rescue
+      haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+        (case {(case haxe_exception do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
+          {n, _} when is_integer(n) -> IO.puts(label <> " rethrown " <> Reflaxe.Elixir.HaxeFloat.to_string(n))
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
+        end)
+    end
+  end
+  def rethrow_in_error_arm(r, code) do
+    (case r do
+      {:ok, value} ->
+        v = value
+        "ok #{v}"
+      {:error, e} ->
+        try do
+          raise Reflaxe.Elixir.HaxeThrow, [value: code]
+        rescue
+          haxe_exception ->
+            Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+            (case {(case haxe_exception do
+              %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+              _ -> haxe_exception
+            end), haxe_exception} do
+              {reason, _} when is_binary(reason) -> reason <> e
+              _ ->
+                reraise(haxe_exception, __STACKTRACE__)
+            end)
+        end
+    end)
+  end
+  def rethrow_in_error_arm_statement(r, code) do
+    out = "start"
+    out = (case r do
+      {:ok, value} ->
+        v = value
+        out = "ok #{v}"
+        out
+      {:error, reason} ->
+        e = reason
+        out = try do
+          if (code > 0) do
+            raise Reflaxe.Elixir.HaxeThrow, [value: code]
+          end
+          out = "no throw " <> e
+          out
+        rescue
+          haxe_exception ->
+            Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+            out = (case {(case haxe_exception do
+              %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+              _ -> haxe_exception
+            end), haxe_exception} do
+              {s, _} when is_binary(s) ->
+                out = "caught " <> s <> e
+                out
+              _ ->
+                reraise(haxe_exception, __STACKTRACE__)
+                out
+            end)
+            out
+        end
+        out
+    end)
+    out
+  end
+  def rethrow_then_read_payload(r, code) do
+    (case r do
+      {:ok, value} ->
+        v = value
+        "ok #{v}"
+      {:error, reason} ->
+        e = reason
+        try do
+          raise Reflaxe.Elixir.HaxeThrow, [value: code]
+        rescue
+          haxe_exception ->
+            Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+            (case {(case haxe_exception do
+              %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+              _ -> haxe_exception
+            end), haxe_exception} do
+              {s, _} when is_binary(s) -> IO.puts(s)
+              _ ->
+                reraise(haxe_exception, __STACKTRACE__)
+            end)
+        end
+        "after #{e}"
+    end)
+  end
+  def rethrow_in_ok_arm(r, code) do
+    (case r do
+      {:ok, haxe_exception} ->
+        v = haxe_exception
+        try do
+          raise Reflaxe.Elixir.HaxeThrow, [value: code]
+        rescue
+          haxe_exception ->
+            Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+            (case {(case haxe_exception do
+              %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+              _ -> haxe_exception
+            end), haxe_exception} do
+              {s, _} when is_binary(s) -> s <> v
+              _ ->
+                reraise(haxe_exception, __STACKTRACE__)
+            end)
+        end
+      {:error, reason} ->
+        e = reason
+        "error #{e}"
+    end)
   end
   def ok_in_error(a, b) do
     (case a do

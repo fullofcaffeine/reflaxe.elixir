@@ -105,9 +105,14 @@ class ElixirNaming {
 	}
 
 	/**
-	 * Check if a string is an Elixir special macro that should be preserved
+	 * Tells whether `s` is one of Elixir's `__NAME__` special forms, such as
+	 * `__MODULE__` or `__STACKTRACE__`.
+	 *
+	 * These names look like variables, and the compiler emits them as `EVar`
+	 * nodes, but nothing binds them: Elixir supplies their value. `toVarName`
+	 * keeps them unchanged, and `isVariableName` rejects them.
 	 */
-	static function isSpecialMacro(s:String):Bool {
+	public static function isSpecialMacro(s:String):Bool {
 		return switch (s) {
 			case "__MODULE__" | "__FILE__" | "__ENV__" | "__DIR__" | "__CALLER__" | "__STACKTRACE__": true;
 			default: false;
@@ -202,15 +207,25 @@ class ElixirNaming {
 	 * because `:` has no upper-case form. A pass then renamed a pattern
 	 * binder to it: `{:ok, value}` became `{:ok, :erlang}`.
 	 *
-	 * WHAT: True when the name starts with a lower-case letter or `_`.
-	 * It does not check the remaining characters or reserved words.
+	 * The `__NAME__` special forms (`isSpecialMacro`) are not variables either.
+	 * A typed Haxe `catch` becomes a `rescue` whose catch-all clause ends in
+	 * `reraise(haxe_exception, __STACKTRACE__)`. A pass that repairs the one
+	 * unbound name of an `{:error, e}` clause took `__STACKTRACE__` for that
+	 * name and replaced it with `e`. `reraise` then got a bad stacktrace,
+	 * returned `:badarg` without raising, and the exception was lost
+	 * (haxe.elixir.codex-sx27).
+	 *
+	 * WHAT: True when the name starts with a lower-case letter or `_` and is
+	 * not a special form. It does not check the remaining characters or
+	 * reserved words.
 	 *
 	 * Examples:
 	 * - "value" → true, "_g1" → true
 	 * - "Enum" → false, ":erlang" → false, "@moduledoc" → false, "1" → false
+	 * - "__STACKTRACE__" → false, "__MODULE__" → false
 	 */
 	public static function isVariableName(name:String):Bool {
-		return name != null && name.length > 0 && isVariableStart(name.charAt(0));
+		return name != null && name.length > 0 && isVariableStart(name.charAt(0)) && !isSpecialMacro(name);
 	}
 
 	/**

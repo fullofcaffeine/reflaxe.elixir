@@ -30,3 +30,19 @@ statement err x after why
 inClosure err x/why
 threeLevels ok 3/x/why
 threeLevels err z/x/why
+rethrowInErrorArm returned ok o
+rethrowInErrorArmStatement returned ok o
+rethrowThenReadPayload returned ok o
+rethrowInOkArm rethrown 0
+rethrowInErrorArm returned ok o
+rethrowInErrorArmStatement returned ok o
+rethrowThenReadPayload returned ok o
+rethrowInOkArm rethrown 5
+rethrowInErrorArm rethrown 0
+rethrowInErrorArmStatement returned no throw x
+rethrowThenReadPayload rethrown 0
+rethrowInOkArm returned error x
+rethrowInErrorArm rethrown 5
+rethrowInErrorArmStatement rethrown 5
+rethrowThenReadPayload rethrown 5
+rethrowInOkArm returned error x
