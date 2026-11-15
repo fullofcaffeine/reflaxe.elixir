@@ -1535,6 +1535,7 @@ class SwitchBuilder {
 			// Precompute usage to avoid repeated full-tree scans per parameter
 			var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length, ef, context);
 			var localUsage = collectReadLocalNameUsage(caseBody);
+			var outerReadNames = collectOuterReadNames(caseBody);
 			#if debug_switch_builder
 			trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
 			trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
@@ -1637,6 +1638,17 @@ class SwitchBuilder {
 				// This would shadow the outer binding and can silently corrupt semantics.
 				if (candidate != null && isFunctionParamByName(candidate)) {
 					candidate = enumParamName;
+				}
+
+				// The binder must not hide an outer variable that the clause reads. In
+				// `case SOk(a): "ok " + value`, with the enum field `SOk(value:String)`
+				// and an unread `a`, the field name `value` was chosen above, so
+				// `{:s_ok, value}` made the body read the payload instead of the outer
+				// `value`. The Haxe binder's own name cannot hide an outer read, because
+				// Haxe already resolved every read of that name to the binder.
+				if (candidate != null && outerReadNames.exists(VariableAnalyzer.toElixirVarName(candidate))) {
+					var ownBinder = (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb)) ? rb : null;
+					candidate = binderNameClearOfOuterReads(candidate, ownBinder, outerReadNames);
 				}
 
 				#if debug_switch_builder
@@ -1893,6 +1905,70 @@ class SwitchBuilder {
 				return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Returns the Elixir names of the outer variables that a clause body reads.
+	 *
+	 * WHY: A `case` clause binder with one of these names hides the outer
+	 * variable for the whole clause. `case SOk(a): "ok " + value` must still read
+	 * the function argument `value`, so the binder of `{:s_ok, _}` must not be
+	 * named `value` (haxe.elixir.codex-spk).
+	 *
+	 * HOW: An outer variable is a local that the body reads but does not declare.
+	 * Identity, not the name, decides: a variable that the body declares itself,
+	 * such as the payload extraction `var _g = r[0]`, an inner pattern binder, a
+	 * lambda parameter, a loop variable or a catch variable, is not an outer
+	 * variable, even when an outer variable has the same name.
+	 */
+	static function collectOuterReadNames(caseBody:TypedExpr):Map<String, Bool> {
+		var declaredInBody = new Map<Int, Bool>();
+		function collectDeclarations(expression:TypedExpr):Void {
+			if (expression == null)
+				return;
+			switch (expression.expr) {
+				case TVar(local, _):
+					declaredInBody.set(local.id, true);
+				case TFunction(func):
+					for (argument in func.args)
+						declaredInBody.set(argument.v.id, true);
+				case TFor(local, _, _):
+					declaredInBody.set(local.id, true);
+				case TTry(_, catches):
+					for (catchClause in catches)
+						declaredInBody.set(catchClause.v.id, true);
+				default:
+			}
+			TypedExprTools.iter(expression, collectDeclarations);
+		}
+		collectDeclarations(caseBody);
+
+		var names = new Map<String, Bool>();
+		for (local in collectReadLocals(caseBody)) {
+			if (!declaredInBody.exists(local.id))
+				names.set(VariableAnalyzer.toElixirVarName(local.name), true);
+		}
+		return names;
+	}
+
+	/**
+	 * Returns a name for a payload binder that hides none of `outerReadNames`.
+	 *
+	 * `ownBinder` is the name that the Haxe pattern gave the payload, when one is
+	 * known. It is the first choice, because Haxe scoping already guarantees that
+	 * the clause reads no outer variable with that name. Without it, or when two
+	 * Haxe names map to the same Elixir name, the result is `candidate` with as
+	 * many `payload_` prefixes as it takes. The clause body reaches the payload
+	 * through the compiler's own extraction variable, which the builder maps to
+	 * whatever name the pattern uses, so a new name is safe.
+	 */
+	static function binderNameClearOfOuterReads(candidate:String, ownBinder:Null<String>, outerReadNames:Map<String, Bool>):String {
+		if (ownBinder != null && !outerReadNames.exists(VariableAnalyzer.toElixirVarName(ownBinder)))
+			return ownBinder;
+		var name = candidate;
+		while (outerReadNames.exists(VariableAnalyzer.toElixirVarName(name)))
+			name = "payload_" + name;
+		return name;
 	}
 
 	/** Collect read identities without treating assignment destinations as reads. */

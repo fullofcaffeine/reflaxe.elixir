@@ -80,6 +80,7 @@ TEST_DIRS=(
   "test/snapshot/regression/enum_switch_arm_assignment"
   "test/snapshot/regression/else_if_condition_assignment"
   "test/snapshot/regression/case_pattern_nil_fact_shadow"
+  "test/snapshot/regression/unused_enum_binder_outer_read"
   "test/snapshot/regression/module_level_final_with_app_name"
   "test/snapshot/regression/declared_then_assigned_in_branches"
   "test/snapshot/regression/enum_extraction_usage"
