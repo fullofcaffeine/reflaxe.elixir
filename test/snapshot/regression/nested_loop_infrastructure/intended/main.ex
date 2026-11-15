@@ -16,10 +16,7 @@ defmodule Main do
     results = []
     _ = Enum.reduce(matrix, results, fn row, results_acc -> Enum.reduce(row, results_acc, fn item, results_acc -> Enum.concat(results_acc, [item * 2]) end) end)
     g = []
-    _doubled = Enum.reduce(matrix, g, fn row, g_acc ->
-      _ = Enum.reduce(row, g, fn item, g_acc -> Enum.concat(g_acc, [item * 2]) end)
-      g_acc
-    end)
+    _doubled = Enum.reduce(matrix, g, fn row, g_acc -> Enum.reduce(row, g_acc, fn item, g_acc -> Enum.concat(g_acc, [item * 2]) end) end)
     _mapped = Enum.map(matrix, fn row -> Enum.map(row, fn item -> item * 2 end) end)
     sum_of_sums = 0
     _ = Enum.reduce(matrix, sum_of_sums, fn row, sum_of_sums_acc ->
