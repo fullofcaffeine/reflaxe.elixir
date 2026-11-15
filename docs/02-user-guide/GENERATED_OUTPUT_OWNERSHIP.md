@@ -52,7 +52,8 @@ The compiler applies these rules before publication:
 3. Reject any generated target that already exists but is not owned.
 4. Generate the next tree in staging. A full build, legacy-manifest upgrade, or enabled formatter
    stages the complete tree. A version 2 cached rebuild with formatting off stages only candidates
-   whose generated digest differs from the verified live digest.
+   whose generated digest differs from the verified live digest, or whose owned file is missing on
+   disk.
 5. Back up changed/stale owned files, activate a recovery journal, publish files, and atomically
    replace the manifest last.
 
@@ -60,6 +61,11 @@ Unchanged generated files are not rewritten. Removed Haxe modules and namespace 
 stale owned paths. With `-D source-map`, each `.ex.map` sidecar enters the same transaction as its
 `.ex` file, so a rename cannot leave an obsolete map behind. Editing a generated file by hand
 changes its digest, so the next build and clean both stop instead of silently discarding the edit.
+
+If someone deletes an owned file, a cached rebuild that renders that file's module again writes it
+back in the same request, with the same bytes as a full build. A cached rebuild that does not render
+that module has nothing to write, so it stops with "Cached rebuild cannot preserve missing owned
+output" and publishes nothing; run a full Haxe rebuild.
 
 On a safe cached rebuild, the compiler hashes newly rendered candidates in memory and compares them
 with the version 2 manifest. It reuses an old digest only after verifying that the live file still
