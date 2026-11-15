@@ -83,6 +83,7 @@ TEST_DIRS=(
   "test/snapshot/regression/enum_switch_arm_assignment"
   "test/snapshot/regression/value_position_branch_assignment"
   "test/snapshot/regression/erlang_module_call_in_result_arm"
+  "test/snapshot/regression/nested_same_result_enum_switch"
   "test/snapshot/regression/else_if_condition_assignment"
   "test/snapshot/regression/case_pattern_nil_fact_shadow"
   "test/snapshot/regression/unused_enum_binder_outer_read"

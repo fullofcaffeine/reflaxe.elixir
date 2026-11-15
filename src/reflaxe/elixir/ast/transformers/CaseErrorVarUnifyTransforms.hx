@@ -275,6 +275,32 @@ class CaseErrorVarUnifyTransforms {
 		return m;
 	}
 
+	/**
+	 * Returns every name that the clause binds: the binders of its own pattern, and
+	 * every name bound anywhere inside its body.
+	 *
+	 * WHY
+	 * - `processClause` treats a lower-case name that is used but never bound as a
+	 *   missing variable, and points it at the `{:error, binder}` payload. A name
+	 *   that a nested construct binds is not missing. Without the nested binders,
+	 *   the inner `value` below looked unbound in the outer clause, and
+	 *   `v = value` was rewritten to `v = reason`, the outer payload
+	 *   (haxe.elixir.codex-sx27):
+	 *
+	 *     {:error, reason} ->
+	 *       case b do
+	 *         {:ok, value} -> v = value; String.length(v)
+	 *         {:error, _} -> String.length(reason) * 10
+	 *       end
+	 *
+	 * HOW
+	 * - Count the binders of nested `case`, `receive`, `with`, `for`, `fn`,
+	 *   `rescue` and `catch` patterns, and of every match, whatever the shape of
+	 *   its left side. The test ignores where in the body the binding is: a name
+	 *   bound in one place is never rewritten in another. That can leave a real
+	 *   missing variable alone, which Elixir then reports at compile time; it
+	 *   cannot change which value a bound name reads.
+	 */
 	static function collectDeclared(p:EPattern, body:ElixirAST):Map<String, Bool> {
 		var d = new Map<String, Bool>();
 		// pattern binds
@@ -289,13 +315,39 @@ class CaseErrorVarUnifyTransforms {
 					}
 			default:
 		}
-		// local LHS assigns inside body
+		// names bound inside the body, nested binders included
 		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
 			switch (n.def) {
-				case EMatch(PVar(nm), _):
-					d.set(nm, true);
-				case EBinary(Match, {def: EVar(nm2)}, _):
-					d.set(nm2, true);
+				case EMatch(pattern, _):
+					collectPatternVarsInto(pattern, d);
+				case EBinary(Match, left, _):
+					collectLhsVars(left, d);
+				case ECase(_, clauses):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EReceive(clauses, _):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EWith(clauses, _, _):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EFor(generators, _, _, _, _):
+					for (generator in generators)
+						collectPatternVarsInto(generator.pattern, d);
+				case EFn(clauses):
+					for (clause in clauses)
+						for (arg in clause.args)
+							collectPatternVarsInto(arg, d);
+				case ETry(_, rescueClauses, catchClauses, _, _):
+					if (rescueClauses != null)
+						for (clause in rescueClauses) {
+							collectPatternVarsInto(clause.pattern, d);
+							if (clause.varName != null)
+								d.set(clause.varName, true);
+						}
+					if (catchClauses != null)
+						for (clause in catchClauses)
+							collectPatternVarsInto(clause.pattern, d);
 				default:
 			}
 		});
