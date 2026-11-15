@@ -26,8 +26,8 @@ import reflaxe.elixir.ast.ASTUtils;
  *   before printing, eliminating undefined-local and hygiene warnings while adhering to idiomatic Elixir.
  *
  * HOW
- * - Traverse the AST with a lightweight context that tracks the current anonymous function's second
- *   parameter name when inside an `EFn` with at least two parameters.
+ * - For each anonymous function with at least two parameters, take the second parameter as the
+ *   accumulator and rewrite its body, but not the bodies of nested anonymous functions.
  * - Whenever an assignment is encountered where the RHS structurally self-appends the LHS via
  *   `Enum.concat/2`, `concat/2`, or `++`, rewrite the assignment to target the acc parameter instead
  *   and normalize the RHS to `Enum.concat(acc, list)`.
@@ -89,7 +89,46 @@ class AccAliasLateRewriteTransforms {
 		return makeASTWithMeta(EBinary(Match, makeAST(EVar(accName)), newRight), meta, pos);
 	}
 
-	static function transformWithAccContext(ast:ElixirAST, currentAcc:Null<String>):ElixirAST {
+	/**
+	 * Rewrite the self-appends of one callback body to its accumulator `accName`.
+	 *
+	 * Nested anonymous functions are left as they are: each one has its own
+	 * accumulator, and `transformPass` already rewrote it. For example, the inner
+	 * loop of `[for (x in xs) for (k in m.keys()) x + k]` is
+	 * `{acc} = Enum.reduce_while(keys, {acc}, fn k, {acc__g_acc} -> acc__g_acc = acc__g_acc ++ [x <> k] ... end)`;
+	 * renaming its update to the outer `acc` lost every element.
+	 */
+	static function rewriteCurrentScope(body:ElixirAST, accName:String):ElixirAST {
+		return ElixirASTTransformer.transformNodeUntil(body, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBinary(Match, left, rhs):
+					var lhsName:Null<String> = switch (left.def) {
+						case EVar(nm): nm;
+						default: null;
+					};
+					if (lhsName != null && isSelfAppend(rhs, lhsName)) {
+						rewriteToAcc(lhsName, rhs, accName, n.metadata, n.pos);
+					} else n;
+				case EMatch(pat, rhs2):
+					var lhsName2:Null<String> = switch (pat) {
+						case PVar(nm): nm;
+						default: null;
+					};
+					if (lhsName2 != null && isSelfAppend(rhs2, lhsName2)) {
+						rewriteToAcc(lhsName2, rhs2, accName, n.metadata, n.pos);
+					} else n;
+				default:
+					n;
+			}
+		}, n -> switch (n.def) {
+			case EFn(_): true;
+			default: false;
+		});
+	}
+
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		// Children first: an inner callback is rewritten before its parent, and the
+		// parent's scoped rewrite does not enter it again.
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EFn(clauses) if (clauses.length == 1):
@@ -102,32 +141,11 @@ class AccAliasLateRewriteTransforms {
 					};
 					if (accName == null)
 						return n;
-					var newBody = transformWithAccContext(cl.body, accName);
-					makeASTWithMeta(EFn([{args: cl.args, guard: cl.guard, body: newBody}]), n.metadata, n.pos);
-				case EBinary(Match, left, rhs) if (currentAcc != null):
-					var lhsName:Null<String> = switch (left.def) {
-						case EVar(nm): nm;
-						default: null;
-					};
-					if (lhsName != null && isSelfAppend(rhs, lhsName)) {
-						rewriteToAcc(lhsName, rhs, currentAcc, n.metadata, n.pos);
-					} else n;
-				case EMatch(pat, rhs2) if (currentAcc != null):
-					var lhsName2:Null<String> = switch (pat) {
-						case PVar(nm): nm;
-						default: null;
-					};
-					if (lhsName2 != null && isSelfAppend(rhs2, lhsName2)) {
-						rewriteToAcc(lhsName2, rhs2, currentAcc, n.metadata, n.pos);
-					} else n;
+					makeASTWithMeta(EFn([{args: cl.args, guard: cl.guard, body: rewriteCurrentScope(cl.body, accName)}]), n.metadata, n.pos);
 				default:
 					n;
 			}
 		});
-	}
-
-	public static function transformPass(ast:ElixirAST):ElixirAST {
-		return transformWithAccContext(ast, null);
 	}
 }
 #end

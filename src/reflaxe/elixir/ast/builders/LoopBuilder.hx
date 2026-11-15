@@ -2836,14 +2836,9 @@ class LoopBuilder {
 				accName:String
 			}> = [];
 			for (id => tvar in mutated) {
-				var outerName = toElixirVarName(tvar.name);
-				var accName = if (outerName == "_") {
-					"_acc";
-				} else if (outerName.endsWith("_acc")) {
-					outerName + "_state";
-				} else {
-					outerName + "_acc";
-				};
+				var stateNames = reducerStateNames(id, tvar, compilationContext, toElixirVarName);
+				var outerName = stateNames.outerName;
+				var accName = stateNames.accName;
 				mutatedList.push({
 					id: id,
 					originalName: tvar.name,
@@ -3587,14 +3582,9 @@ class LoopBuilder {
 			accName:String
 		}> = [];
 		for (id => tvar in mutated) {
-			var outerName = toElixirVarName(tvar.name);
-			var accName = if (outerName == "_") {
-				"_acc";
-			} else if (outerName.endsWith("_acc")) {
-				outerName + "_state";
-			} else {
-				outerName + "_acc";
-			};
+			var stateNames = reducerStateNames(id, tvar, compilationContext, toElixirVarName);
+			var outerName = stateNames.outerName;
+			var accName = stateNames.accName;
 			mutatedList.push({
 				id: id,
 				originalName: tvar.name,
@@ -3700,6 +3690,55 @@ class LoopBuilder {
 		var statefulBody = ensureReturnsState(compiledBody, stateReturn);
 		return buildStatefulReducerLoop(rangeAst, initialState, PVar(binderName), statePattern, outerBindPattern, stateReturn, statefulBody,
 			bodyContainsReturn, bodyContainsLoopControl).def;
+	}
+
+	/**
+	 * Return the names a reducer uses for one local that its loop body changes.
+	 *
+	 * WHAT
+	 * - `outerName` holds the local where the loop starts: it is the initial state of
+	 *   the new `Enum.reduce`, and its result rebinds it.
+	 * - `accName` holds the local inside the reducer callback.
+	 *
+	 * WHY
+	 * - While a reducer compiles its body, it maps each changed local to its
+	 *   accumulator by TVar ID (`_g` becomes `_g_acc`). A nested loop that changes
+	 *   the same local must start from that accumulator and rebind it. With the
+	 *   declared name, the inner loop started again from the value before the outer
+	 *   loop, and the outer reducer returned its own unchanged accumulator. So
+	 *   `[for (x in xs) for (y in ys) x + y]` returned `[]`.
+	 *
+	 * HOW
+	 * - When an ID-keyed rename gives a name other than the declared one, the local
+	 *   is already bound under that name here, for example as the accumulator of an
+	 *   enclosing reducer. Start from it and reuse it as the callback parameter: the
+	 *   inner callback shadows it, and every read of the local in the callback means
+	 *   the inner state. The ID is exact; the spelling is never inspected.
+	 * - Otherwise use the declared name and derive the accumulator name from it.
+	 *
+	 * EXAMPLES
+	 * - `[for (x in xs) for (y in ys) x + y]`:
+	 *   `Enum.reduce(xs, g, fn x, g_acc -> Enum.reduce(ys, g_acc, fn y, g_acc -> Enum.concat(g_acc, [x <> y]) end) end)`.
+	 */
+	static function reducerStateNames(id:Int, tvar:TVar, compilationContext:Null<CompilationContext>,
+			toElixirVarName:String->String):{outerName:String, accName:String} {
+		var declaredName = toElixirVarName(tvar.name);
+		if (compilationContext != null && compilationContext.tempVarRenameMap != null) {
+			var idKey = Std.string(id);
+			if (compilationContext.tempVarRenameMap.exists(idKey)) {
+				var boundName = compilationContext.tempVarRenameMap.get(idKey);
+				if (boundName != declaredName)
+					return {outerName: boundName, accName: boundName};
+			}
+		}
+		var accName = if (declaredName == "_") {
+			"_acc";
+		} else if (declaredName.endsWith("_acc")) {
+			declaredName + "_state";
+		} else {
+			declaredName + "_acc";
+		};
+		return {outerName: declaredName, accName: accName};
 	}
 
 	/**
@@ -4405,6 +4444,14 @@ class LoopBuilder {
 			if (tvar == null)
 				return null;
 			var originalName = tvar.name;
+
+			// An active ID-keyed rename means the local already has a binding here, such
+			// as the accumulator `_g_acc` of an enclosing reducer. Seed from that binding:
+			// the tracked initializer (`[]`) is the value before the outer loop began.
+			if (concreteContext != null
+				&& concreteContext.tempVarRenameMap != null
+				&& concreteContext.tempVarRenameMap.exists(Std.string(tvar.id)))
+				return makeAST(EVar(elixirName));
 
 			// Prefer ID-keyed tracked initializers (Haxe 5 temp names can be non-stable/escaped).
 			if (concreteContext != null

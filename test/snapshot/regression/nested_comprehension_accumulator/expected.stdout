@@ -1,0 +1,18 @@
+twoPlain a1,a2,b1,b2
+statementLoops 1a,2a,1b,2b
+twoSwitch o,o,o,o
+twoSwitchGuard o,o,o,o
+threeSwitch o,o,o,o,o,o,o,o
+twoFilter o,o,o,o
+innerRange o,o,o,o
+innerMap o,o,o,o
+named 6
+twoSwitch a1x,a2x,b1x,b2x
+twoSwitchGuard a1x,a2x,E1,E2
+threeSwitch a1px,a1qx,a2px,a2qx,b1px,b1qx,b2px,b2qx
+twoFilter 21x,23x,31x,32x
+innerRange a1x,a2x,b1x,b2x
+innerMap ajx,akx,bjx,bkx
+named 6
+emptyInner 
+emptyOuter 

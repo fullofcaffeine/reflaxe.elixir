@@ -5,7 +5,6 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 
 /**
@@ -64,6 +63,22 @@ class ReduceAppendCanonicalizeTransforms {
 			return n;
 		});
 		return found;
+	}
+
+	/** Return true for an anonymous function, which owns its own binders and accumulator. */
+	static function isNestedCallback(ast:ElixirAST):Bool {
+		return switch (ast.def) {
+			case EFn(_): true;
+			default: false;
+		};
+	}
+
+	/** Visit `ast` and its children parent first, like `ASTUtils.walk`, but not inside a nested anonymous function. */
+	static function walkCurrentScope(ast:ElixirAST, visitor:ElixirAST->Void):Void {
+		if (ast == null || ast.def == null || isNestedCallback(ast))
+			return;
+		visitor(ast);
+		ElixirASTTransformer.iterateAST(ast, child -> walkCurrentScope(child, visitor));
 	}
 
 	static function isEnumReduceCall(ast:ElixirAST):Bool {
@@ -192,7 +207,11 @@ class ReduceAppendCanonicalizeTransforms {
 								// DEBUG: Sys.println('[ReduceAppendCanonicalize] stmt=' + ElixirASTPrinter.print(stmt, 0));
 								#end
 								var localRewrote = false;
-								var rewritten = ElixirASTTransformer.transformNode(stmt, function(node:ElixirAST):ElixirAST {
+								// Stay in this reducer's scope. A nested callback, such as the
+								// `Enum.reduce_while` of an inner loop in the statement
+								// `{acc} = Enum.reduce_while(keys, {acc}, fn k, {inner} -> ... end)`,
+								// owns its own accumulator; renaming it to `accName` breaks that loop.
+								var rewritten = ElixirASTTransformer.transformNodeUntil(stmt, function(node:ElixirAST):ElixirAST {
 									return switch (node.def) {
 										case EBinary(Match, left, rhs):
 											#if debug_reduce_append_canon
@@ -313,7 +332,7 @@ class ReduceAppendCanonicalizeTransforms {
 										default:
 											node;
 									}
-								});
+								}, isNestedCallback);
 								if (localRewrote)
 									didRewrite = true;
 								newBody.push(rewritten);
@@ -330,7 +349,10 @@ class ReduceAppendCanonicalizeTransforms {
 								for (stmt2 in bodyStmts) {
 									if (isEnumReduceCall(stmt2))
 										continue;
-									ASTUtils.walk(stmt2, function(n2:ElixirAST) {
+									// Only appends of this reducer count. An append inside a nested
+									// callback, such as `acc = Enum.reduce(ys, acc, fn y, inner -> ... end)`,
+									// belongs to that callback; rebuilding the body from it drops the inner loop.
+									walkCurrentScope(stmt2, function(n2:ElixirAST) {
 										switch (n2.def) {
 											case ERemoteCall(modX, "concat", argsX) if (argsX.length == 2):
 												// Capture list arg
