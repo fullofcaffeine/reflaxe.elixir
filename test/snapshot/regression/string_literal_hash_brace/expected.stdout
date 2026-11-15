@@ -57,3 +57,4 @@ Main.hx:120: #{traced}
 injected 2
 argument #{1 + 1}
 in string: #{x} n
+:"c\#{d}"

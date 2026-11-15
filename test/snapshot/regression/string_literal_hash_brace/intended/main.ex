@@ -132,6 +132,11 @@ defmodule Main do
     IO.puts("injected #{1 + 1}")
     IO.puts("argument \#{1 + 1}")
     IO.puts("in string: #{"\#{x}"} #{name}")
+    v = atom_text(:"c\#{d}")
+    IO.puts(v)
+  end
+  defp atom_text(a) do
+    inspect(a)
   end
   def show(s) do
     "[#{s}]"

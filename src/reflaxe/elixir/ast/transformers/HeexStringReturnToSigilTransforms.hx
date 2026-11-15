@@ -834,7 +834,25 @@ class HeexStringReturnToSigilTransforms {
 		}
 	}
 
+	/**
+	 * Converts HTML string returns of functions that take `assigns` into ~H.
+	 *
+	 * Such a function is a template route. A Haxe literal that the conversion turns into ~H is
+	 * template source (its `#{...}` becomes `<%= ... %>`); every other literal in the function
+	 * stays plain text. `TemplateHelpers.convertWithLiteralTemplateSource` owns that rule.
+	 */
 	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(_, _, _, _) | EDefp(_, _, _, _):
+					reflaxe.elixir.ast.TemplateHelpers.convertWithLiteralTemplateSource(n, convertStringReturns);
+				default:
+					n;
+			}
+		});
+	}
+
+	static function convertStringReturns(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDef(name, args, guards, body) | EDefp(name, args, guards, body):

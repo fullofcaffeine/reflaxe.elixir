@@ -324,7 +324,7 @@ class AbstractNilDefaultSpecializationTransforms {
 		if (ast == null || ast.def == null)
 			return false;
 		return switch (ast.def) {
-			case EVar(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_):
+			case EVar(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_):
 				true;
 			case EMap(pairs): pairs != null && Lambda.foreach(pairs, pair -> pair != null && isPure(pair.key) && isPure(pair.value));
 			case EKeywordList(pairs): pairs != null && Lambda.foreach(pairs, pair -> pair != null && isPure(pair.value));

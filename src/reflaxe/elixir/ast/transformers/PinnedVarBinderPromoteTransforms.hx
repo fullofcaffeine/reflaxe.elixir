@@ -132,7 +132,7 @@ class PinnedVarBinderPromoteTransforms {
 
 	static function isLiteral(e:ElixirAST):Bool {
 		return switch (e.def) {
-			case EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | EAtom(_) | EList(_) | EMap(_) | ETuple(_): true;
+			case EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | EAtom(_) | EList(_) | EMap(_) | ETuple(_): true;
 			default: false;
 		};
 	}

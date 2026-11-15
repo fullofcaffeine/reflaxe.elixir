@@ -99,7 +99,7 @@ class TrivialIIFEUnwrapTransforms {
 								case EVar(candidate) if (candidate == name):
 									if (useIndex != -1) safe = false; else useIndex = index;
 
-								case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+								case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
 									// These values cannot change evaluation order or bind names.
 
 								default:
@@ -158,7 +158,8 @@ class TrivialIIFEUnwrapTransforms {
 			return false;
 
 		return switch (expression.def) {
-			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EAssign(_) | ESigil(_, _, _):
+			case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EAssign(_) |
+				ESigil(_, _, _):
 				true;
 
 			// Creating an anonymous function preserves its own lexical scope. Its body

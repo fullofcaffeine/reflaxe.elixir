@@ -343,10 +343,41 @@ the `shortdoc` of a `@:mixTask` class are escaped in the same way, and so is SQL
 text in migration helpers (`execute`, check constraints, an index `where`).
 
 To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
-`+`. Two places keep `#{...}` as code on purpose: target code injection
-(`untyped __elixir__('IO.puts("#{1 + 1}")')`), where you write Elixir, and HXX
-template source (`HXX.hxx('<p>#{@user.name}</p>')`), where it is a template
-marker.
+`+`. Three places keep `#{...}` as code on purpose:
+
+- Target code injection (`untyped __elixir__('IO.puts("#{1 + 1}")')`), where you
+  write Elixir.
+- HXX template source (`HXX.hxx('<p>#{@user.name}</p>')`), where it is a
+  template marker.
+- HTML text returned from a function that takes `assigns`. The compiler turns
+  that return into a `~H` template, and `#{...}` becomes `<%= ... %>`:
+
+  ```haxe
+  public static function help(assigns:PageAssigns):String
+  	return "<p>Hello #{assigns.name}</p>";
+  ```
+
+  ```elixir
+  def help(assigns) do
+    ~H"""
+    <p>Hello <%= @name %></p>
+    """
+  end
+  ```
+
+  Only a string that becomes `~H` is template source. Other strings in the same
+  function, and HTML text in a function without `assigns`, are plain text.
+  Prefer `HXX.hxx(...)` for new templates.
+
+A literal passed to a parameter of type `elixir.types.Atom` becomes a quoted
+atom with the marker escaped: `takes("c#{d}")` prints `takes(:"c\#{d}")`.
+
+Limits: two cases give Elixir "unused variable" warnings while the printed text
+stays correct. Both need a literal marker that sits next to values, such as
+`"#{x} " + name`. In the first, `x` is a parameter or local that is used
+nowhere; the compiler keeps its name. In the second, the string is in a
+`switch` arm on an enum and `x` is a name that the compiler knows for the
+matched value; the compiler adds a binding for it.
 
 ### Special Type Compilations
 

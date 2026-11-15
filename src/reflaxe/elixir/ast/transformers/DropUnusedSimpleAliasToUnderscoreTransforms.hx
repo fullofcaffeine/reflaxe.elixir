@@ -75,7 +75,7 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
 
 	static function isSimple(e:ElixirAST):Bool {
 		return switch (e.def) {
-			case EVar(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_): true;
+			case EVar(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_): true;
 			case ERemoteCall(_, _, _) | ECall(_, _, _): true;
 			case EParen(inner): isSimple(inner);
 			default: false;

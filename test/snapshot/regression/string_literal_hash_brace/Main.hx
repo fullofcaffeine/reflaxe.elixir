@@ -136,7 +136,19 @@ line3");
 		Sys.println("argument #{1 + 1}");
 		Sys.println("in string: #{x} n");
 		#end
+
+		// A literal passed where the function expects an Elixir atom becomes an
+		// atom, with the marker escaped inside the quoted atom.
+		Sys.println(atomText("c#{d}"));
 	}
+
+	#if elixir
+	static function atomText(a:elixir.types.Atom):String
+		return untyped __elixir__('inspect({0})', a);
+	#else
+	static function atomText(a:String):String
+		return ':"' + StringTools.replace(a, "#{", "\\#{") + '"';
+	#end
 
 	public static function show(s:String):String
 		return "[" + s + "]";

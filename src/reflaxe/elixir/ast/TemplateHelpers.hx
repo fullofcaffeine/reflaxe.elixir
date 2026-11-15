@@ -227,6 +227,65 @@ class TemplateHelpers {
 	}
 
 	/**
+	 * Runs a string-to-~H conversion on a function in which Haxe string literals may be the
+	 * template, and returns its result with every string that did not become a template left as
+	 * literal text.
+	 *
+	 * WHY: A function that takes `assigns` and returns HTML text is a template route, like HXX:
+	 * the compiler turns `"<p>#{assigns.name}</p>"` into `~H"<p><%= @name %></p>"`. The builder
+	 * keeps a Haxe literal that contains `#{` as `EStringLiteral`, which the conversion passes do
+	 * not match. Without this step a helper would return `~H` or a plain string depending on
+	 * whether its text holds `#{`.
+	 *
+	 * WHAT: `convert` sees `definition` with each `EStringLiteral` shown as an `EString`, the
+	 * form it had before literals were kept apart. A string that `convert` turns into a `~H`
+	 * sigil is template source, so its `#{...}` becomes `<%= ... %>`. Every other shown string
+	 * goes back to its `EStringLiteral`, so its `#{` stays plain text. When `convert` changes
+	 * nothing, the result is `definition` itself.
+	 *
+	 * HOW: The shown text also gets the `Phoenix.HTML.raw` wrapping of
+	 * `HeexInlineRawForHeexVarsInStringsTransforms`, which runs earlier and skips literal text.
+	 * Shown nodes are found again by identity; `convert` must not copy a string node that it
+	 * keeps.
+	 *
+	 * EXAMPLE: in `help(assigns)`, `return "<p>#{assigns.name}</p>"` becomes a `~H` template,
+	 * while `var label = "#{x}"` in the same function still prints as `"\#{x}"`.
+	 */
+	public static function convertWithLiteralTemplateSource(definition:ElixirAST, convert:ElixirAST->ElixirAST):ElixirAST {
+		var hasLiteral = false;
+		ASTUtils.walk(definition, function(node:ElixirAST):Void {
+			if (!hasLiteral && node != null && node.def != null && node.def.match(EStringLiteral(_)))
+				hasLiteral = true;
+		});
+		if (!hasLiteral)
+			return convert(definition);
+
+		var plainBody = switch (definition.def) {
+			case EDef(_, _, _, body) | EDefp(_, _, _, body): asTemplateSource(body);
+			default: asTemplateSource(definition);
+		};
+		var htmlVars = reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.collectVars(plainBody);
+		var literalOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
+		var shown = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(definition, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EStringLiteral(text):
+					var source = reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.wrapHtmlVars(text, htmlVars);
+					var shownNode = makeASTWithMeta(EString(source), node.metadata, node.pos);
+					literalOf.set(shownNode, node);
+					shownNode;
+				default: node;
+			}
+		});
+		var converted = convert(shown);
+		if (converted == shown)
+			return definition;
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(converted, function(node:ElixirAST):ElixirAST {
+			var literal = literalOf.get(node);
+			return literal != null ? literal : node;
+		});
+	}
+
+	/**
 	 * Collect template content from an ElixirAST node
 	 * 
 	 * Processes various AST patterns to extract template strings,

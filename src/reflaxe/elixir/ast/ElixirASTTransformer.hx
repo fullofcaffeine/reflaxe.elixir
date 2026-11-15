@@ -2927,7 +2927,7 @@ class ElixirASTTransformer {
 										return false;
 									return switch (x.def) {
 										case EVar(_): true;
-										case EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EString(_) | EAtom(_): true;
+										case EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EString(_) | EStringLiteral(_) | EAtom(_): true;
 										case EField(obj, _): isTrivialForInterpolation(obj, depth + 1);
 										default: false;
 									}

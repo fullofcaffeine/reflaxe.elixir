@@ -952,7 +952,7 @@ class InlineExpansionTransforms {
 	 */
 	static function isPlainValue(expr:ElixirAST):Bool {
 		return switch (expr.def) {
-			case EVar(_) | EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil: true;
+			case EVar(_) | EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil: true;
 			default: false;
 		};
 	}

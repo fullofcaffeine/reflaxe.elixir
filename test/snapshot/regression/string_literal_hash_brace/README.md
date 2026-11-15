@@ -35,13 +35,17 @@ the compiler writes real values as `#{...}`:
 
 `#` and `{` apart need no escape and are not changed.
 
-Two places keep `#{...}` as code on purpose:
+Three places keep `#{...}` as code on purpose:
 
 - Target code injection, `untyped __elixir__('IO.puts("#{1 + 1}")')`. The author
   writes Elixir there. A Haxe literal passed as an injection argument is still
   text.
 - HXX template source, `HXX.hxx('<p>#{@user.name}</p>')`, where `#{...}` is a
   documented template marker.
+- HTML text returned from a function that takes `assigns`,
+  `function help(assigns) return "<p>#{assigns.name}</p>";`. The compiler turns
+  that return into a `~H` template, where `#{...}` becomes `<%= ... %>`. The
+  fixture `test/snapshot/phoenix/assigns_html_string_markers` covers it.
 
 `expected.stdout` is the output of the same program on the Haxe interpreter:
 
@@ -50,13 +54,20 @@ haxe -cp . -main Main --interp > expected.stdout
 ```
 
 The three injection lines have no interpreter form, so `Main.hx` prints their
-expected text directly on the interpreter.
+expected text directly on the interpreter. The atom line uses an `Atom`
+parameter on Elixir and builds the same text by hand on the interpreter.
 
 Run the snapshot with `make -C test test-regression__string_literal_hash_brace`.
 Run the program on the BEAM and compare it with `expected.stdout` with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/string_literal_hash_brace`.
 
-Limit: when a parameter or local is used nowhere, and its name stands between
-the braces of a literal marker that the compiler joins with values (for example
-`function f(x:Int, name:String) return "#{x} " + name;`), the compiler keeps the
-name `x` and Elixir warns that `x` is unused. The printed text is correct.
+Limits. Both give Elixir warnings only; the printed text is correct.
+
+- A parameter or local is used nowhere, and its name stands between the braces
+  of a literal marker that the compiler joins with values (for example
+  `function f(x:Int, name:String) return "#{x} " + name;`). The compiler keeps
+  the name `x`, and Elixir warns that `x` is unused.
+- A `switch` arm on an enum joins such a marker with values, and the name
+  between the braces is one that the compiler knows as another name of the
+  matched value (for example `case Ok(v): "#{value} " + name`). The compiler
+  adds the binding `value = v`, and Elixir warns that `value` is unused.

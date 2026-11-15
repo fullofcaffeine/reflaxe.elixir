@@ -115,7 +115,7 @@ class BareLiteralDropTransforms {
 			case EBlock(exprs): exprs != null && exprs.length == 1 && isPureLiteral(exprs[0]);
 			case EUnary(Negate, inner) | EUnary(Positive, inner):
 				isUnsignedNumericLiteral(inner);
-			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+			case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
 				true;
 			default:
 				false;

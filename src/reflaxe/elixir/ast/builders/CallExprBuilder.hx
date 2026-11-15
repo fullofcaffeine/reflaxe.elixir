@@ -201,7 +201,7 @@ class CallExprBuilder {
 			context:CompilationContext):ElixirASTDef {
 		inline function isStableValue(value:ElixirAST):Bool {
 			return switch (value.def) {
-				case EVar(_) | EInteger(_) | EFloat(_) | EString(_) | EAtom(_) | EBoolean(_) | ENil: true;
+				case EVar(_) | EInteger(_) | EFloat(_) | EString(_) | EStringLiteral(_) | EAtom(_) | EBoolean(_) | ENil: true;
 				default: false;
 			};
 		}
@@ -804,7 +804,7 @@ class CallExprBuilder {
 			var builtArg = buildExpression(args[i]);
 			if (isAtomType(expected)) {
 				switch (builtArg.def) {
-					case EString(s):
+					case EString(s) | EStringLiteral(s):
 						builtArg = makeASTWithMeta(EAtom(s), builtArg.metadata, builtArg.pos);
 					default:
 				}

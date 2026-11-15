@@ -1929,7 +1929,7 @@ class MapAndCollectionTransforms {
 							var keyExpr = args[0];
 							// Convert string literal keys to atoms when possible
 							var atomKey:Null<ElixirAST> = switch (keyExpr.def) {
-								case EString(s): makeAST(EAtom(s));
+								case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 								default: null;
 							};
 							var finalKey = atomKey != null ? atomKey : keyExpr;
@@ -1943,7 +1943,7 @@ class MapAndCollectionTransforms {
 						case EVar(name):
 							var keyExpr = args[0];
 							var atomKey:Null<ElixirAST> = switch (keyExpr.def) {
-								case EString(s): makeAST(EAtom(s));
+								case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 								default: null;
 							};
 							var finalKey = atomKey != null ? atomKey : keyExpr;
