@@ -26,6 +26,35 @@ defmodule Main do
     IO.puts(v)
     v = second_payload({:wrap, {:s_ok, "x"}}, "P")
     IO.puts(v)
+    v = other_arm_assigns({:ok, "o"})
+    IO.puts(v)
+    v = other_arm_assigns({:error, "x"})
+    IO.puts(v)
+    flag = true
+    v = assigned_in_if({:ok, "o"}, flag)
+    IO.puts(v)
+    v = assigned_in_if({:error, "x"}, flag)
+    IO.puts(v)
+    v = nested_assigned({:wrap, {:s_ok, "x"}}, flag)
+    IO.puts(v)
+    v = nested_assigned({:wrap, {:s_err, "x"}}, flag)
+    IO.puts(v)
+    v = nested_assigned({:both, "a", "b"}, flag)
+    IO.puts(v)
+    flag = false
+    v = assigned_in_if({:ok, "o"}, flag)
+    IO.puts(v)
+    v = assigned_in_if({:error, "x"}, flag)
+    IO.puts(v)
+    v = nested_assigned({:wrap, {:s_ok, "x"}}, flag)
+    IO.puts(v)
+    v = nested_assigned({:wrap, {:s_err, "x"}}, flag)
+    IO.puts(v)
+    v = nested_assigned({:both, "a", "b"}, flag)
+    IO.puts(v)
+  end
+  defp note(text) do
+    IO.puts("  note " <> text)
   end
   def outer_argument(r, value) do
     (case r do
@@ -93,5 +122,51 @@ defmodule Main do
       {:wrap, _} -> value
       {:both, _a, b} -> "#{value}#{b}"
     end)
+  end
+  def other_arm_assigns(r) do
+    value = "d"
+    value = (case r do
+      {:ok, v} ->
+        note(v)
+        value
+      {:error, reason} ->
+        e = reason
+        value = "err #{e}"
+        value
+    end)
+    "r=#{value}"
+  end
+  def assigned_in_if(r, flag) do
+    value = "d"
+    value = (case r do
+      {:ok, v} ->
+        value = if (flag) do
+          "#{v}!"
+        else
+          value
+        end
+        value
+      {:error, _reason} ->
+        value = if (flag), do: "err", else: value
+        value
+    end)
+    "r=#{value}"
+  end
+  def nested_assigned(o, flag) do
+    value = "d"
+    value = (case o do
+      {:wrap, payload_value} ->
+        value = (case payload_value do
+          {:s_ok, x} ->
+            value = if (flag), do: x, else: value
+            value
+          {:s_err, _} -> value
+        end)
+        value
+      {:both, _, b} ->
+        value = b
+        value
+    end)
+    "r=#{value}"
   end
 end

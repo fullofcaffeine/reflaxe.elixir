@@ -36,6 +36,39 @@ payload. There the compiler adds `payload_` to the field name:
   value = (case payload_value do ...
 ```
 
+## An outer variable that an arm assigns
+
+```haxe
+var value = "d";
+switch (r) {
+  case Ok(v): note(v);
+  case Error(e): value = "err " + e;
+}
+return "r=" + value;
+```
+
+Elixir does not keep an assignment made inside a `case` arm, so the compiler
+makes the `case` return `value` from every arm. The `Ok` arm does not mention
+`value` in Haxe, but its Elixir clause reads it. The check above looked only at
+the Haxe code of one arm, so the payload still got the name `value`:
+
+```elixir
+value = (case r do
+  {:ok, value} ->
+    v = value
+    note(v)
+    value          # the payload, not the outer "d"
+```
+
+The function returned `"r=o"` instead of `"r=d"`. The compiler now also counts,
+for every arm, the outer variables that any arm of the same switch assigns:
+
+```elixir
+{:ok, v} ->
+  note(v)
+  value
+```
+
 `expected.stdout` is the output of this program on the Haxe interpreter:
 
 ```bash
@@ -46,10 +79,17 @@ It covers an argument and a local named like the enum field, a local that is
 null (the folded nil test must use the outer value), `Ok` and `Error`
 payloads, an inner switch that binds the same name, a nested pattern, and a
 constructor with two payloads.
+For an assigned outer variable it covers an arm that does not mention the
+variable, an assignment under an `if`, and a nested pattern.
 
-Not covered: `case Both(a, b)` with an unread `a` next to a `case _:` clause
-does not compile to valid Elixir (`_a = _`). That older problem is separate
-from the naming rule here.
+Not covered:
+
+- A pattern binder that itself has the name of an outer variable, as in
+  `var value = "d"; switch (r) { case SOk(value): ...; case SErr(e): value = e; }`.
+  A new binder name does not help there (haxe.elixir.codex-d2g).
+- `case Both(a, b)` with an unread `a` next to a `case _:` clause does not
+  compile to valid Elixir (`_a = _`). That older problem is separate from the
+  naming rule here (haxe.elixir.codex-9ue).
 
 Run the snapshot with `make -C test test-regression__unused_enum_binder_outer_read`
 and the native check with

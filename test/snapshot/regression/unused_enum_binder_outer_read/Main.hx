@@ -16,6 +16,12 @@ enum Outer {
 	Both(value:String, e:String);
 }
 
+/** A result whose payloads have the generic name `v`, which the compiler renames to `value` and `reason`. */
+enum Verdict {
+	Ok(v:String);
+	Error(v:String);
+}
+
 /**
  * Regression for haxe.elixir.codex-spk, second part: a pattern binder that the
  * clause does not read, such as `a` in `case SOk(a): "ok " + value`.
@@ -24,6 +30,11 @@ enum Outer {
  * the clause also reads an outer variable with that name, the binder must get
  * another name, or the clause reads the payload instead. `expected.stdout` is
  * the output of this program on the Haxe interpreter.
+ *
+ * The same holds when any arm of the switch assigns the outer variable. Elixir
+ * does not keep an assignment made inside a `case` arm, so the generated `case`
+ * returns the variable from every arm. An arm that does not mention the
+ * variable in Haxe then reads it too.
  */
 @:keep
 class Main {
@@ -41,6 +52,19 @@ class Main {
 		Sys.println(nestedPattern(Both("a", "b")));
 		Sys.println(secondPayload(Both("a", "b"), "P"));
 		Sys.println(secondPayload(Wrap(SOk("x")), "P"));
+		Sys.println(otherArmAssigns(Ok("o")));
+		Sys.println(otherArmAssigns(Error("x")));
+		for (flag in [true, false]) {
+			Sys.println(assignedInIf(Ok("o"), flag));
+			Sys.println(assignedInIf(Error("x"), flag));
+			Sys.println(nestedAssigned(Wrap(SOk("x")), flag));
+			Sys.println(nestedAssigned(Wrap(SErr("x")), flag));
+			Sys.println(nestedAssigned(Both("a", "b"), flag));
+		}
+	}
+
+	static function note(text:String):Void {
+		Sys.println("  note " + text);
 	}
 
 	/** Reads the function argument `value`; `a` and `b` are not read. */
@@ -120,5 +144,48 @@ class Main {
 			case Both(a, b): value + b;
 			case Wrap(_): value;
 		};
+	}
+
+	/**
+	 * Only the `Error` arm assigns `value`. The `Ok` arm does not mention it, but
+	 * the generated `case` returns it from both arms.
+	 */
+	public static function otherArmAssigns(r:Verdict):String {
+		var value = "d";
+		switch (r) {
+			case Ok(v):
+				note(v);
+			case Error(e):
+				value = "err " + e;
+		}
+		return "r=" + value;
+	}
+
+	/** Each arm assigns `value` only when `flag` holds, and never reads it. */
+	public static function assignedInIf(r:Verdict, flag:Bool):String {
+		var value = "d";
+		switch (r) {
+			case Ok(v):
+				if (flag)
+					value = v + "!";
+			case Error(e):
+				if (flag)
+					value = "err";
+		}
+		return "r=" + value;
+	}
+
+	/** A nested pattern whose arms assign `value`, never read it, or do nothing. */
+	public static function nestedAssigned(o:Outer, flag:Bool):String {
+		var value = "d";
+		switch (o) {
+			case Wrap(SOk(x)):
+				if (flag)
+					value = x;
+			case Wrap(SErr(_)):
+			case Both(_, b):
+				value = b;
+		}
+		return "r=" + value;
 	}
 }

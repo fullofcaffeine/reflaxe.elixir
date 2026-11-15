@@ -375,6 +375,13 @@ class SwitchBuilder {
 			return null;
 		}
 
+		// An outer variable that one arm assigns is returned from every arm of the
+		// generated `case`, so no arm's pattern may bind its name.
+		var armBodies = [for (switchCase in cases) switchCase.expr];
+		if (edef != null)
+			armBodies.push(edef);
+		var assignedNames = collectAssignedOuterNames(armBodies);
+
 		// Build case clauses (may generate multiple clauses per case due to guard chains)
 		var caseClauses:Array<ECaseClause> = [];
 
@@ -383,7 +390,7 @@ class SwitchBuilder {
 			#if debug_switch_builder
 			#if !no_traces trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}'); #end
 			#end
-			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType, actualSwitchExpr);
+			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType, actualSwitchExpr, assignedNames);
 			if (clausesFromCase.length > 0) {
 				#if debug_switch_builder
 				#if !no_traces trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case'); #end
@@ -450,7 +457,7 @@ class SwitchBuilder {
 	 * HOW: Analyzes case values, extracts patterns, detects guard chains, compiles bodies
 	 */
 	static function buildCaseClause(switchCase:{values:Array<TypedExpr>, expr:TypedExpr}, targetVarName:String, context:CompilationContext, caseIndex:Int,
-			enumTypeForSwitch:Null<EnumType>, receiver:TypedExpr):Array<ECaseClause> {
+			enumTypeForSwitch:Null<EnumType>, receiver:TypedExpr, assignedNames:Map<String, Bool>):Array<ECaseClause> {
 		// Multi-value cases (`case a, b:`) are compiled as multiple clauses with identical bodies.
 		if (switchCase.values.length == 0) {
 			return [];
@@ -458,7 +465,8 @@ class SwitchBuilder {
 		if (switchCase.values.length > 1) {
 			var out:Array<ECaseClause> = [];
 			for (v in switchCase.values) {
-				out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch, receiver));
+				out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch, receiver,
+					assignedNames));
 			}
 			return out;
 		}
@@ -467,6 +475,7 @@ class SwitchBuilder {
 		var parentCtx = context.getCurrentClauseContext();
 		var clauseCtx = new ClauseContext(parentCtx);
 		clauseCtx.enumReceiver = context.substituteIfNeeded(receiver);
+		clauseCtx.switchAssignedNames = assignedNames;
 		if (enumTypeForSwitch != null)
 			clauseCtx.enumType = enumTypeForSwitch;
 		context.pushClauseContext(clauseCtx);
@@ -1536,6 +1545,7 @@ class SwitchBuilder {
 			var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length, ef, context);
 			var localUsage = collectReadLocalNameUsage(caseBody);
 			var outerReadNames = collectOuterReadNames(caseBody, context);
+			var assignedBySwitch = switchAssignedNames(context);
 			#if debug_switch_builder
 			trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
 			trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
@@ -1646,9 +1656,21 @@ class SwitchBuilder {
 				// `{:s_ok, value}` made the body read the payload instead of the outer
 				// `value`. The Haxe binder's own name cannot hide an outer read, because
 				// Haxe already resolved every read of that name to the binder.
-				if (candidate != null && outerReadNames.exists(VariableAnalyzer.toElixirVarName(candidate))) {
-					var ownBinder = (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb)) ? rb : null;
-					candidate = binderNameClearOfOuterReads(candidate, ownBinder, outerReadNames);
+				//
+				// The clause also reads every outer variable that an arm of this switch
+				// assigns: the generated `case` returns it from each arm. That rule
+				// applies only to a name that the compiler chose. When the Haxe binder
+				// itself has the name of such a variable, renaming the binder does not
+				// help (haxe.elixir.codex-d2g).
+				if (candidate != null) {
+					var elixirCandidate = VariableAnalyzer.toElixirVarName(candidate);
+					if (outerReadNames.exists(elixirCandidate) || (candidate != rb && assignedBySwitch.exists(elixirCandidate))) {
+						var ownBinder = (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb)) ? rb : null;
+						var takenNames = outerReadNames.copy();
+						for (name in assignedBySwitch.keys())
+							takenNames.set(name, true);
+						candidate = binderNameClearOfOuterReads(candidate, ownBinder, takenNames);
+					}
 				}
 
 				#if debug_switch_builder
@@ -1667,7 +1689,7 @@ class SwitchBuilder {
 					&& i == 0
 					&& candidate != null
 					&& isGenericOrAutoName(candidate)
-					&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", candidate)) {
+					&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", candidate, context)) {
 					baseParamName = (ef.name == "Ok") ? "value" : "reason";
 				}
 
@@ -1898,8 +1920,18 @@ class SwitchBuilder {
 	 * HOW: Look for a read local whose Elixir name equals the canonical name but
 	 * whose Haxe name is not the payload binder's own name. The caller then keeps
 	 * the binder's own name.
+	 *
+	 * An outer variable that any arm of the switch assigns counts as read in
+	 * every arm, because the generated `case` returns it from each arm:
+	 *
+	 *   var value = "d";
+	 *   switch (r) { case Ok(v): note(v); case Error(e): value = "err " + e; }
+	 *
+	 * must not become `{:ok, value} -> ...; value`, which returns the payload.
 	 */
-	static function canonicalResultBinderShadowsRead(caseBody:TypedExpr, canonical:String, binderName:Null<String>):Bool {
+	static function canonicalResultBinderShadowsRead(caseBody:TypedExpr, canonical:String, binderName:Null<String>, context:CompilationContext):Bool {
+		if (binderName != canonical && switchAssignedNames(context).exists(canonical))
+			return true;
 		for (local in collectReadLocals(caseBody)) {
 			if (local.name != binderName && VariableAnalyzer.toElixirVarName(local.name) == canonical)
 				return true;
@@ -1929,26 +1961,7 @@ class SwitchBuilder {
 	 * for no reason.
 	 */
 	static function collectOuterReadNames(caseBody:TypedExpr, context:CompilationContext):Map<String, Bool> {
-		var declaredInBody = new Map<Int, Bool>();
-		function collectDeclarations(expression:TypedExpr):Void {
-			if (expression == null)
-				return;
-			switch (expression.expr) {
-				case TVar(local, _):
-					declaredInBody.set(local.id, true);
-				case TFunction(func):
-					for (argument in func.args)
-						declaredInBody.set(argument.v.id, true);
-				case TFor(local, _, _):
-					declaredInBody.set(local.id, true);
-				case TTry(_, catches):
-					for (catchClause in catches)
-						declaredInBody.set(catchClause.v.id, true);
-				default:
-			}
-			TypedExprTools.iter(expression, collectDeclarations);
-		}
-		collectDeclarations(caseBody);
+		var declaredInBody = collectDeclaredLocalIds(caseBody);
 
 		var clause = context.getCurrentClauseContext();
 		var receiver = clause == null ? null : clause.enumReceiver;
@@ -1967,6 +1980,70 @@ class SwitchBuilder {
 				names.set(VariableAnalyzer.toElixirVarName(local.name), true);
 		}
 		return names;
+	}
+
+	/** Returns the identities of the locals that `body` declares, in any nested scope. */
+	static function collectDeclaredLocalIds(body:TypedExpr):Map<Int, Bool> {
+		var declared = new Map<Int, Bool>();
+		function collectDeclarations(expression:TypedExpr):Void {
+			if (expression == null)
+				return;
+			switch (expression.expr) {
+				case TVar(local, _):
+					declared.set(local.id, true);
+				case TFunction(func):
+					for (argument in func.args)
+						declared.set(argument.v.id, true);
+				case TFor(local, _, _):
+					declared.set(local.id, true);
+				case TTry(_, catches):
+					for (catchClause in catches)
+						declared.set(catchClause.v.id, true);
+				default:
+			}
+			TypedExprTools.iter(expression, collectDeclarations);
+		}
+		collectDeclarations(body);
+		return declared;
+	}
+
+	/**
+	 * Returns the Elixir names of the outer variables that the arms of one switch
+	 * assign: locals that an arm writes with `=`, an operator such as `+=`, `++`
+	 * or `--`, and does not declare itself.
+	 *
+	 * WHY: Elixir does not keep an assignment made inside a `case` arm. The
+	 * compiler therefore makes the `case` return each assigned variable from
+	 * every arm, also from arms that do not mention it. Each arm then reads the
+	 * variable, and a pattern binder with the same name would be returned
+	 * instead (haxe.elixir.codex-spk). See `ClauseContext.switchAssignedNames`.
+	 */
+	static function collectAssignedOuterNames(armBodies:Array<TypedExpr>):Map<String, Bool> {
+		var names = new Map<String, Bool>();
+		for (body in armBodies) {
+			if (body == null)
+				continue;
+			var declaredInArm = collectDeclaredLocalIds(body);
+			function collectWrites(expression:TypedExpr):Void {
+				if (expression == null)
+					return;
+				switch (expression.expr) {
+					case TBinop(OpAssign | OpAssignOp(_), {expr: TLocal(local)}, _) | TUnop(OpIncrement | OpDecrement, _, {expr: TLocal(local)}):
+						if (!declaredInArm.exists(local.id))
+							names.set(VariableAnalyzer.toElixirVarName(local.name), true);
+					default:
+				}
+				TypedExprTools.iter(expression, collectWrites);
+			}
+			collectWrites(body);
+		}
+		return names;
+	}
+
+	/** Returns `ClauseContext.switchAssignedNames` of the clause being built, or an empty set. */
+	static function switchAssignedNames(context:CompilationContext):Map<String, Bool> {
+		var clause = context.getCurrentClauseContext();
+		return clause == null ? new Map<String, Bool>() : clause.switchAssignedNames;
 	}
 
 	/**
@@ -2149,7 +2226,7 @@ class SwitchBuilder {
 			if (isResultCtor
 				&& i == 0
 				&& isGenericParamName(chosen)
-				&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", chosen)) {
+				&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", chosen, context)) {
 				baseParamName = (ef.name == "Ok") ? "value" : "reason";
 			}
 			var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
