@@ -445,7 +445,8 @@ class ControlFlowStateHoistTransforms {
 		var targets = new Map<String, Bool>();
 		bindFromPattern(targetPattern, targets);
 		var updates = [
-			for (name in collectAssignedToBoundVars(bodies, bound)) if (!targets.exists(name)) name
+			for (name in collectAssignedToBoundVars(bodies, bound))
+				if (!targets.exists(name)) name
 		];
 		if (updates.length == 0)
 			return stmt;
