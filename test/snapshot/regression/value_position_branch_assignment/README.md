@@ -50,7 +50,7 @@ end
 ```
 
 `expected.stdout` is the output of this program on the Haxe interpreter. The
-compiler before the fix printed 18 of the 30 lines wrong. The fixture covers:
+compiler before the fix printed 30 of the 56 lines wrong. The fixture covers:
 
 - a value `switch` with a plain subject and with a call subject (the compiler
   stores a call subject in a temporary first, which makes the value a block);
@@ -60,10 +60,9 @@ compiler before the fix printed 18 of the 30 lines wrong. The fixture covers:
 - value `if` and `switch` inside an arm of a value `switch`, with two updated
   variables. That arm declares locals, so the compiler runs it as
   `(fn -> ... end).()`; the updates leave that closure the same way;
-- a `var` inside a branch that has the name of an outer variable. It is a new
-  local, so the outer variable keeps its value. The statement form
-  (`if (c) { var v = ...; r = v + 1; }`) overwrote the outer variable before
-  this fix;
+- a `var` inside a branch that has the name of an outer variable, with no
+  write to the outer one. It is a new local, so the outer variable keeps its
+  value;
 - a branch that throws. It has no value, so it stays as it is; pairing it with
   the updates would not even be valid Elixir (`{raise ..., out}`);
 - a function that ends by returning the assigned variable, and one that ends
@@ -71,6 +70,52 @@ compiler before the fix printed 18 of the 30 lines wrong. The fixture covers:
   assignment after the `switch`, so the generated `case` keeps its plain form;
 - three loops: `for` with an early return (the shape above), `for` without one,
   and `while`.
+
+## Another variable under the same name
+
+`Shadowing.hx` holds the second half of the output. There, one branch assigns
+an outer variable, and another branch has a different variable with that name:
+
+```haxe
+var value = 100;
+var ok = switch r {
+  case Ok(value): value > 0;            // `value` is the payload here
+  case Error(_): value = value + 1; false;
+};
+// Haxe: the outer value is still 100 after Ok(3)
+```
+
+Every hoisted branch ends with the updated variables. The first version of
+this fix let the `Ok` branch return its own `value`, so the outer variable
+became 3. The statement form of the same code was already wrong before. Now a
+branch whose name belongs to another variable returns the outer value from a
+capture:
+
+```elixir
+reflaxe_outer_value_1 = value
+{ok, value} = case r do
+  {:ok, value} -> {value > 0, reflaxe_outer_value_1}
+  {:error, _} ->
+    value = value + 1
+    {false, value}
+end
+```
+
+For a `var` inside the branch, the capture is made just before that `var`, so
+it holds what the branch wrote to the outer variable until then.
+
+The shapes, each in value and in statement position where both exist:
+
+- a pattern binder with the name of the updated variable (`Ok(value)`,
+  `Some(out)`), also with a second updated variable;
+- a branch-local `var` with that name, also after a write to the outer
+  variable in the same branch;
+- a write that has no Haxe assignment behind it (`items.push(v)`, the result
+  of a loop) in one branch, and a `var` of that name in the other branch. The
+  `var` must not hide the write.
+
+Of these 26 lines, 13 were wrong on the first version of the fix (commit
+6bbcfc12a); 7 of those were right on the base commit.
 
 Not covered, and still wrong: a control flow that assigns and is neither a
 statement nor the whole right side of a match. Examples are a call argument,

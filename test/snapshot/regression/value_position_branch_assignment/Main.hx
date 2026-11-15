@@ -38,9 +38,10 @@ class Main {
 		Sys.println(lastSome([Some("a"), None, Some("bcd")]));
 		Sys.println(largest([1, 5, 2, 9, 3]));
 		Sys.println(oddSteps(5));
+		Shadowing.run();
 	}
 
-	static function find(s:String):Opt
+	public static function find(s:String):Opt
 		return s == "" ? None : Some(s);
 
 	static function score(k:String):Int

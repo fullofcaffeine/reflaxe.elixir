@@ -62,8 +62,9 @@ defmodule Main do
     IO.puts(v)
     v = odd_steps(5)
     IO.puts(v)
+    Shadowing.run()
   end
-  defp find(s) do
+  def find(s) do
     if (s == ""), do: {:none}, else: {:some, s}
   end
   defp score(k) do
