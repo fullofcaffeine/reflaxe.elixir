@@ -339,7 +339,8 @@ heading = EReg.new("^\#{1,3} ", "")
 The text stays text when the literal sits next to values. The compiler writes
 real values as `#{...}` and the literal marker as `\#{`:
 `"lit #{1 + 1} " + name` becomes `"lit \#{1 + 1} #{name}"`. The doc comment and
-the `shortdoc` of a `@:mixTask` class are escaped in the same way.
+the `shortdoc` of a `@:mixTask` class are escaped in the same way, and so is SQL
+text in migration helpers (`execute`, check constraints, an index `where`).
 
 To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
 `+`. Two places keep `#{...}` as code on purpose: target code injection

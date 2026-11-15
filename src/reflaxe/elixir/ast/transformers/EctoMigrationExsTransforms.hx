@@ -637,7 +637,7 @@ class EctoMigrationExsTransforms {
 		var constraintCall = makeAST(ECall(null, "constraint", [
 			tableAtom,
 			makeAtom(name),
-			makeAST(EKeywordList([{key: "check", value: makeAST(EString(expression))}]))
+			makeAST(EKeywordList([{key: "check", value: makeAST(haxeStringLiteralDef(expression))}]))
 		]));
 		return makeAST(ECall(null, "create", [constraintCall]));
 	}
@@ -991,7 +991,8 @@ class EctoMigrationExsTransforms {
 
 	static function extractString(expr:ElixirAST):Null<String> {
 		return switch (unwrap(expr).def) {
-			case EString(value):
+			// A Haxe literal that contains `#{` arrives as EStringLiteral; it is still literal text.
+			case EString(value) | EStringLiteral(value):
 				value;
 			default:
 				null;
@@ -1261,7 +1262,7 @@ class EctoMigrationExsTransforms {
 				case "where":
 					var w = extractString(p.value);
 					if (w != null && w != "")
-						out.push({key: "where", value: makeAST(EString(w))});
+						out.push({key: "where", value: makeAST(haxeStringLiteralDef(w))});
 				case "concurrently":
 					out.push({key: "concurrently", value: p.value});
 				case "method":
