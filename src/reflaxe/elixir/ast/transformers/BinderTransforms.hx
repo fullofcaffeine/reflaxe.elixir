@@ -1300,6 +1300,11 @@ class BinderTransforms {
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
 	 * - Forget prior facts when a tuple, branch, loop, or nested expression can rebind
 	 *   a variable. This avoids using an earlier value after control flow changes it.
+	 * - A match inside a larger expression, such as the condition of
+	 *   `if (v = Map.get(m, k)) != "zzz"`, removes the facts about its names as soon as
+	 *   the walk passes it. The parts of the statement that Elixir evaluates later, here
+	 *   both branches, then see no stale fact. Regression fixture:
+	 *   `regression/condition_assignment_nil_fact`.
 	 * - Fold negated known results, boolean identities such as `true and condition`,
 	 *   and containing constant `if` expressions immediately, since the general
 	 *   constant-folding pass has already run by this stage.
@@ -1639,6 +1644,22 @@ class BinderTransforms {
 						afterBlock == null ? null : rewriteInScope(afterBlock, incomingNonNil, incomingNil),
 						elseBlock == null ? null : rewriteInScope(elseBlock, incomingNonNil, incomingNil)),
 						node.metadata, node.pos);
+				case EMatch(pattern, value):
+					// A match inside a larger expression rebinds its names for the code
+					// that Elixir evaluates next. In
+					// `if (v = Map.get(m, k)) != "zzz", do: (if is_nil(v), ...)` the earlier
+					// fact `v = nil` is false in the branch (haxe.elixir.codex-c0o.9).
+					// Rewrite the value with the facts from before the match, then drop the
+					// bound names from the sets that the enclosing block shares with the
+					// later parts of the same statement.
+					var rewrittenValue = rewriteInScope(value, incomingNonNil, incomingNil);
+					forgetPatternBindings(pattern, incomingNonNil, incomingNil);
+					rewrittenValue == value ? node : makeASTWithMeta(EMatch(pattern, rewrittenValue), node.metadata, node.pos);
+				case EBinary(Match, target = {def: EVar(name)}, value):
+					var rewrittenValue = rewriteInScope(value, incomingNonNil, incomingNil);
+					incomingNonNil.remove(name);
+					incomingNil.remove(name);
+					rewrittenValue == value ? node : makeASTWithMeta(EBinary(Match, target, rewrittenValue), node.metadata, node.pos);
 				default:
 					rewriteProvableIsNil(ElixirASTTransformer.transformAST(node, child -> rewriteInScope(child, incomingNonNil, incomingNil)), incomingNonNil,
 						incomingNil);
