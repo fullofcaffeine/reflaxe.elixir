@@ -4307,6 +4307,59 @@ class LoopBuilder {
 		return unwrapReturnCarrier(reducer, state.outerPattern).def;
 	}
 
+	/**
+	 * Point the tracked initializer of each threaded local at the local's own binding.
+	 *
+	 * WHAT
+	 * - For each local that a `reduce_while` loop threads and that has a tracked
+	 *   initializer (`localVarInitValuesById`), replace that initializer with a read
+	 *   of the local. Returns the replaced values, so the caller can put them back.
+	 *
+	 * WHY
+	 * - `inferAccumulatorSeed` starts a comprehension temp such as `_g` from its
+	 *   tracked initializer (`[]`). That is right only while `_g` still has that
+	 *   value. Two shapes change it, and both returned `[]` or lost elements:
+	 *   - a nested loop inside the body of a loop that threads `_g`
+	 *     (`[for (k in m.keys()) for (j in n.keys()) k + j]`): the inner loop must
+	 *     start from the outer loop's state, not from `[]`;
+	 *   - a later loop after a loop that rebound `_g`, as when Haxe unrolls
+	 *     `[for (i in 0...2) for (k in m.keys()) ...]` into two copies of the inner
+	 *     loop: the second copy must start from the first copy's result.
+	 *
+	 * HOW
+	 * - The caller sets the seeds before it builds the loop body and restores them
+	 *   after it, so the loop's own seed still uses the initializer. After it emits
+	 *   the loop, it sets them again and keeps them: the loop result now binds the
+	 *   local. The rebinding uses the same resolved name, so a read of that name is
+	 *   the current value. Entries are matched by TVar ID, never by spelling.
+	 *   Inside the body, the enclosing loop then renames that read to its own
+	 *   accumulator (`_g` becomes `acc__g`).
+	 *
+	 * EXAMPLES
+	 * - Inner loop seed: `Enum.reduce_while(Map.keys(n), {acc__g}, ...)`, not `{[]}`.
+	 * - Second unrolled copy: `{_g} = Enum.reduce_while(Map.keys(m), {_g}, ...)`.
+	 */
+	static function seedThreadedLocalsFromBinding(mutatedVars:Map<Int, TVar>, compilationContext:Null<CompilationContext>):Array<{id:Int, value:ElixirAST}> {
+		var replaced:Array<{id:Int, value:ElixirAST}> = [];
+		if (compilationContext == null || compilationContext.localVarInitValuesById == null)
+			return replaced;
+		for (id => tvar in mutatedVars) {
+			if (!compilationContext.localVarInitValuesById.exists(id))
+				continue;
+			replaced.push({id: id, value: compilationContext.localVarInitValuesById.get(id)});
+			compilationContext.localVarInitValuesById.set(id, makeAST(EVar(VariableBuilder.resolveVariableName(tvar, compilationContext))));
+		}
+		return replaced;
+	}
+
+	/** Puts back the tracked initializers that `seedThreadedLocalsFromBinding` replaced. */
+	static function restoreTrackedSeeds(replaced:Array<{id:Int, value:ElixirAST}>, compilationContext:Null<CompilationContext>):Void {
+		if (compilationContext == null || compilationContext.localVarInitValuesById == null)
+			return;
+		for (entry in replaced)
+			compilationContext.localVarInitValuesById.set(entry.id, entry.value);
+	}
+
 	static function buildWhileLoop(econd:TypedExpr, e:TypedExpr, normalWhile:Bool, context:BuildContext, toElixirVarName:String->String):ElixirASTDef {
 		#if debug_loop_builder
 		#end
@@ -4335,8 +4388,11 @@ class LoopBuilder {
 			}
 		}
 
+		// Inside the body, a threaded local holds the loop state, not its declared value.
+		var replacedSeeds = seedThreadedLocalsFromBinding(mutatedVars, compilationContext);
 		var condition = buildExpression(econd);
 		var body = buildExpression(e);
+		restoreTrackedSeeds(replacedSeeds, compilationContext);
 
 		if (compilationContext != null
 			&& compilationContext.loopControlStateStack != null
@@ -4352,7 +4408,10 @@ class LoopBuilder {
 
 		// If there are variables to thread, use reduce_while with state
 		if (Lambda.count(mutatedVars) > 0) {
-			return buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName, containsNonLocalReturn(e));
+			var loop = buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName, containsNonLocalReturn(e));
+			// The loop result rebinds each threaded local, so a later loop must start from it.
+			seedThreadedLocalsFromBinding(mutatedVars, compilationContext);
+			return loop;
 		} else {
 			if (containsNonLocalReturn(e))
 				return buildReturningWhile(condition, body, {

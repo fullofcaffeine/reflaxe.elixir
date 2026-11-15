@@ -2775,7 +2775,7 @@ end'))
 	}
 
 	/** Returns true when `pattern` binds `name`, at any depth. A pinned `^name` reads it and does not count. */
-	static function patternBindsName(pattern:EPattern, name:String):Bool {
+	public static function patternBindsName(pattern:EPattern, name:String):Bool {
 		if (pattern == null)
 			return false;
 		return switch (pattern) {
@@ -2786,6 +2786,33 @@ end'))
 			case PMap(pairs): Lambda.exists(pairs, pair -> patternBindsName(pair.value, name));
 			case PStruct(_, fields): Lambda.exists(fields, field -> patternBindsName(field.value, name));
 			case PBinary(segments): Lambda.exists(segments, segment -> patternBindsName(segment.pattern, name));
+			default: false;
+		};
+	}
+
+	/**
+	 * Returns true when a block statement binds `name` for the statements after it.
+	 *
+	 * WHAT
+	 * - A match binds `name` with any pattern: `name = x`, or the tuple result
+	 *   `{name} = Enum.reduce_while(...)` of a loop.
+	 * - A nested `EBlock` prints as plain statements in the same Elixir scope, so a
+	 *   match inside it counts too. Loop lowering emits such a block, for example
+	 *   `k = Map.keys(m)` followed by the reduce_while.
+	 * - Anonymous functions and `case` clauses are not entered: their binders stay local.
+	 *
+	 * WHY
+	 * - Trailing-return cleanups replace a returned `name` with the value of its last
+	 *   simple assignment. When a later tuple match rebinds `name`, that value is
+	 *   stale: `_g = []`, then `{_g} = Enum.reduce_while(...)`, then `_g` returned `[]`.
+	 */
+	public static function statementBindsName(stmt:ElixirAST, name:String):Bool {
+		if (stmt == null || stmt.def == null)
+			return false;
+		return switch (stmt.def) {
+			case EMatch(pattern, _): patternBindsName(pattern, name);
+			case EBinary(Match, {def: EVar(bound)}, _): bound == name;
+			case EBlock(inner) if (inner != null): Lambda.exists(inner, s -> statementBindsName(s, name));
 			default: false;
 		};
 	}

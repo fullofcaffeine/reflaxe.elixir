@@ -1,0 +1,12 @@
+keysOnly a,b
+keysNamed a,b
+keysOuter a1,a2,b1,b2
+keysInner a1,a2,b1,b2
+keysInKeys a1,a2,b1,b2
+valuesOuter 11,12,21,22
+iteratorOuter 11,21,12,22
+rangeOuter 1,11,12,2
+keysFilter b1,b3
+emptyOuter 
+emptyInner 
+emptyRange 

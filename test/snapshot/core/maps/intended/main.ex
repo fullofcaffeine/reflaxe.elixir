@@ -37,7 +37,7 @@ defmodule Main do
           {:cont, acc}
       end
     end)
-    {_g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
+    {g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [k]
         {:cont, {acc__g}}
@@ -52,8 +52,8 @@ defmodule Main do
           {:cont, {acc__g}}
       end
     end)
-    _keys = []
-    {_g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
+    _keys = g
+    {g} = Enum.reduce_while(Map.keys(map), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [Map.get(map, k)]
         {:cont, {acc__g}}
@@ -68,7 +68,7 @@ defmodule Main do
           {:cont, {acc__g}}
       end
     end)
-    _values = []
+    _values = g
     nil
   end
   def map_literals() do

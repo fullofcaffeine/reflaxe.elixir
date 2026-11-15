@@ -81,10 +81,9 @@ line before the fix.
 
 ## Not covered
 
-A single-level comprehension over map keys that is returned directly,
-`return [for (k in m.keys()) k];`, still returns `[]`. That is
-haxe.elixir.codex-47i: a different pass (`InlineTrailingReturnVar`) replaces the
-returned variable with its empty initializer.
+A comprehension whose outer loop is `Enum.reduce_while`, such as
+`return [for (k in m.keys()) k];`. Its fixture is
+`test/snapshot/regression/reduce_while_comprehension_accumulator`.
 
 Run the snapshot with
 `make -C test test-regression__nested_comprehension_accumulator` and the native

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 	* - For each def/defp body that is a block ending with EVar(name):
 	*   - Scan backward to find the last assignment to `name` (EMatch/EBinary Match).
 	*   - Remove that assignment statement and replace the trailing EVar with the RHS.
+	*   - Skip the block when a later match, such as the tuple result
+	*     `{name} = Enum.reduce_while(...)` of a loop, rebinds `name`, also inside a
+	*     nested statement block. The simple assignment is then not the last value
+	*     of `name`.
 
 	*
 	* EXAMPLES
@@ -75,6 +79,12 @@ class InlineTrailingReturnVarTransforms {
 						case EMatch(PVar(v2), r2) if (v2 == retName):
 							idx = i;
 							rhs = r2;
+						case _ if (BinderTransforms.statementBindsName(stmts[i], retName)):
+							// A later match rebinds the name, for example the
+							// `{_g} = Enum.reduce_while(...)` result of a loop. An earlier
+							// assignment is then stale: inlining `_g = []` returned `[]`.
+							idx = -1;
+							rhs = null;
 						default:
 					}
 				}
