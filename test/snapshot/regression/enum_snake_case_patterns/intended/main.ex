@@ -28,9 +28,7 @@ defmodule Main do
       {:bulk_update, action} -> "Bulk action: #{action}"
       {:user_online, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is online"
       {:user_offline, user_id} -> "User #{Reflaxe.Elixir.HaxeFloat.to_string(user_id)} is offline"
-      {:system_alert, message, level} ->
-        msg = message
-        "Alert [#{level}]: #{msg}"
+      {:system_alert, msg, level} -> "Alert [#{level}]: #{msg}"
     end)
   end
   defp assert_text(actual, expected) do

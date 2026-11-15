@@ -275,6 +275,38 @@ class CaseErrorVarUnifyTransforms {
 		return m;
 	}
 
+	/**
+	 * Returns every name that the clause binds: the binders of its own pattern, and
+	 * every name bound anywhere inside its body.
+	 *
+	 * WHY
+	 * - `processClause` treats a lower-case name that is used but never bound as a
+	 *   missing variable, and points it at the `{:error, binder}` payload. A name
+	 *   that a nested construct binds is not missing. Without the nested binders,
+	 *   the inner `value` below looked unbound in the outer clause, and
+	 *   `v = value` was rewritten to `v = reason`, the outer payload
+	 *   (haxe.elixir.codex-sx27):
+	 *
+	 *     {:error, reason} ->
+	 *       case b do
+	 *         {:ok, value} -> v = value; String.length(v)
+	 *         {:error, _} -> String.length(reason) * 10
+	 *       end
+	 *
+	 * HOW
+	 * - Count the binders of nested `case`, `receive`, `with`, `for`, `fn`,
+	 *   `rescue` and `catch` patterns, and of every match, whatever the shape of
+	 *   its left side. The test ignores where in the body the binding is: a name
+	 *   bound in one place is never rewritten in another, so the value that a
+	 *   bound name reads does not change.
+	 * - More bound names also mean fewer unbound ones. A clause that had two
+	 *   unbound names, and was left alone, can now have one, and the rewrite in
+	 *   `processClause` then applies to it. A typed `catch` in the clause showed
+	 *   this: its binder now counts as bound, and `__STACKTRACE__` in
+	 *   `reraise(haxe_exception, __STACKTRACE__)` was the one name left. It
+	 *   became the payload, and `reraise` returned `:badarg` instead of raising.
+	 *   `isLower` therefore rejects every name that is not a local variable.
+	 */
 	static function collectDeclared(p:EPattern, body:ElixirAST):Map<String, Bool> {
 		var d = new Map<String, Bool>();
 		// pattern binds
@@ -289,13 +321,39 @@ class CaseErrorVarUnifyTransforms {
 					}
 			default:
 		}
-		// local LHS assigns inside body
+		// names bound inside the body, nested binders included
 		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
 			switch (n.def) {
-				case EMatch(PVar(nm), _):
-					d.set(nm, true);
-				case EBinary(Match, {def: EVar(nm2)}, _):
-					d.set(nm2, true);
+				case EMatch(pattern, _):
+					collectPatternVarsInto(pattern, d);
+				case EBinary(Match, left, _):
+					collectLhsVars(left, d);
+				case ECase(_, clauses):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EReceive(clauses, _):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EWith(clauses, _, _):
+					for (clause in clauses)
+						collectPatternVarsInto(clause.pattern, d);
+				case EFor(generators, _, _, _, _):
+					for (generator in generators)
+						collectPatternVarsInto(generator.pattern, d);
+				case EFn(clauses):
+					for (clause in clauses)
+						for (arg in clause.args)
+							collectPatternVarsInto(arg, d);
+				case ETry(_, rescueClauses, catchClauses, _, _):
+					if (rescueClauses != null)
+						for (clause in rescueClauses) {
+							collectPatternVarsInto(clause.pattern, d);
+							if (clause.varName != null)
+								d.set(clause.varName, true);
+						}
+					if (catchClauses != null)
+						for (clause in catchClauses)
+							collectPatternVarsInto(clause.pattern, d);
 				default:
 			}
 		});
@@ -340,7 +398,8 @@ class CaseErrorVarUnifyTransforms {
 	}
 
 	static inline function isLower(s:String):Bool {
-		// `:erlang` in `:erlang.term_to_binary(x)` is a module, not an unbound local.
+		// `:erlang` in `:erlang.term_to_binary(x)` is a module, and `__STACKTRACE__`
+		// is a special form; neither is an unbound local.
 		return reflaxe.elixir.ast.naming.ElixirNaming.isVariableName(s);
 	}
 }

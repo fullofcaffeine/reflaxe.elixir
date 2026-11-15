@@ -1,0 +1,48 @@
+okInError -1
+okInErrorNamed -1
+bothRead ok o/p
+errorInOk ok p
+statement plain p
+inClosure plain p
+threeLevels ok p
+threeLevels ok p
+okInError -1
+okInErrorNamed -1
+bothRead err x/p
+errorInOk inner error x
+statement plain p
+inClosure plain p
+threeLevels ok 3/x/p
+threeLevels err z/x/p
+okInError 1
+okInErrorNamed 1
+bothRead ok o/why
+errorInOk outer error
+statement ok o after why
+inClosure ok o
+threeLevels ok 3/o/why
+threeLevels err z/o/why
+okInError 30
+okInErrorNamed 30
+bothRead err x/why
+errorInOk outer error
+statement err x after why
+inClosure err x/why
+threeLevels ok 3/x/why
+threeLevels err z/x/why
+rethrowInErrorArm returned ok o
+rethrowInErrorArmStatement returned ok o
+rethrowThenReadPayload returned ok o
+rethrowInOkArm rethrown 0
+rethrowInErrorArm returned ok o
+rethrowInErrorArmStatement returned ok o
+rethrowThenReadPayload returned ok o
+rethrowInOkArm rethrown 5
+rethrowInErrorArm rethrown 0
+rethrowInErrorArmStatement returned no throw x
+rethrowThenReadPayload rethrown 0
+rethrowInOkArm returned error x
+rethrowInErrorArm rethrown 5
+rethrowInErrorArmStatement rethrown 5
+rethrowThenReadPayload rethrown 5
+rethrowInOkArm returned error x

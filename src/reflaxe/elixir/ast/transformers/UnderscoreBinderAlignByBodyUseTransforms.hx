@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ECaseClause;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
@@ -22,7 +23,8 @@ import reflaxe.elixir.ast.ASTUtils;
 	* HOW
 	* - Walk EDef/EDefp bodies, visiting ECase clauses. For each clause with PTuple/2 and
 	*   second element PVar(b) where b starts with `_`:
-	*   - Compute declared names (pattern binders + LHS inside body) and merge function params.
+	*   - Compute declared names (pattern binders + LHS inside body) and merge function params
+	*     and the binders of every enclosing closure, case clause and comprehension.
 	*   - Collect used lowercase names in the clause body.
 	*   - Let `undef = used \\ declared \\ {b}` excluding env names (socket/live_socket).
 	*   - If `undef.length == 1`, rename binder to `undef[0]` and return updated clause.
@@ -49,52 +51,97 @@ class UnderscoreBinderAlignByBodyUseTransforms {
 		});
 	}
 
-	static function process(body:ElixirAST, fnDeclared:Map<String, Bool>):ElixirAST {
-		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
-			return switch (x.def) {
-				case ECase(target, clauses):
-					var out = [];
+	/**
+	 * Rewrites the `case` clauses in `node`, innermost first.
+	 *
+	 * `declaredOutside` holds the names that are bound around `node`: the
+	 * function's arguments and matches, and the binders of every enclosing
+	 * closure, `case` clause and comprehension. A name that is bound there is
+	 * not a missing variable of an inner clause. Without the enclosing binders,
+	 *
+	 *   fn reason -> case r do {:error, _v} -> String.length(reason) end end
+	 *
+	 * became `{:error, reason} -> ...`, which read the payload instead of the
+	 * closure argument (haxe.elixir.codex-mj83).
+	 */
+	static function process(node:ElixirAST, declaredOutside:Map<String, Bool>):ElixirAST {
+		if (node == null || node.def == null)
+			return node;
+		return switch (node.def) {
+			case ECase(target, clauses):
+				var out = [];
+				for (cl in clauses) {
+					var inside = withPatterns(declaredOutside, [cl.pattern]);
+					var visited = {pattern: cl.pattern, guard: process(cl.guard, inside), body: process(cl.body, inside)};
+					out.push(alignClause(visited, declaredOutside));
+				}
+				makeASTWithMeta(ECase(process(target, declaredOutside), out), node.metadata, node.pos);
+			case EFn(clauses):
+				makeASTWithMeta(EFn([
 					for (cl in clauses) {
-						var binder = extractSecondBinder(cl.pattern);
-						if (binder != null && isUnderscored(binder)) {
-							var base = binder.substr(1);
-							var declared = new Map<String, Bool>();
-							collectPatternDecls(cl.pattern, declared);
-							collectLhsDeclsInBody(cl.body, declared);
-							if (fnDeclared != null)
-								for (k in fnDeclared.keys())
-									declared.set(k, true);
-							var used = collectUsedLowerNames(cl.body);
-							// Prefer the binder's base name when it is actually used in the body, regardless
-							// of how many other locals appear. This avoids false negatives that leave the
-							// pattern underscored and produce undefined-variable errors downstream.
-							if (allow(base) && used.exists(base) && !declared.exists(base)) {
-								var newPat = rewriteSecondBinder(cl.pattern, base);
-								if (newPat != null) {
-									out.push({pattern: newPat, guard: cl.guard, body: cl.body});
-									continue;
-								}
-							}
-							// Fallback to original heuristic: single undefined lower-case var
-							var undef:Array<String> = [];
-							for (u in used.keys())
-								if (!declared.exists(u) && allow(u))
-									undef.push(u);
-							if (undef.length == 1) {
-								var newPat2 = rewriteSecondBinder(cl.pattern, undef[0]);
-								if (newPat2 != null) {
-									out.push({pattern: newPat2, guard: cl.guard, body: cl.body});
-									continue;
-								}
-							}
-						}
-						out.push(cl);
+						var inside = withPatterns(declaredOutside, cl.args);
+						{args: cl.args, guard: process(cl.guard, inside), body: process(cl.body, inside)};
 					}
-					makeASTWithMeta(ECase(target, out), x.metadata, x.pos);
-				default:
-					x;
-			}
-		});
+				]), node.metadata, node.pos);
+			case EFor(generators, filters, body, into, uniq):
+				var inside = withPatterns(declaredOutside, [for (generator in generators) generator.pattern]);
+				makeASTWithMeta(EFor([
+					for (generator in generators)
+						{pattern: generator.pattern, expr: process(generator.expr, inside)}
+				],
+					[for (filter in filters) process(filter, inside)], process(body, inside), process(into, declaredOutside), uniq), node.metadata, node.pos);
+			default:
+				ElixirASTTransformer.transformAST(node, function(child:ElixirAST):ElixirAST {
+					return process(child, declaredOutside);
+				});
+		}
+	}
+
+	/** Returns a copy of `declared` that also holds the names that `patterns` bind. */
+	static function withPatterns(declared:Map<String, Bool>, patterns:Array<EPattern>):Map<String, Bool> {
+		var copy = new Map<String, Bool>();
+		if (declared != null)
+			for (name in declared.keys())
+				copy.set(name, true);
+		if (patterns != null)
+			for (pattern in patterns)
+				if (pattern != null)
+					collectPatternDecls(pattern, copy);
+		return copy;
+	}
+
+	/** Renames the `_binder` of one `{:tag, _binder}` clause when its body names the payload; see the class comment. */
+	static function alignClause(cl:ECaseClause, declaredOutside:Map<String, Bool>):ECaseClause {
+		var binder = extractSecondBinder(cl.pattern);
+		if (binder == null || !isUnderscored(binder))
+			return cl;
+		var base = binder.substr(1);
+		var declared = new Map<String, Bool>();
+		collectPatternDecls(cl.pattern, declared);
+		collectLhsDeclsInBody(cl.body, declared);
+		if (declaredOutside != null)
+			for (k in declaredOutside.keys())
+				declared.set(k, true);
+		var used = collectUsedLowerNames(cl.body);
+		// Prefer the binder's base name when it is actually used in the body, regardless
+		// of how many other locals appear. This avoids false negatives that leave the
+		// pattern underscored and produce undefined-variable errors downstream.
+		if (allow(base) && used.exists(base) && !declared.exists(base)) {
+			var newPat = rewriteSecondBinder(cl.pattern, base);
+			if (newPat != null)
+				return {pattern: newPat, guard: cl.guard, body: cl.body};
+		}
+		// Fallback to original heuristic: single undefined lower-case var
+		var undef:Array<String> = [];
+		for (u in used.keys())
+			if (!declared.exists(u) && allow(u))
+				undef.push(u);
+		if (undef.length == 1) {
+			var newPat2 = rewriteSecondBinder(cl.pattern, undef[0]);
+			if (newPat2 != null)
+				return {pattern: newPat2, guard: cl.guard, body: cl.body};
+		}
+		return cl;
 	}
 
 	static inline function isUnderscored(name:String):Bool {

@@ -2710,8 +2710,9 @@ end'))
 	}
 
 	/**
-	 * Applies `rewriteNode` to every node, children first, except inside a
-	 * function that binds `name` itself.
+	 * Applies `rewriteNode` to every node, children first, except where `name`
+	 * already belongs to another variable: inside a function that binds `name`
+	 * itself, and inside a clause, closure or comprehension whose pattern binds it.
 	 *
 	 * WHY: The two late passes below assume that a variable called `reason` in
 	 * the body of an `{:error, binder}` clause stands for the payload, and
@@ -2725,19 +2726,68 @@ end'))
 	 * became `{:error, reason} -> reason = e; ...`, which does not compile and
 	 * would hide the argument if it did (haxe.elixir.codex-spk). A function that
 	 * binds the name is left as the builder emitted it.
+	 *
+	 * The same holds where an enclosing pattern binds the name. A Haxe
+	 * `catch (reason:String)` becomes a `case` clause `{reason, _} when ...`,
+	 * and code in that clause reads the caught value:
+	 *
+	 *   {reason, _} when is_binary(reason) ->
+	 *     case r do
+	 *       {:error, e} -> note(e); "caught " <> reason
+	 *
+	 * became `{:error, e} -> reason = e; ...`, which printed the payload
+	 * (haxe.elixir.codex-mj83). Such a clause, closure (`fn reason -> ...`) or
+	 * comprehension is left as it is; its other clauses are still visited.
 	 */
 	static function transformOutsideFunctionsBinding(ast:ElixirAST, name:String, rewriteNode:ElixirAST->ElixirAST):ElixirAST {
+		function binds(pattern:EPattern):Bool {
+			return patternBindsName(pattern, name);
+		}
 		function visit(node:ElixirAST):ElixirAST {
 			if (node == null || node.def == null)
 				return node;
 			switch (node.def) {
 				case EDef(_, args, _, body) | EDefp(_, args, _, body) if (functionBindsName(args, body, name)):
 					return node;
+				case ECase(target, clauses) if (Lambda.exists(clauses, clause -> binds(clause.pattern))):
+					return rewriteNode(makeASTWithMeta(ECase(visit(target), [
+						for (clause in clauses)
+							binds(clause.pattern) ? clause : {pattern: clause.pattern, guard: visit(clause.guard), body: visit(clause.body)}
+					]), node.metadata, node.pos));
+				case EReceive(clauses, afterClause) if (Lambda.exists(clauses, clause -> binds(clause.pattern))):
+					var visitedAfter = afterClause == null ? null : {timeout: visit(afterClause.timeout), body: visit(afterClause.body)};
+					return rewriteNode(makeASTWithMeta(EReceive([
+						for (clause in clauses)
+							binds(clause.pattern) ? clause : {pattern: clause.pattern, guard: visit(clause.guard), body: visit(clause.body)}
+					], visitedAfter), node.metadata, node.pos));
+				case EFn(clauses) if (Lambda.exists(clauses, clause -> Lambda.exists(clause.args, binds))):
+					return rewriteNode(makeASTWithMeta(EFn([
+						for (clause in clauses)
+							Lambda.exists(clause.args, binds) ? clause : {args: clause.args, guard: visit(clause.guard), body: visit(clause.body)}
+					]), node.metadata, node.pos));
+				case EFor(generators, _, _, _, _) if (Lambda.exists(generators, generator -> binds(generator.pattern))):
+					return node;
 				default:
 			}
 			return rewriteNode(ElixirASTTransformer.transformAST(node, visit));
 		}
 		return visit(ast);
+	}
+
+	/** Returns true when `pattern` binds `name`, at any depth. A pinned `^name` reads it and does not count. */
+	static function patternBindsName(pattern:EPattern, name:String):Bool {
+		if (pattern == null)
+			return false;
+		return switch (pattern) {
+			case PVar(bound): bound == name;
+			case PAlias(bound, inner): bound == name || patternBindsName(inner, name);
+			case PTuple(items) | PList(items): Lambda.exists(items, item -> patternBindsName(item, name));
+			case PCons(head, tail): patternBindsName(head, name) || patternBindsName(tail, name);
+			case PMap(pairs): Lambda.exists(pairs, pair -> patternBindsName(pair.value, name));
+			case PStruct(_, fields): Lambda.exists(fields, field -> patternBindsName(field.value, name));
+			case PBinary(segments): Lambda.exists(segments, segment -> patternBindsName(segment.pattern, name));
+			default: false;
+		};
 	}
 
 	/**
@@ -2838,7 +2888,12 @@ end'))
 					// Explicitly transform clause bodies to catch nested cases (e.g., in reduce_while)
 					var newClauses = [];
 					for (cl in clauses) {
-						var fixedBody = ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+						// A closure whose argument is `reason` keeps its body; inside, the same rule applies.
+						if (Lambda.exists(cl.args, argument -> patternBindsName(argument, "reason"))) {
+							newClauses.push(cl);
+							continue;
+						}
+						var fixedBody = transformOutsideFunctionsBinding(cl.body, "reason", function(n:ElixirAST):ElixirAST {
 							return switch (n.def) {
 								case ECase(target, caseClauses):
 									var newCaseClauses = [];

@@ -205,6 +205,19 @@ class SuccessBinderAlignByBodyUseTransforms {
 		return true;
 	}
 
+	/**
+	 * Returns every name that the function binds anywhere: its arguments, its
+	 * matches, and the binders of its `case` clauses, closures and comprehensions.
+	 *
+	 * A name in this set is never taken for a missing variable of an
+	 * `{:ok, _binder}` clause. Closure arguments and comprehension variables
+	 * belong here too: without them,
+	 *
+	 *   fn value -> case r do {:ok, _v} -> "ok " <> value end end
+	 *
+	 * became `{:ok, value} -> ...`, which read the payload instead of the
+	 * closure argument (haxe.elixir.codex-mj83).
+	 */
 	static function collectFunctionDefinedVars(args:Array<EPattern>, body:ElixirAST):Map<String, Bool> {
 		var vars = new Map<String, Bool>();
 		for (a in args)
@@ -220,6 +233,13 @@ class SuccessBinderAlignByBodyUseTransforms {
 				case ECase(_, cs):
 					for (c in cs)
 						collectPatternDecls(c.pattern, vars);
+				case EFn(clauses):
+					for (clause in clauses)
+						for (argument in clause.args)
+							collectPatternDecls(argument, vars);
+				case EFor(generators, _, _, _, _):
+					for (generator in generators)
+						collectPatternDecls(generator.pattern, vars);
 				default:
 			}
 		});

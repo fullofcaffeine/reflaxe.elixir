@@ -23,11 +23,9 @@ defmodule Main do
   end
   defp handle_nested(value) do
     (case value do
-      {:some, value} ->
-        (case value do
-          {:ok, value} ->
-            n = value
-            "n=#{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
+      {:some, payload_value} ->
+        (case payload_value do
+          {:ok, n} -> "n=#{Reflaxe.Elixir.HaxeFloat.to_string(n)}"
           {:error, reason} ->
             e = reason
             "Got error: #{e}"

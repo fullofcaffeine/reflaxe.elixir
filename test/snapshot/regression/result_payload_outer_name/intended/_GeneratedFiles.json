@@ -1,5 +1,7 @@
 {
 	"filesGenerated": [
+		"visible_names.ex",
+		"verdict.ex",
 		"string_tools.ex",
 		"std.ex",
 		"res.ex",
@@ -57,7 +59,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "50857af71e5955fe4204d7b5fcd6d588505a59e8f7a69b9a3b4c54e9730f1ebc"
+			"sha256": "febed41522fa1c2734b20f93dd3d14f0eb3f39f6477eb0bee4e0da8984d73bfc"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -90,7 +92,15 @@
 		{
 			"path": "string_tools.ex",
 			"sha256": "5c4ae9afead09ee10480724e18ea318b8778dea148dcbb117f0fa4bc28e2fa51"
+		},
+		{
+			"path": "verdict.ex",
+			"sha256": "4a4faff1914140ea299aa7f19afd29003eb1cdf69a6e6f36b38c7c9ec23776cf"
+		},
+		{
+			"path": "visible_names.ex",
+			"sha256": "13a9e677a2204f5c3d6062f04ac22256b6899376024c4346ba435f1bd64bf60e"
 		}
 	],
-	"generation": "ba37f5f36e2588d128b452d8c8eff32d6f8a2011174d3f820273982414788e7b"
+	"generation": "82adc69bb270ae601cb9b14684127786b674003615b7c325111912629f6205e4"
 }
