@@ -54,7 +54,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "2ed18b8768b8c486777c3d7d642b6aeb513adffa5446694574bb686a31d97389"
+			"sha256": "77c8a1473988800e847da57879088e406dfaeed654e390416d1e130020bc769b"
 		},
 		{
 			"path": "outer.ex",
@@ -97,5 +97,5 @@
 			"sha256": "4a4faff1914140ea299aa7f19afd29003eb1cdf69a6e6f36b38c7c9ec23776cf"
 		}
 	],
-	"generation": "310c13e18d7f5b433575fc88643115e869a3c82dd1de5861bad7093dd60e3ad0"
+	"generation": "d46674ea2c8de170ece3622f5e7dfb644f004f46eb0ce227caba2cd51c3e840c"
 }

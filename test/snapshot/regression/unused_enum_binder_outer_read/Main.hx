@@ -61,6 +61,10 @@ class Main {
 			Sys.println(nestedAssigned(Wrap(SErr("x")), flag));
 			Sys.println(nestedAssigned(Both("a", "b"), flag));
 		}
+		Sys.println(otherArmAssignsReason(Ok("o")));
+		Sys.println(otherArmAssignsReason(Error("x")));
+		Sys.println(reasonLength(Ok("o"), "why"));
+		Sys.println(reasonLength(Error("x"), "why"));
 	}
 
 	static function note(text:String):Void {
@@ -187,5 +191,28 @@ class Main {
 				value = b;
 		}
 		return "r=" + value;
+	}
+
+	/**
+	 * Only the `Ok` arm assigns `reason`; the `Error` arm must return the old
+	 * value, not its payload.
+	 */
+	public static function otherArmAssignsReason(r:Verdict):String {
+		var reason = "d";
+		switch (r) {
+			case Ok(v):
+				reason = "ok " + v;
+			case Error(e):
+				note(e);
+		}
+		return "r=" + reason;
+	}
+
+	/** The `Error` arm reads the argument `reason` outside a string. */
+	public static function reasonLength(r:Verdict, reason:String):Int {
+		return switch (r) {
+			case Ok(v): v.length;
+			case Error(e): reason.length * 10 + e.length;
+		};
 	}
 }

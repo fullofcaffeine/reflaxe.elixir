@@ -2709,9 +2709,69 @@ end'))
 		});
 	}
 
+	/**
+	 * Applies `rewriteNode` to every node, children first, except inside a
+	 * function that binds `name` itself.
+	 *
+	 * WHY: The two late passes below assume that a variable called `reason` in
+	 * the body of an `{:error, binder}` clause stands for the payload, and
+	 * rename or alias the binder to match. That is wrong in a function that has
+	 * its own `reason`, as an argument or as an assigned local:
+	 *
+	 *   def describe(r, reason) do
+	 *     case r do
+	 *       {:error, e} -> up(reason) <> e      # reads the argument
+	 *
+	 * became `{:error, reason} -> reason = e; ...`, which does not compile and
+	 * would hide the argument if it did (haxe.elixir.codex-spk). A function that
+	 * binds the name is left as the builder emitted it.
+	 */
+	static function transformOutsideFunctionsBinding(ast:ElixirAST, name:String, rewriteNode:ElixirAST->ElixirAST):ElixirAST {
+		function visit(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
+			switch (node.def) {
+				case EDef(_, args, _, body) | EDefp(_, args, _, body) if (functionBindsName(args, body, name)):
+					return node;
+				default:
+			}
+			return rewriteNode(ElixirASTTransformer.transformAST(node, visit));
+		}
+		return visit(ast);
+	}
+
+	/**
+	 * Returns true when a function binds `name` as an argument or by a match
+	 * anywhere in its body. A `case` clause pattern does not count: such a
+	 * binder is visible in its own clause only.
+	 */
+	static function functionBindsName(args:Array<EPattern>, body:ElixirAST, name:String):Bool {
+		if (args != null)
+			for (argument in args)
+				if (collectPatternBinders(argument).indexOf(name) != -1)
+					return true;
+		var bound = false;
+		function visit(node:ElixirAST):Void {
+			if (bound || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EMatch(pattern, _) if (collectPatternBinders(pattern).indexOf(name) != -1):
+					bound = true;
+					return;
+				case EBinary(Match, {def: EVar(assigned)}, _) if (assigned == name):
+					bound = true;
+					return;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, visit);
+		}
+		visit(body);
+		return bound;
+	}
+
 	// Late safety net: ensure {:error, binder} arms alias reason only when the body references `reason`
 	public static function errorReasonAliasInjectionPass(ast:ElixirAST):ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+		return transformOutsideFunctionsBinding(ast, "reason", function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
 				case ECase(target, clauses):
 					var newClauses = [];
@@ -2772,7 +2832,7 @@ end'))
 				default: p;
 			}
 		}
-		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+		return transformOutsideFunctionsBinding(ast, "reason", function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
 				case EFn(clauses):
 					// Explicitly transform clause bodies to catch nested cases (e.g., in reduce_while)

@@ -52,6 +52,14 @@ defmodule Main do
     IO.puts(v)
     v = nested_assigned({:both, "a", "b"}, flag)
     IO.puts(v)
+    v = other_arm_assigns_reason({:ok, "o"})
+    IO.puts(v)
+    v = other_arm_assigns_reason({:error, "x"})
+    IO.puts(v)
+    v = reason_length({:ok, "o"}, "why")
+    IO.puts(v)
+    v = reason_length({:error, "x"}, "why")
+    IO.puts(v)
   end
   defp note(text) do
     IO.puts("  note " <> text)
@@ -168,5 +176,26 @@ defmodule Main do
         value
     end)
     "r=#{value}"
+  end
+  def other_arm_assigns_reason(r) do
+    reason = "d"
+    reason = (case r do
+      {:ok, value} ->
+        v = value
+        reason = "ok #{v}"
+        reason
+      {:error, e} ->
+        note(e)
+        reason
+    end)
+    "r=#{reason}"
+  end
+  def reason_length(r, reason) do
+    (case r do
+      {:ok, value} ->
+        v = value
+        StringTools.haxe_length(v)
+      {:error, e} -> StringTools.haxe_length(reason) * 10 + StringTools.haxe_length(e)
+    end)
   end
 end

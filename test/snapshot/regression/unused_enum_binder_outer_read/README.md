@@ -69,6 +69,27 @@ for every arm, the outer variables that any arm of the same switch assigns:
   value
 ```
 
+## An outer variable named `reason` in an `Error` clause
+
+Two late passes assume that `reason` in the body of an `{:error, binder}`
+clause means the payload. One adds `reason = binder`, the other renames the
+binder to `reason`. With an outer `reason` that is wrong, and the two together
+gave code that does not compile:
+
+```elixir
+def reason_length(r, reason) do
+  (case r do
+    {:error, reason} ->
+      reason = e          # `e` no longer exists
+```
+
+Both passes now leave a function alone when it binds `reason` itself, as an
+argument or by an assignment:
+
+```elixir
+{:error, e} -> StringTools.haxe_length(reason) * 10 + StringTools.haxe_length(e)
+```
+
 `expected.stdout` is the output of this program on the Haxe interpreter:
 
 ```bash
@@ -81,6 +102,8 @@ payloads, an inner switch that binds the same name, a nested pattern, and a
 constructor with two payloads.
 For an assigned outer variable it covers an arm that does not mention the
 variable, an assignment under an `if`, and a nested pattern.
+For `reason` it covers an outer local that the other arm assigns and an
+argument that the `Error` arm reads outside a string.
 
 Not covered:
 
