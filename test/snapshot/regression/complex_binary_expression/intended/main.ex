@@ -12,6 +12,7 @@ defmodule Main do
   defp test_method_call_in_binary_expression() do
     s = TestString.new("test")
     i = 0
+    index = 0
     c = apply(
       Map.get(s, :__reflaxe_class__) || Map.get(s, :__struct__),
       :cca,
@@ -20,8 +21,8 @@ defmodule Main do
          [s, index]
        end).()
     )
-    _ = if (c > 55296) do
-      Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(apply(
+    {_c, _index} = if (c > 55296) do
+      reflaxe_branch_value = Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(apply(
         Map.get(s, :__reflaxe_class__) || Map.get(s, :__struct__),
         :cca,
         (fn ->
@@ -29,8 +30,9 @@ defmodule Main do
            [s, index]
          end).()
       ), 1023))
+      {reflaxe_branch_value, index}
     else
-      c
+      {c, index}
     end
     nil
   end
