@@ -22,8 +22,7 @@ defmodule Main do
   end
   def independent_alias(result) do
     (case result do
-      {:ok, value} ->
-        g = value
+      {:ok, g} ->
         value = g
         value = value + 1
         g * 100 + value
@@ -32,8 +31,7 @@ defmodule Main do
   end
   defp unwrap_or(result, default_value) do
     (case result do
-      {:ok, value} ->
-        g = value
+      {:ok, g} ->
         value = g
         value
       {:error, _error} -> default_value

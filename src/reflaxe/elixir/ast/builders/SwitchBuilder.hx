@@ -1651,7 +1651,11 @@ class SwitchBuilder {
 				// but we must preserve explicit (recovered) binder names (e.g., `Ok(result)`) to avoid
 				// introducing undefined locals in the clause body. Only apply the canonical
 				// names when the selected candidate is generic/auto (e.g., `value`, `_g0`, `v`).
-				if (isResultCtor && i == 0 && candidate != null && isGenericOrAutoName(candidate)) {
+				if (isResultCtor
+					&& i == 0
+					&& candidate != null
+					&& isGenericOrAutoName(candidate)
+					&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", candidate)) {
 					baseParamName = (ef.name == "Ok") ? "value" : "reason";
 				}
 
@@ -1870,6 +1874,27 @@ class SwitchBuilder {
 		return names;
 	}
 
+	/**
+	 * Returns true when the canonical Result payload name would hide another
+	 * variable that the clause body reads.
+	 *
+	 * WHY: `Ok(v)` and `Error(v)` payloads get the Elixir names `value` and
+	 * `reason`. When the clause also reads an outer `value`, such as a function
+	 * argument, the binder `{:ok, value}` hides it and every read returns the
+	 * payload instead (`case Ok(v): v + value` returned `v + v`).
+	 *
+	 * HOW: Look for a read local whose Elixir name equals the canonical name but
+	 * whose Haxe name is not the payload binder's own name. The caller then keeps
+	 * the binder's own name.
+	 */
+	static function canonicalResultBinderShadowsRead(caseBody:TypedExpr, canonical:String, binderName:Null<String>):Bool {
+		for (local in collectReadLocals(caseBody)) {
+			if (local.name != binderName && VariableAnalyzer.toElixirVarName(local.name) == canonical)
+				return true;
+		}
+		return false;
+	}
+
 	/** Collect read identities without treating assignment destinations as reads. */
 	static function collectReadLocals(caseBody:TypedExpr):Map<Int, TVar> {
 		var used = new Map<Int, TVar>();
@@ -2024,7 +2049,10 @@ class SwitchBuilder {
 			// Result.Ok/1 and Result.Error/1 are commonly named `value`/`reason` in Elixir,
 			// but preserve explicit Haxe binder names (e.g., `Ok(result)`) to avoid
 			// generating undefined locals in the clause body.
-			if (isResultCtor && i == 0 && isGenericParamName(chosen)) {
+			if (isResultCtor
+				&& i == 0
+				&& isGenericParamName(chosen)
+				&& !canonicalResultBinderShadowsRead(caseBody, (ef.name == "Ok") ? "value" : "reason", chosen)) {
 				baseParamName = (ef.name == "Ok") ? "value" : "reason";
 			}
 			var isUsed = (i < usedFlags.length) ? usedFlags[i] : false;
