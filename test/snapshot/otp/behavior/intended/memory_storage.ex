@@ -22,7 +22,7 @@ defmodule MemoryStorage do
   end
   def list(struct) do
     this1 = struct.data
-    {_g} = Enum.reduce_while(Map.keys(this1), {[]}, fn k, {acc__g} ->
+    {g} = Enum.reduce_while(Map.keys(this1), {[]}, fn k, {acc__g} ->
       try do
         acc__g = acc__g ++ [k]
         {:cont, {acc__g}}
@@ -37,6 +37,6 @@ defmodule MemoryStorage do
           {:cont, {acc__g}}
       end
     end)
-    []
+    g
   end
 end

@@ -2811,8 +2811,24 @@ end'))
 			return false;
 		return switch (stmt.def) {
 			case EMatch(pattern, _): patternBindsName(pattern, name);
-			case EBinary(Match, {def: EVar(bound)}, _): bound == name;
+			case EBinary(Match, left, _): matchTargetBindsName(left, name);
 			case EBlock(inner) if (inner != null): Lambda.exists(inner, s -> statementBindsName(s, name));
+			default: false;
+		};
+	}
+
+	/**
+	 * Returns true when the left side of an expression-form match binds `name`:
+	 * `name = x`, or a destructuring target such as `{name, other} = x` or
+	 * `[name, other] = x`.
+	 */
+	static function matchTargetBindsName(target:ElixirAST, name:String):Bool {
+		if (target == null || target.def == null)
+			return false;
+		return switch (target.def) {
+			case EVar(bound): bound == name;
+			case ETuple(items) | EList(items): Lambda.exists(items, item -> matchTargetBindsName(item, name));
+			case EParen(inner): matchTargetBindsName(inner, name);
 			default: false;
 		};
 	}

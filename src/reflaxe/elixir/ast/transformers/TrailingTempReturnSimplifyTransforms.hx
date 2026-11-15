@@ -86,6 +86,9 @@ class TrailingTempReturnSimplifyTransforms {
 											out.push(rhs);
 											return out;
 										}
+									case _ if (BinderTransforms.statementBindsName(stmts[idx], name)):
+										// A destructuring match such as `{g, h} = ...` rebinds it: keep the block.
+										return stmts;
 									default:
 								}
 							case EMatch(pat, rhs2):

@@ -29,6 +29,10 @@ class Main {
 		Sys.println("emptyOuter " + keysOuter(empty, xs));
 		Sys.println("emptyInner " + keysInKeys(m, emptyInts));
 		Sys.println("emptyRange " + rangeOuter(emptyInts));
+		Sys.println("keysArrayKeys " + keysArrayKeys(m, xs, im));
+		Sys.println("rangeIfElse " + rangeIfElse([true, false], xs, im));
+		Sys.println("whileAfterNested " + whileAfterNested(xs));
+		Sys.println("whileAfterEmptyNested " + whileAfterNested([]));
 	}
 
 	/** One loop over map keys, returned directly. */
@@ -75,9 +79,47 @@ class Main {
 	/** An `if` filter on each loop. */
 	public static function keysFilter(m:Map<String, Int>, xs:Array<Int>):String {
 		return sorted([
-			for (k in m.keys()) if (m.get(k) > 1) for (x in xs) if (x != m.get(k))
-				k + x
+			for (k in m.keys())
+				if (m.get(k) > 1) for (x in xs)
+					if (x != m.get(k))
+						k + x
 		]);
+	}
+
+	/** A map loop inside an array loop inside a map loop: the innermost loop runs in an `Enum.reduce` callback. */
+	public static function keysArrayKeys(m:Map<String, Int>, xs:Array<Int>, im:Map<Int, String>):String {
+		return sorted([for (k in m.keys()) for (x in xs) for (j in im.keys()) k + x + j]);
+	}
+
+	/** An unrolled range with a branch: one arm nests a map loop in an array loop, the other has a map loop. */
+	public static function rangeIfElse(flags:Array<Bool>, xs:Array<Int>, im:Map<Int, String>):String {
+		return sorted([
+			for (i in 0...2)
+				if (flags[i]) for (x in xs) for (k in im.keys()) Std.string(x * 10 + k) else for (k in im.keys()) Std.string(k + 100)
+		]);
+	}
+
+	/**
+	 * A `while` loop inside a `for` loop, then a second `while` loop, all adding to one
+	 * array. The local is named `g` on purpose: the loop lowering treats that name like
+	 * a compiler temp. The second loop must start from the first loops' result, not from
+	 * the `for` loop's callback state. With an empty `xs`, the second loop still runs.
+	 */
+	public static function whileAfterNested(xs:Array<Int>):String {
+		var g:Array<Int> = [];
+		for (x in xs) {
+			var j = 0;
+			while (j < 2) {
+				g.push(x * 10 + j);
+				j++;
+			}
+		}
+		var i = 0;
+		while (i < 2) {
+			g.push(i);
+			i++;
+		}
+		return g.join(",");
 	}
 
 	static function sorted(items:Array<String>):String {

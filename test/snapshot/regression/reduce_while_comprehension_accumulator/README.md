@@ -57,16 +57,25 @@ Two separate faults.
    | `TrailingTempReturnSimplify` | the same, after the first pass was fixed |
 
    Both passes now stop when a later match binds the name with any other
-   pattern, also inside a nested statement block
-   (`BinderTransforms.statementBindsName`).
+   pattern, also inside a nested statement block or as an expression-form
+   tuple target (`BinderTransforms.statementBindsName`).
 
 2. **The seed of a later or inner loop.** `reduce_while` lowering starts a
-   comprehension temp from its tracked initializer (`[]`). That is right only
-   while the temp still has that value. Inside the body of a loop that threads
-   the temp, and after a loop that rebinds it, the current value is the
-   binding. `LoopBuilder.seedThreadedLocalsFromBinding` now points the tracked
-   initializer at the binding in both places, by TVar ID. The enclosing loop
-   then renames that read to its accumulator (`_g` becomes `acc__g`).
+   comprehension temp, or any local named like one (`g`, `g1`), from its
+   tracked initializer (`[]`). That is right only while the local still has
+   that value. Inside the body of a loop that threads the local, and after a
+   loop that rebinds it, the current value is a binding.
+   `LoopBuilder.setTrackedSeeds` now points the tracked initializer at that
+   binding, by TVar ID. Every loop lowering that threads locals
+   (`reduce_while`, both `Enum.reduce` forms, and the receiver-iterator loop)
+   sets the name of the state inside its body before it builds the body, and
+   the name its result binds when it ends.
+
+   The name must exist where the seed is read. An `Enum.reduce` callback calls
+   the state `g_acc`, and that name does not exist after the callback. A first
+   version of this fix kept `g_acc` after the callback, so a later loop seeded
+   from an undefined variable (`whileAfterNested`). Now the `Enum.reduce` loop
+   replaces it with `g` when it ends.
 
 PR #82 (haxe.elixir.codex-uplw) fixed the same nesting when the outer loop is
 `Enum.reduce` (an array). This fixture covers the `Enum.reduce_while` outer
@@ -81,16 +90,27 @@ loop.
 - an outer loop over an array iterator (`xs.iterator()`);
 - a constant range around map keys, which Haxe unrolls;
 - an `if` filter on each loop;
-- an empty outer map, an empty inner map, and an empty map in the range case.
+- an empty outer map, an empty inner map, and an empty map in the range case;
+- map keys inside an array loop inside map keys, so the innermost loop runs
+  in an `Enum.reduce` callback;
+- an unrolled range with an `if` whose arms hold different nestings;
+- a `while` inside a `for`, then a second `while`, on a user local named `g`,
+  with a non-empty and an empty `for` list.
 
 Results from map loops are sorted, because map order differs between the
 interpreter and the BEAM.
 
 `expected.stdout` is the output of this program on the Haxe interpreter. Before
-the fix, the module compiled with no warning, and seven of its nine non-empty
-lines printed an empty list. Only `keysNamed` and `keysInner` were right.
+the fix, the module compiled, and ten of its thirteen non-empty lines were
+wrong. Most printed an empty list; `rangeIfElse` and `whileAfterNested` lost
+elements.
 
 ## Not covered
+
+A local named like a compiler temp (`g`) that a plain assignment changes
+before a loop, such as `var g = 0; g = 5; while (...) g++;`, still starts the
+loop from its declared value. Only loops update the tracked value, not plain
+assignments or `push`.
 
 A user class iterator whose `next()` changes the object, such as a
 `Countdown` class with `n--`, does not end on the BEAM. That is a separate

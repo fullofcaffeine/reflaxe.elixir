@@ -29,6 +29,14 @@ defmodule Main do
     IO.puts(v)
     v = "emptyRange #{range_outer(empty_ints)}"
     IO.puts(v)
+    v = "keysArrayKeys #{keys_array_keys(m, xs, im)}"
+    IO.puts(v)
+    v = "rangeIfElse #{range_if_else([true, false], xs, im)}"
+    IO.puts(v)
+    v = "whileAfterNested #{while_after_nested(xs)}"
+    IO.puts(v)
+    v = "whileAfterEmptyNested #{while_after_nested([])}"
+    IO.puts(v)
   end
   def keys_only(m) do
     sorted(
@@ -295,6 +303,176 @@ defmodule Main do
          g
        end).()
     )
+  end
+  def keys_array_keys(m, xs, im) do
+    sorted(
+      (fn ->
+         {g} = Enum.reduce_while(Map.keys(m), {[]}, fn k, {acc__g} ->
+           try do
+             acc__g = Enum.reduce(xs, acc__g, fn x, g_acc ->
+               {g_acc} = Enum.reduce_while(Map.keys(im), {g_acc}, fn j, {acc__g_acc} ->
+                 try do
+                   acc__g_acc = acc__g_acc ++ [k <> Reflaxe.Elixir.HaxeFloat.to_string(x) <> Reflaxe.Elixir.HaxeFloat.to_string(j)]
+                   {:cont, {acc__g_acc}}
+                 catch
+                   :throw, {:break, break_state} ->
+                     {:halt, break_state}
+                   :throw, {:continue, continue_state} ->
+                     {:cont, continue_state}
+                   :throw, :break ->
+                     {:halt, {acc__g_acc}}
+                   :throw, :continue ->
+                     {:cont, {acc__g_acc}}
+                 end
+               end)
+               g_acc
+             end)
+             {:cont, {acc__g}}
+           catch
+             :throw, {:break, break_state} ->
+               {:halt, break_state}
+             :throw, {:continue, continue_state} ->
+               {:cont, continue_state}
+             :throw, :break ->
+               {:halt, {acc__g}}
+             :throw, :continue ->
+               {:cont, {acc__g}}
+           end
+         end)
+         g
+       end).()
+    )
+  end
+  def range_if_else(flags, xs, im) do
+    sorted(
+      (fn ->
+         g = []
+         g = if (Enum.at(flags, 0)) do
+           Enum.reduce(xs, g, fn x, g_acc ->
+             {g_acc} = Enum.reduce_while(Map.keys(im), {g_acc}, fn k, {acc__g_acc} ->
+               try do
+                 acc__g_acc = acc__g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(x * 10 + k)]
+                 {:cont, {acc__g_acc}}
+               catch
+                 :throw, {:break, break_state} ->
+                   {:halt, break_state}
+                 :throw, {:continue, continue_state} ->
+                   {:cont, continue_state}
+                 :throw, :break ->
+                   {:halt, {acc__g_acc}}
+                 :throw, :continue ->
+                   {:cont, {acc__g_acc}}
+               end
+             end)
+             g_acc
+           end)
+         else
+           {g} = Enum.reduce_while(Map.keys(im), {g}, fn k, {acc__g} ->
+             try do
+               acc__g = acc__g ++ [Reflaxe.Elixir.HaxeFloat.to_string(k + 100)]
+               {:cont, {acc__g}}
+             catch
+               :throw, {:break, break_state} ->
+                 {:halt, break_state}
+               :throw, {:continue, continue_state} ->
+                 {:cont, continue_state}
+               :throw, :break ->
+                 {:halt, {acc__g}}
+               :throw, :continue ->
+                 {:cont, {acc__g}}
+             end
+           end)
+           g
+         end
+         g = if (Enum.at(flags, 1)) do
+           Enum.reduce(xs, g, fn x, g_acc ->
+             {g_acc} = Enum.reduce_while(Map.keys(im), {g_acc}, fn k, {acc__g_acc} ->
+               try do
+                 acc__g_acc = acc__g_acc ++ [Reflaxe.Elixir.HaxeFloat.to_string(x * 10 + k)]
+                 {:cont, {acc__g_acc}}
+               catch
+                 :throw, {:break, break_state} ->
+                   {:halt, break_state}
+                 :throw, {:continue, continue_state} ->
+                   {:cont, continue_state}
+                 :throw, :break ->
+                   {:halt, {acc__g_acc}}
+                 :throw, :continue ->
+                   {:cont, {acc__g_acc}}
+               end
+             end)
+             g_acc
+           end)
+         else
+           {g} = Enum.reduce_while(Map.keys(im), {g}, fn k, {acc__g} ->
+             try do
+               acc__g = acc__g ++ [Reflaxe.Elixir.HaxeFloat.to_string(k + 100)]
+               {:cont, {acc__g}}
+             catch
+               :throw, {:break, break_state} ->
+                 {:halt, break_state}
+               :throw, {:continue, continue_state} ->
+                 {:cont, continue_state}
+               :throw, :break ->
+                 {:halt, {acc__g}}
+               :throw, :continue ->
+                 {:cont, {acc__g}}
+             end
+           end)
+           g
+         end
+         g
+       end).()
+    )
+  end
+  def while_after_nested(xs) do
+    g = []
+    g = Enum.reduce(xs, g, fn x, g_acc ->
+      j = 0
+      {g_acc, _j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g_acc, j}, fn _, {acc_g_acc, acc_j} ->
+        try do
+          if (acc_j < 2) do
+            acc_g_acc = acc_g_acc ++ [x * 10 + acc_j]
+            acc_j = acc_j + 1
+            {:cont, {acc_g_acc, acc_j}}
+          else
+            {:halt, {acc_g_acc, acc_j}}
+          end
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, {acc_g_acc, acc_j}}
+          :throw, :continue ->
+            {:cont, {acc_g_acc, acc_j}}
+        end
+      end)
+      g_acc
+    end)
+    i = 0
+    {g, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, i}, fn _, {acc_g, acc_i} ->
+      try do
+        if (acc_i < 2) do
+          acc_g = acc_g ++ [acc_i]
+          acc_i = acc_i + 1
+          {:cont, {acc_g, acc_i}}
+        else
+          {:halt, {acc_g, acc_i}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_g, acc_i}}
+        :throw, :continue ->
+          {:cont, {acc_g, acc_i}}
+      end
+    end)
+    Enum.join(g, ",")
   end
   defp sorted(items) do
     items = Enum.sort(items, fn a, b ->
