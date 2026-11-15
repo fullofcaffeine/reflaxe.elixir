@@ -87,6 +87,6 @@ defmodule Main do
   end
   def still_folded(k) do
     mode = "asc"
-    "#{mode}#{k}"
+    "#{Reflaxe.Elixir.HaxeFloat.to_string(mode)}#{k}"
   end
 end
