@@ -598,6 +598,86 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "tampered-output-removed"
 }
 
+run_missing_output_variant() {
+	local variants="$FIXTURE_DIR/variants/mixed-file"
+	local direct_restored="$TMP_ROOT/direct-missing-output-restored"
+	local direct_after="$TMP_ROOT/direct-missing-output-after"
+	local failure_log="$TMP_ROOT/missing-output.log"
+	local main_output="$SERVER_OUTPUT/main.ex"
+	local bystander_output="$SERVER_OUTPUT/cache_mixed_bystander.ex"
+	local bystander_copy="$TMP_ROOT/missing-output-bystander.ex"
+
+	# Two server requests first, so that the next request is a warm one: the
+	# compiler builds only the modules that Haxe typed again, and keeps the
+	# other generated files as they are on disk.
+	cp "$variants/MainMixed.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	cp "$variants/CacheMixedFunctionsBefore.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
+	cp "$variants/CacheMixedBystander.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	if [[ ! -f "$main_output" || ! -f "$bystander_output" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:missing-output fixture did not generate main.ex and cache_mixed_bystander.ex" >&2
+		return 1
+	fi
+
+	# Somebody deletes one generated file. The source edit changes a class that
+	# Main uses, so Haxe types Main again and the compiler builds main.ex again,
+	# with the same bytes as before. The request has all it needs to write the
+	# file, so it must write it, the same as a fresh build. It must not report
+	# success while the output folder has no main.ex.
+	rm "$main_output"
+	cp "$variants/CacheMixedClassEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	compile_server "$SERVER_OUTPUT"
+	if [[ ! -f "$main_output" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:missing-output warm build reported success but left the deleted main.ex missing" >&2
+		return 1
+	fi
+	compile_direct "$direct_restored"
+	compare_generated_output "$direct_restored" "$SERVER_OUTPUT" "missing-output-restored"
+	echo "SERVER_CACHE_OWNERSHIP:missing-output-restored:PASS"
+
+	# Now the deleted file belongs to a class that the edit does not touch.
+	# Haxe does not type CacheMixedBystander again, so this request has no
+	# content for the file. It must stop and publish nothing.
+	cp "$bystander_output" "$bystander_copy"
+	rm "$bystander_output"
+	cp "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_OWNERSHIP:missing-output warm build reported success without the deleted cache_mixed_bystander.ex" >&2
+		return 1
+	fi
+	grep -Fq 'Cached rebuild cannot preserve missing owned output' "$failure_log" || {
+		echo "SERVER_CACHE_OWNERSHIP:missing-output warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$failure_log" >&2
+		return 1
+	}
+	if [[ -e "$bystander_output" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:missing-output refused build still wrote cache_mixed_bystander.ex" >&2
+		return 1
+	fi
+	if grep -RFq '"mixed-before"' "$SERVER_OUTPUT"; then
+		echo "SERVER_CACHE_OWNERSHIP:missing-output warm build published other files after the refusal" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_OWNERSHIP:missing-output-refused:PASS"
+
+	# When the file has its compiler bytes again, the same server publishes the
+	# pending source edit.
+	cp "$bystander_copy" "$bystander_output"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$direct_after"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "missing-output-after-refusal"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "missing-output-removed"
+}
+
 # Reads the phase report of one warm request and prints how many class modules
 # that request built. The server prints the report because it runs with
 # REFLAXE_ELIXIR_TIMINGS=1.
@@ -1033,6 +1113,7 @@ run_module_routes_variant
 run_private_exports_variant
 run_native_class_variant
 run_tampered_output_variant
+run_missing_output_variant
 run_mixed_file_variant
 run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant
