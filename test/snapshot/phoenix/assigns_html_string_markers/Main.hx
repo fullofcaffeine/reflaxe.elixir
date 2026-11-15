@@ -1,3 +1,5 @@
+import HXX;
+
 typedef PageAssigns = {name:String, on:Bool};
 
 /**
@@ -12,6 +14,7 @@ typedef PageAssigns = {name:String, on:Bool};
  * Text that does not become a template is an ordinary Haxe string. Its `#{`
  * stays plain text and prints escaped (`\#{`): see the second group.
  */
+@:hxx_mode("balanced")
 @:keep
 class Main {
 	// Template route: `#{...}` becomes `<%= ... %>` inside `~H`.
@@ -41,7 +44,31 @@ class Main {
 		return "<h2>#{title}</h2>";
 	}
 
+	// A parameter that only the template reads keeps its name; `~H` reads `extra`.
+	public static function cell(assigns:PageAssigns, extra:String):String
+		return "<td>#{extra}</td>";
+
+	// `inner` holds HTML text with a marker of its own. The HXX template still
+	// prints it with `Phoenix.HTML.raw`; the text of `inner` itself is not a
+	// template, so its marker stays text.
+	public static function htmlVarHxx(assigns:PageAssigns):String {
+		var inner = "<b>#{assigns.name}</b>";
+		Sys.println(inner);
+		return HXX.hxx('<div>#{inner}</div>');
+	}
+
 	// Ordinary strings: `#{` stays text.
+	// Not HTML and not the returned value. The compiler rewrites the inner `if`
+	// of this `switch`, but must not turn this text into a template.
+	public static function kind(assigns:PageAssigns):String {
+		var kind = switch (assigns.name) {
+			case "a": "first";
+			case other if (other == "b"): "second";
+			default: "write #{System.halt(1)} here";
+		};
+		return "<span>" + kind + "</span>";
+	}
+
 	// Takes `assigns`, but the text is not HTML and the function is not `render`.
 	public static function label(assigns:PageAssigns):String
 		return "no tags #{assigns.name}";

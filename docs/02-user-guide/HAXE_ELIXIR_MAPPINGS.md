@@ -354,7 +354,7 @@ To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
 
   ```haxe
   public static function help(assigns:PageAssigns):String
-  	return "<p>Hello #{assigns.name}</p>";
+      return "<p>Hello #{assigns.name}</p>";
   ```
 
   ```elixir
@@ -372,12 +372,19 @@ To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
 A literal passed to a parameter of type `elixir.types.Atom` becomes a quoted
 atom with the marker escaped: `takes("c#{d}")` prints `takes(:"c\#{d}")`.
 
-Limits: two cases give Elixir "unused variable" warnings while the printed text
-stays correct. Both need a literal marker that sits next to values, such as
-`"#{x} " + name`. In the first, `x` is a parameter or local that is used
-nowhere; the compiler keeps its name. In the second, the string is in a
-`switch` arm on an enum and `x` is a name that the compiler knows for the
-matched value; the compiler adds a binding for it.
+Limits: three cases give Elixir "unused variable" warnings while the printed
+text stays correct.
+
+- A parameter is used nowhere, but its name stands inside a literal marker, as
+  in `function f(x:Int) return "#{x}";`. The compiler keeps the name `x`. It
+  cannot rename such a parameter, because the same text can be a template that
+  reads it.
+- A local that holds a computed value (`var x = name.length;`) is used
+  nowhere, but its name stands inside a literal marker that sits next to
+  values, such as `"#{x} " + name`. The compiler keeps the binding.
+- The string `"#{x} " + name` is in a `switch` arm on an enum, and `x` is a
+  name that the compiler knows for the matched value. The compiler adds a
+  binding for it.
 
 ### Special Type Compilations
 

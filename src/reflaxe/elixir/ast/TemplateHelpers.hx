@@ -237,11 +237,15 @@ class TemplateHelpers {
 	 * not match. Without this step a helper would return `~H` or a plain string depending on
 	 * whether its text holds `#{`.
 	 *
-	 * WHAT: `convert` sees `definition` with each `EStringLiteral` shown as an `EString`, the
-	 * form it had before literals were kept apart. A string that `convert` turns into a `~H`
-	 * sigil is template source, so its `#{...}` becomes `<%= ... %>`. Every other shown string
-	 * goes back to its `EStringLiteral`, so its `#{` stays plain text. When `convert` changes
-	 * nothing, the result is `definition` itself.
+	 * WHAT: `convert` sees `definition` with its template candidates shown as `EString`, the
+	 * form they had before literals were kept apart. A candidate is a literal whose text looks
+	 * like HTML (the test of `HeexStringReturnToSigilTransforms.looksLikeHtml`), or the literal
+	 * that is the function's returned value. A candidate that `convert` turns into a `~H` sigil
+	 * is template source, so its `#{...}` becomes `<%= ... %>`. Every other candidate goes back
+	 * to its `EStringLiteral`. A literal that is not a candidate is never shown, so `convert`
+	 * cannot turn it into code: `default: "write #{x} here"` inside a `switch` stays text even
+	 * where `convert` rewrites an `if` of plain strings. When `convert` changes nothing, the
+	 * result is `definition` itself.
 	 *
 	 * HOW: The shown text also gets the `Phoenix.HTML.raw` wrapping of
 	 * `HeexInlineRawForHeexVarsInStringsTransforms`, which runs earlier and skips literal text.
@@ -252,23 +256,33 @@ class TemplateHelpers {
 	 * while `var label = "#{x}"` in the same function still prints as `"\#{x}"`.
 	 */
 	public static function convertWithLiteralTemplateSource(definition:ElixirAST, convert:ElixirAST->ElixirAST):ElixirAST {
-		var hasLiteral = false;
+		var body = switch (definition.def) {
+			case EDef(_, _, _, functionBody) | EDefp(_, _, _, functionBody): functionBody;
+			default: definition;
+		};
+		var returned = returnedValue(body);
+		inline function isCandidate(node:ElixirAST, text:String):Bool {
+			return node == returned || reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms.looksLikeHtml(text);
+		}
+
+		var hasCandidate = false;
 		ASTUtils.walk(definition, function(node:ElixirAST):Void {
-			if (!hasLiteral && node != null && node.def != null && node.def.match(EStringLiteral(_)))
-				hasLiteral = true;
+			if (hasCandidate || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EStringLiteral(text) if (isCandidate(node, text)):
+					hasCandidate = true;
+				default:
+			}
 		});
-		if (!hasLiteral)
+		if (!hasCandidate)
 			return convert(definition);
 
-		var plainBody = switch (definition.def) {
-			case EDef(_, _, _, body) | EDefp(_, _, _, body): asTemplateSource(body);
-			default: asTemplateSource(definition);
-		};
-		var htmlVars = reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.collectVars(plainBody);
+		var htmlVars = reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.collectVars(body);
 		var literalOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
 		var shown = reflaxe.elixir.ast.ElixirASTTransformer.transformNode(definition, function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
-				case EStringLiteral(text):
+				case EStringLiteral(text) if (isCandidate(node, text)):
 					var source = reflaxe.elixir.ast.transformers.HeexInlineRawForHeexVarsInStringsTransforms.wrapHtmlVars(text, htmlVars);
 					var shownNode = makeASTWithMeta(EString(source), node.metadata, node.pos);
 					literalOf.set(shownNode, node);
@@ -283,6 +297,19 @@ class TemplateHelpers {
 			var literal = literalOf.get(node);
 			return literal != null ? literal : node;
 		});
+	}
+
+	/**
+	 * Returns the expression whose value a function body returns: the body itself, or the last
+	 * statement of its block, with surrounding parentheses removed. For `var s = "a"; return "b";`
+	 * it is the node of `"b"`.
+	 */
+	static function returnedValue(body:ElixirAST):ElixirAST {
+		return switch (body.def) {
+			case EParen(inner): returnedValue(inner);
+			case EBlock(statements) | EDo(statements) if (statements.length > 0): returnedValue(statements[statements.length - 1]);
+			default: body;
+		}
 	}
 
 	/**

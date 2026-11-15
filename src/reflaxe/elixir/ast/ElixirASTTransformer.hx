@@ -5784,6 +5784,12 @@ class ElixirASTTransformer {
 			switch (ast.def) {
 				case EString(template):
 					markUsedNamesInTemplateString(template);
+				case EStringLiteral(text):
+					// A Haxe literal can still become a ~H template in a later HEEx pass, where
+					// `#{extra}` reads the parameter. Count the name as used so this pass never
+					// renames a parameter that a template reads. When the literal stays plain
+					// text, the cost is an Elixir "unused variable" warning at most.
+					markUsedNamesInTemplateString(text);
 				case EVar(name):
 					if (paramNames.exists(name)) {
 						paramNames.set(name, true); // Mark as used

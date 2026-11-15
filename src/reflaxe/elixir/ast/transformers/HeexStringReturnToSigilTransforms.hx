@@ -37,7 +37,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStringReturnToSigilTransforms {
-	static function looksLikeHtml(s:String):Bool {
+	/**
+	 * Tells whether text looks like HTML: it holds both `<` and `>`. The conversions below use
+	 * this test, and `TemplateHelpers.convertWithLiteralTemplateSource` uses it to choose which
+	 * Haxe literals they may see as template source.
+	 */
+	public static function looksLikeHtml(s:String):Bool {
 		if (s == null)
 			return false;
 		var t = StringTools.trim(s);

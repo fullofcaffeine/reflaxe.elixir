@@ -33,10 +33,32 @@ defmodule Main do
     <h2><%= title %></h2>
     """
   end
+  def cell(assigns, extra) do
+    ~H"""
+    <td><%= extra %></td>
+    """
+  end
+  def html_var_hxx(assigns) do
+    inner = "<b>\#{assigns.name}</b>"
+    IO.puts(inner)
+    ~H"""
+    <div><%= Phoenix.HTML.raw(inner) %></div>
+    """
+  end
+  def kind(assigns) do
+    assigns_name = assigns.name
+    kind = if (assigns_name == "a") do
+      "first"
+    else
+      other = assigns_name
+      if (other == "b"), do: "second", else: "write \#{System.halt(1)} here"
+    end
+    "<span>#{kind}</span>"
+  end
   def label(assigns) do
     "no tags \#{assigns.name}"
   end
-  def plain(_name) do
+  def plain(name) do
     "<p>\#{name}</p>"
   end
   def shout(text) do

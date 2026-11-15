@@ -71,7 +71,7 @@ class HeexInlineRawForHeexVarsInStringsTransforms {
 					case ESigil(type, _, _) if (type == "H"):
 						found = true;
 						return;
-					case EString(s) if (looksLikeHtml(s)):
+					case EString(s) | EStringLiteral(s) if (looksLikeHtml(s)):
 						found = true;
 						return;
 					case EBlock(es):

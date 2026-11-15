@@ -61,12 +61,18 @@ Run the snapshot with `make -C test test-regression__string_literal_hash_brace`.
 Run the program on the BEAM and compare it with `expected.stdout` with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/string_literal_hash_brace`.
 
-Limits. Both give Elixir warnings only; the printed text is correct.
+Limits. All give Elixir "unused variable" warnings only; the printed text is
+correct.
 
-- A parameter or local is used nowhere, and its name stands between the braces
-  of a literal marker that the compiler joins with values (for example
-  `function f(x:Int, name:String) return "#{x} " + name;`). The compiler keeps
-  the name `x`, and Elixir warns that `x` is unused.
+- A parameter is used nowhere, and its name stands between the braces of a
+  literal marker (for example `function f(x:Int) return "#{x}";`). The compiler
+  keeps the name `x`, and Elixir warns that `x` is unused. The compiler cannot
+  rename such a parameter, because the same text can be a template that reads
+  it (see `test/snapshot/phoenix/assigns_html_string_markers`).
+- A local that holds a computed value is used nowhere, and its name stands
+  between the braces of a literal marker that the compiler joins with values
+  (for example `var x = name.length; return "#{x} " + name;`). The compiler
+  keeps the binding `x = ...`, and Elixir warns that `x` is unused.
 - A `switch` arm on an enum joins such a marker with values, and the name
   between the braces is one that the compiler knows as another name of the
   matched value (for example `case Ok(v): "#{value} " + name`). The compiler
