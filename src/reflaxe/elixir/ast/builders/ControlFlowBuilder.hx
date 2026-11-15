@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.context.ClauseContext;
@@ -853,6 +854,13 @@ class ControlFlowBuilder {
 	 * The nullable_enum_cond regression checks both ignored and consumed payloads.
 	 */
 	static function buildCondStatement(condition:ElixirAST, thenBranch:ElixirAST, elseBranch:Null<ElixirAST>):ElixirASTDef {
+		// A variable bound in a cond test is visible only in that clause's body.
+		// Haxe runs `else if ((v = m.get(k)) > 0)` before the later branches and
+		// keeps `v` for them, so such a test must stay an `if`, whose condition
+		// binding reaches both branches (haxe.elixir.codex-u8x).
+		if (conditionBindsVariable(condition))
+			return EIf(condition, thenBranch, elseBranch);
+
 		var clauses = [];
 		var hasFinalElse = false; // Track if we emitted a final else clause
 
@@ -866,7 +874,7 @@ class ControlFlowBuilder {
 		var current = elseBranch;
 		while (current != null) {
 			switch (current.def) {
-				case EIf(nestedCondition, nestedThen, nestedElse):
+				case EIf(nestedCondition, nestedThen, nestedElse) if (!conditionBindsVariable(nestedCondition)):
 					clauses.push({
 						condition: nestedCondition,
 						body: nestedThen
@@ -876,7 +884,7 @@ class ControlFlowBuilder {
 				case EBlock([single]):
 					current = single;
 
-				case ECond(nestedClauses):
+				case ECond(nestedClauses) if (!Lambda.exists(nestedClauses, clause -> conditionBindsVariable(clause.condition))):
 					clauses = clauses.concat(nestedClauses);
 					hasFinalElse = true;
 					break;
@@ -901,6 +909,36 @@ class ControlFlowBuilder {
 		}
 
 		return ECond(clauses);
+	}
+
+	/**
+	 * Returns true when evaluating `condition` binds a variable, as in
+	 * `(v = Map.get(m, k)) > 0`.
+	 *
+	 * WHY: Elixir keeps such a binding inside one cond clause, while an `if`
+	 * condition binding is visible in both branches and after the `if`. The cond
+	 * builder uses this check to keep binding tests as nested `if` expressions.
+	 *
+	 * Anonymous functions have their own scope, so a match inside one does not
+	 * count.
+	 */
+	static function conditionBindsVariable(condition:ElixirAST):Bool {
+		var binds = false;
+		function visit(node:ElixirAST):Void {
+			if (binds || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EFn(_):
+					return;
+				case EMatch(_, _) | EBinary(Match, _, _):
+					binds = true;
+					return;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, visit);
+		}
+		visit(condition);
+		return binds;
 	}
 
 	/**
