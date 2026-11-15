@@ -33,6 +33,12 @@ name is the binder's own plain name (for example `v = _v`):
 `expected.stdout` is the output of this program on the Haxe interpreter. It
 covers one assigning arm with an empty arm, and two assigning arms.
 
+Not covered: a switch in value position, as in
+`var r = switch find(k) { case Some(v): out = v; 1; case None: 0; }`. The
+assignment to `out` is still lost there, through a different mechanism than
+the one fixed here. No assignment inside a value-position `switch` or `if`
+reaches the code after it yet (haxe.elixir.codex-pap).
+
 Run the snapshot with `make -C test test-regression__enum_switch_arm_assignment`
 and the native check with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/enum_switch_arm_assignment`.

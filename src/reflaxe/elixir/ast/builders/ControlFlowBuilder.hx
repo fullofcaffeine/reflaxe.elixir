@@ -932,6 +932,11 @@ class ControlFlowBuilder {
 	 * most one of them runs, exactly as in the short-circuit form. A test that
 	 * binds nothing on the right side of such an operator stays as it is.
 	 *
+	 * GROWTH: Every split doubles one branch, so the output grows with the
+	 * number of splits: a test of five `(x || binding)` parts joined by `&&`
+	 * gave 371 output lines where the unsplit form gave 35. There is no cap,
+	 * because the unsplit form is the one that loses the binding.
+	 *
 	 * LIMITS: Only the boolean structure at the top of the test is split. A
 	 * binding operator inside a call argument or a comparison operand is not
 	 * reached. The `if` must be a statement for the code after it to see the

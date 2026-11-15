@@ -41,6 +41,15 @@ strict build stays free of warnings.
 covers a later branch that reads the value and code after the `if` that reads
 it.
 
+Not covered here:
+
+- A test that assigns on the right side of `&&` or `||`. The fixture
+  `short_circuit_condition_assignment` covers that form.
+- A value `if`, such as the ternary
+  `var r = k == "x" ? "x" : ((v = m.get(k)) > 0 ? "pos" : "other")`. This fix
+  covers `if` statements only. No assignment inside a value-position `if` or
+  `switch` reaches the code after it yet (haxe.elixir.codex-pap).
+
 Run the snapshot with `make -C test test-regression__else_if_condition_assignment`
 and the native check with
 `scripts/test-runtime-smoke.sh --fixture test/snapshot/regression/else_if_condition_assignment`.
