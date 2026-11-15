@@ -2064,6 +2064,9 @@ class SwitchBuilder {
 		return names;
 	}
 
+	/** Haxe local name to Elixir variable name, as `collectLocalNamesInScope` has converted them so far. */
+	static var scopeNameSpellings:Map<String, String> = new Map();
+
 	/** Returns `ClauseContext.switchScopeNames` of the clause being built, or an empty set. */
 	static function switchScopeNames(context:CompilationContext):Map<String, Bool> {
 		var clause = context.getCurrentClauseContext();
@@ -2120,7 +2123,13 @@ class SwitchBuilder {
 		var names = new Map<String, Bool>();
 
 		function addLocal(local:TVar):Void {
-			names.set(VariableAnalyzer.toElixirVarName(local.name), true);
+			// The Elixir spelling depends on the Haxe name only; convert each name once.
+			var elixirName = scopeNameSpellings.get(local.name);
+			if (elixirName == null) {
+				elixirName = VariableAnalyzer.toElixirVarName(local.name);
+				scopeNameSpellings.set(local.name, elixirName);
+			}
+			names.set(elixirName, true);
 			var renamed = context.tempVarRenameMap.get(Std.string(local.id));
 			if (renamed != null)
 				names.set(renamed, true);
@@ -2181,11 +2190,23 @@ class SwitchBuilder {
 			switch (node.expr) {
 				case TBlock(statements):
 					var last = -1;
-					for (index in 0...statements.length) {
-						if (declaredOnPath(statements[index], isTarget, all)) {
-							last = index;
-							if (!all)
+					// The target is usually a statement of the block itself. Look there before
+					// searching inside the earlier statements, which costs their whole size.
+					if (!all) {
+						for (index in 0...statements.length) {
+							if (isTarget(statements[index])) {
+								last = index;
 								break;
+							}
+						}
+					}
+					if (last == -1) {
+						for (index in 0...statements.length) {
+							if (declaredOnPath(statements[index], isTarget, all)) {
+								last = index;
+								if (!all)
+									break;
+							}
 						}
 					}
 					found = last != -1;
@@ -2213,10 +2234,19 @@ class SwitchBuilder {
 						}
 					}
 				default:
-					TypedExprTools.iter(node, function(child:TypedExpr):Void {
-						if ((all || !found) && declaredOnPath(child, isTarget, all))
-							found = true;
-					});
+					// As for a block: a direct child first.
+					if (!all) {
+						TypedExprTools.iter(node, function(child:TypedExpr):Void {
+							if (!found && child != null && isTarget(child))
+								found = true;
+						});
+					}
+					if (!found) {
+						TypedExprTools.iter(node, function(child:TypedExpr):Void {
+							if ((all || !found) && declaredOnPath(child, isTarget, all))
+								found = true;
+						});
+					}
 			}
 			return found;
 		}
