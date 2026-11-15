@@ -82,7 +82,7 @@ class InlineTrailingReturnVarTransforms {
 					return body;
 				// Safety: avoid inlining when RHS is a trivial literal that would degrade semantics
 				switch (rhs.def) {
-					case EString(_) | EInteger(_) | EFloat(_) | EAtom(_) | ENil:
+					case EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EAtom(_) | ENil:
 						return body;
 					default:
 				}

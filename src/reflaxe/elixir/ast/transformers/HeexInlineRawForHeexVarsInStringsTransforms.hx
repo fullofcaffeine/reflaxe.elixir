@@ -45,7 +45,12 @@ class HeexInlineRawForHeexVarsInStringsTransforms {
 		});
 	}
 
-	static function collectVars(body:ElixirAST):haxe.ds.StringMap<Bool> {
+	/**
+	 * Returns the names of locals in `body` that are bound to a ~H sigil or to HTML-like text.
+	 * `TemplateHelpers.convertWithLiteralTemplateSource` reuses it so a Haxe literal that becomes
+	 * a template gets the same `Phoenix.HTML.raw` wrapping as other template strings.
+	 */
+	public static function collectVars(body:ElixirAST):haxe.ds.StringMap<Bool> {
 		var s = new haxe.ds.StringMap<Bool>();
 		function add(name:String):Void {
 			if (!s.exists(name))
@@ -66,7 +71,7 @@ class HeexInlineRawForHeexVarsInStringsTransforms {
 					case ESigil(type, _, _) if (type == "H"):
 						found = true;
 						return;
-					case EString(s) if (looksLikeHtml(s)):
+					case EString(s) | EStringLiteral(s) if (looksLikeHtml(s)):
 						found = true;
 						return;
 					case EBlock(es):
@@ -121,15 +126,25 @@ class HeexInlineRawForHeexVarsInStringsTransforms {
 		return ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EString(s) if (s != null && s.indexOf("#") != -1):
-					var updated = s;
-					for (k in vars.keys()) {
-						updated = updated.split("#{" + k + "}").join("#{Phoenix.HTML.raw(" + k + ")}");
-					}
+					var updated = wrapHtmlVars(s, vars);
 					if (updated != s) makeASTWithMeta(EString(updated), n.metadata, n.pos) else n;
 				default:
 					n;
 			}
 		});
+	}
+
+	/**
+	 * Returns template text in which each `#{name}` of a name in `vars` reads
+	 * `#{Phoenix.HTML.raw(name)}`. For example `<div>#{inner}</div>` becomes
+	 * `<div>#{Phoenix.HTML.raw(inner)}</div>` when `inner` holds HTML.
+	 */
+	public static function wrapHtmlVars(text:String, vars:haxe.ds.StringMap<Bool>):String {
+		var updated = text;
+		for (k in vars.keys()) {
+			updated = updated.split("#{" + k + "}").join("#{Phoenix.HTML.raw(" + k + ")}");
+		}
+		return updated;
 	}
 }
 #end

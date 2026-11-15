@@ -689,7 +689,7 @@ class ReceiverEffectLoweringTransforms {
 		if (value == null)
 			return false;
 		return switch (value.def) {
-			case EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | EBoolean(_) | ENil:
+			case EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | EStringLiteral(_) | EBoolean(_) | ENil:
 				false;
 			case EVar(name) if (name != null && name.length > 0 && name.charAt(0) == name.charAt(0).toUpperCase()):
 				false;

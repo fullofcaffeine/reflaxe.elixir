@@ -154,7 +154,7 @@ class ShadowedInitAssignPruneTransforms {
 		if (expr == null || expr.def == null)
 			return false;
 		return switch (expr.def) {
-			case ENil | EBoolean(_) | EInteger(_) | EFloat(_) | EString(_) | EAtom(_):
+			case ENil | EBoolean(_) | EInteger(_) | EFloat(_) | EString(_) | EStringLiteral(_) | EAtom(_):
 				true;
 			case EList(els):
 				for (e in els)

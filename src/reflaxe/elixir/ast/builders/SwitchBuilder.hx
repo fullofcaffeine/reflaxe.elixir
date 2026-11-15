@@ -1116,7 +1116,7 @@ class SwitchBuilder {
 						// Fallback: regular integer pattern
 						return PLiteral(makeAST(EInteger(i)));
 					case TFloat(f): return PLiteral(makeAST(EFloat(Std.parseFloat(StringTools.replace(f, "_", "")))));
-					case TString(s): return PLiteral(makeAST(EString(s)));
+					case TString(s): return PLiteral(makeAST(haxeStringLiteralDef(s)));
 					case TBool(true): return PLiteral(makeAST(EBoolean(true)));
 					case TBool(false): return PLiteral(makeAST(EBoolean(false)));
 					case TNull: return PLiteral(makeAST(ENil));

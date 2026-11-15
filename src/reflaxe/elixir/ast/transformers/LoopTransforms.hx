@@ -238,7 +238,7 @@ class LoopTransforms {
 				return makeASTWithMeta(EDo(body.map(stmt -> transformer(stmt))), meta, node.pos);
 
 			// Leaf nodes that don't need transformation
-			case EVar(_) | EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | ENil:
+			case EVar(_) | EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | EStringLiteral(_) | ENil:
 				return node;
 
 			default:

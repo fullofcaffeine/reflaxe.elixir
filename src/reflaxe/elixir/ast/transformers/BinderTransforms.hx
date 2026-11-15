@@ -1700,7 +1700,7 @@ class BinderTransforms {
 							&& args != null
 							&& args.length == 1):
 							switch (args[0].def) {
-								case EString(s): makeAST(EAtom(s));
+								case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 								default: n;
 							}
 						default: n;

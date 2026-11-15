@@ -1127,6 +1127,26 @@ inline function makeASTWithMeta(def:ElixirASTDef, meta:ElixirMetadata, ?pos:Posi
 	};
 }
 
+/**
+ * Returns the string node for text that Haxe source wrote as a string literal.
+ *
+ * WHY: In Haxe, `"total #{1 + 1}"` is plain text. In Elixir, `#{` inside a quoted string starts
+ * code. `EString` text is read as Elixir string source by the printer and by many passes, so a
+ * Haxe literal that contains `#{` must not travel as `EString`: it would run as code.
+ *
+ * WHAT: Text that contains `#{` becomes `EStringLiteral`, which always prints the marker escaped
+ * (`\#{`) and which no interpolation pass rewrites. All other text stays `EString`, because for
+ * that text the two nodes mean the same and existing passes match `EString`.
+ *
+ * EXAMPLE: `"lit #{1 + 1} end"` prints as `"lit \#{1 + 1} end"`, and still yields the text
+ * `lit #{1 + 1} end` at run time.
+ *
+ * Do not use it for template source (HXX), where `#{...}` is a documented template marker.
+ */
+function haxeStringLiteralDef(value:String):ElixirASTDef {
+	return value != null && value.indexOf("#{") != -1 ? EStringLiteral(value) : EString(value);
+}
+
 // ============================================================================
 // Shared Transformation Utilities
 // ============================================================================

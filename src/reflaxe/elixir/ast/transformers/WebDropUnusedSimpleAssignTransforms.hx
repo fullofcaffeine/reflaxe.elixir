@@ -90,7 +90,7 @@ class WebDropUnusedSimpleAssignTransforms {
 
 	static function isPure(e:ElixirAST):Bool {
 		return switch (e.def) {
-			case EVar(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_): true;
+			case EVar(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EAtom(_): true;
 			case EMap(_) | EKeywordList(_) | ETuple(_) | EList(_) | EStruct(_, _): true;
 			default: false;
 		}

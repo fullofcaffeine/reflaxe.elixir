@@ -3224,10 +3224,38 @@ class ElixirASTPrinter {
 		return result;
 	}
 
+	/**
+	 * Returns heredoc text in which no `#{` starts Elixir code.
+	 *
+	 * WHY: An Elixir heredoc (`"""`) runs `#{...}` like a quoted string does. Documentation text
+	 * comes from a Haxe doc comment, where `#{name}` is plain text, so it must not run.
+	 *
+	 * WHAT: Puts one backslash before each `#{` that Elixir would read as code. Heredoc text is
+	 * printed without other escaping, so a marker that already follows an odd number of
+	 * backslashes is text for Elixir already and stays as written; a second backslash there would
+	 * turn the marker back into code.
+	 *
+	 * EXAMPLE: `Usage: mix x #{name}` becomes `Usage: mix x \#{name}`.
+	 */
+	static function escapeHeredocInterpolation(text:String):String {
+		if (text == null || text.indexOf("#{") == -1)
+			return text;
+		var out = new StringBuf();
+		var backslashes = 0;
+		for (index in 0...text.length) {
+			var char = text.charAt(index);
+			if (char == "#" && text.charAt(index + 1) == "{" && backslashes % 2 == 0)
+				out.add("\\");
+			backslashes = char == "\\" ? backslashes + 1 : 0;
+			out.add(char);
+		}
+		return out.toString();
+	}
+
 	/** Prints heredoc documentation with content and delimiter aligned to the owning module/function. */
 	static function printDocumentationAttribute(name:String, content:String, indent:Int):String {
 		var padding = indentStr(indent);
-		var lines = content == null ? [] : content.split("\n");
+		var lines = content == null ? [] : escapeHeredocInterpolation(content).split("\n");
 		var body = [for (line in lines) padding + line].join("\n");
 		return '@${name} """\n${body}\n${padding}"""';
 	}
@@ -3299,7 +3327,8 @@ class ElixirASTPrinter {
 			return false;
 
 		return switch (ast.def) {
-			case EVar(_) | EAtom(_) | ENil | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | EField(_, _) | ETuple(_) | EList(_) | EMap(_):
+			case EVar(_) | EAtom(_) | ENil | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | EField(_, _) | ETuple(_) | EList(_) |
+				EMap(_):
 				true;
 			case ECall(_, _, args):
 				// Simple function calls with few arguments

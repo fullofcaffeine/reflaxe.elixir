@@ -2714,8 +2714,19 @@ class ElixirASTTransformer {
 								node; // Can't fold, return unchanged
 							}
 
-						case [EString(l), EString(r)] if (op == StringConcat):
-							makeASTWithMeta(EString(l + r), node.metadata, node.pos);
+						case [EString(l) | EStringLiteral(l), EString(r) | EStringLiteral(r)] if (op == StringConcat):
+							// Both sides are Haxe literal text, so the joined text is literal too.
+							// `"#" + "{x}"` must not fold into an EString that reads as live `#{x}`.
+							// An EString that already holds `#{` is legacy interpolation source; it
+							// cannot be joined with literal text in one node, so that pair stays apart.
+							var leftIsText = left.def.match(EStringLiteral(_)) || l.indexOf("#{") == -1;
+							var rightIsText = right.def.match(EStringLiteral(_)) || r.indexOf("#{") == -1;
+							var joined:Null<ElixirASTDef> = null;
+							if (leftIsText && rightIsText)
+								joined = haxeStringLiteralDef(l + r);
+							else if (left.def.match(EString(_)) && right.def.match(EString(_)))
+								joined = EString(l + r);
+							joined != null ? makeASTWithMeta(joined, node.metadata, node.pos) : node;
 
 						case [EList(l), EList(r)] if (op == Concat):
 							makeASTWithMeta(EList(l.concat(r)), node.metadata, node.pos);
@@ -2795,8 +2806,14 @@ class ElixirASTTransformer {
 							case EBinary(StringConcat, l, r):
 								collectParts(l);
 								collectParts(r);
-							case EString(s):
-								parts.push({isString: true, value: s, expr: null});
+							case EString(s) | EStringLiteral(s):
+								// Join neighbouring literal text first. Escaping each piece alone
+								// would let `"a#" + "{" + v` meet as a live `#{` in the output.
+								var last = parts.length > 0 ? parts[parts.length - 1] : null;
+								if (last != null && last.isString)
+									last.value += s;
+								else
+									parts.push({isString: true, value: s, expr: null});
 							default:
 								parts.push({isString: false, value: null, expr: expr});
 						}
@@ -2910,7 +2927,7 @@ class ElixirASTTransformer {
 										return false;
 									return switch (x.def) {
 										case EVar(_): true;
-										case EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EString(_) | EAtom(_): true;
+										case EInteger(_) | EFloat(_) | EBoolean(_) | ENil | EString(_) | EStringLiteral(_) | EAtom(_): true;
 										case EField(obj, _): isTrivialForInterpolation(obj, depth + 1);
 										default: false;
 									}
@@ -5767,6 +5784,12 @@ class ElixirASTTransformer {
 			switch (ast.def) {
 				case EString(template):
 					markUsedNamesInTemplateString(template);
+				case EStringLiteral(text):
+					// A Haxe literal can still become a ~H template in a later HEEx pass, where
+					// `#{extra}` reads the parameter. Count the name as used so this pass never
+					// renames a parameter that a template reads. When the literal stays plain
+					// text, the cost is an Elixir "unused variable" warning at most.
+					markUsedNamesInTemplateString(text);
 				case EVar(name):
 					if (paramNames.exists(name)) {
 						paramNames.set(name, true); // Mark as used

@@ -1,0 +1,60 @@
+[#{x}]
+lit #{1 + 1} end
+#{x}
+#{name} and #{unknown} twice
+#{
+#{}
+##{x}
+nested #{ %{a: 1} } braces
+quote " then #{x}
+call #{raise "boom"}
+a # b { c } # {#}
+\#{x}
+\\#{x}
+#\{x}
+tab	#{x}	nl\n
+line1
+#{x}
+line3
+lit #{1 + 1} n #{x} and #{name} v=5
+#{n}
+n } #{
+single n #{name} 5 #{6}
+ml n
+#{x}
+lit #{1 + 1} n end
+\#{x} n
+#{x}
+a#{n}#{b}
+#{x}
+#{x}
+4
+true
+false
+#{x}|b#{name}
+#{v}
+#{o}
+inline #{c} text
+static #{f} text
+#{d}
+#{t}
+f#{f}
+marker
+five
+other #{s}
+#{e}
+a-b
+p Q r
+1
+#{X}
+true
+false
+#{b}5
+#{i}0#{i}1
+#{thrown}
+Main.hx:120: #{traced}
+2
+injected 2
+argument #{1 + 1}
+in string: #{x} n
+:"c\#{d}"

@@ -37,7 +37,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStringReturnToSigilTransforms {
-	static function looksLikeHtml(s:String):Bool {
+	/**
+	 * Tells whether text looks like HTML: it holds both `<` and `>`. The conversions below use
+	 * this test, and `TemplateHelpers.convertWithLiteralTemplateSource` uses it to choose which
+	 * Haxe literals they may see as template source.
+	 */
+	public static function looksLikeHtml(s:String):Bool {
 		if (s == null)
 			return false;
 		var t = StringTools.trim(s);
@@ -834,7 +839,25 @@ class HeexStringReturnToSigilTransforms {
 		}
 	}
 
+	/**
+	 * Converts HTML string returns of functions that take `assigns` into ~H.
+	 *
+	 * Such a function is a template route. A Haxe literal that the conversion turns into ~H is
+	 * template source (its `#{...}` becomes `<%= ... %>`); every other literal in the function
+	 * stays plain text. `TemplateHelpers.convertWithLiteralTemplateSource` owns that rule.
+	 */
 	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(_, _, _, _) | EDefp(_, _, _, _):
+					reflaxe.elixir.ast.TemplateHelpers.convertWithLiteralTemplateSource(n, convertStringReturns);
+				default:
+					n;
+			}
+		});
+	}
+
+	static function convertStringReturns(ast:ElixirAST):ElixirAST {
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EDef(name, args, guards, body) | EDefp(name, args, guards, body):

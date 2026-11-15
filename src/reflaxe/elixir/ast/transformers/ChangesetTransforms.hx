@@ -339,24 +339,24 @@ class ChangesetTransforms {
 				// String.to_atom("field") -> :field
 				case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_atom"):
 					switch (fld.def) {
-						case EString(s): makeAST(EAtom(s));
+						case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 						default: arg;
 					}
 				// String.to_existing_atom("field") -> :field
 				case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_existing_atom"):
 					switch (fld.def) {
-						case EString(s): makeAST(EAtom(s));
+						case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 						default: arg;
 					}
 				// String.to_existing_atom(Macro.underscore("FieldName")) -> :field_name (for static strings)
 				case ERemoteCall({def: EVar(m1)}, f1, [{def: ECall(null, f2, [inner])}])
 					if (m1 == "String" && (f1 == "to_existing_atom" || f1 == "to_atom") && f2 == "Macro.underscore"):
 					switch (inner.def) {
-						case EString(s): makeAST(EAtom(s));
+						case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 						default: arg;
 					}
 				// Plain string literal -> atom
-				case EString(s): makeAST(EAtom(s));
+				case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 				default: arg;
 			}
 		}
@@ -366,7 +366,7 @@ class ChangesetTransforms {
 					var out = [];
 					for (e in elements) {
 						switch (e.def) {
-							case EString(s): out.push(makeAST(EAtom(s)));
+							case EString(s) | EStringLiteral(s): out.push(makeAST(EAtom(s)));
 							case EAtom(_): out.push(e);
 							default: out.push(e);
 						}
@@ -393,7 +393,7 @@ class ChangesetTransforms {
 								var out2 = [];
 								for (e2 in elements2) {
 									switch (e2.def) {
-										case EString(s2): out2.push(makeAST(EAtom(s2)));
+										case EString(s2) | EStringLiteral(s2): out2.push(makeAST(EAtom(s2)));
 										case EAtom(_): out2.push(e2);
 										default: out2.push(e2);
 									}
@@ -765,10 +765,10 @@ class ChangesetTransforms {
 								return switch (arg.def) {
 									case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String" && f == "to_atom"):
 										switch (fld.def) {
-											case EString(s): makeAST(EAtom(s));
+											case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 											default: arg;
 										}
-									case EString(s):
+									case EString(s) | EStringLiteral(s):
 										makeAST(EAtom(s));
 									default:
 										arg;
@@ -1192,11 +1192,11 @@ class ChangesetTransforms {
 					if (a.length > 1) {
 						a[1] = (function(arg:ElixirAST) {
 							return switch (arg.def) {
-								case EString(s): makeAST(EAtom(s));
+								case EString(s) | EStringLiteral(s): makeAST(EAtom(s));
 								case ERemoteCall({def: EVar(m)}, f, [fld]) if (m == "String"
 									&& (f == "to_atom" || f == "to_existing_atom")):
 									switch (fld.def) {
-										case EString(s2): makeAST(EAtom(s2));
+										case EString(s2) | EStringLiteral(s2): makeAST(EAtom(s2));
 										default: arg;
 									}
 								default: arg;

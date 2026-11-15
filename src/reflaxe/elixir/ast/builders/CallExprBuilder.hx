@@ -201,7 +201,7 @@ class CallExprBuilder {
 			context:CompilationContext):ElixirASTDef {
 		inline function isStableValue(value:ElixirAST):Bool {
 			return switch (value.def) {
-				case EVar(_) | EInteger(_) | EFloat(_) | EString(_) | EAtom(_) | EBoolean(_) | ENil: true;
+				case EVar(_) | EInteger(_) | EFloat(_) | EString(_) | EStringLiteral(_) | EAtom(_) | EBoolean(_) | ENil: true;
 				default: false;
 			};
 		}
@@ -688,8 +688,9 @@ class CallExprBuilder {
 
 								var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
 
-								// Build inner argument AST
-								var innerAst = buildExpression(args[0]);
+								// Build inner argument AST. It is template source, so `#{...}` in its
+								// string pieces stays a template marker (see asTemplateSource).
+								var innerAst = reflaxe.elixir.ast.TemplateHelpers.asTemplateSource(buildExpression(args[0]));
 
 								if (mode == HxxMode.Tsx
 									&& reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsUntypedTemplateMarkers(innerAst)) {
@@ -803,7 +804,7 @@ class CallExprBuilder {
 			var builtArg = buildExpression(args[i]);
 			if (isAtomType(expected)) {
 				switch (builtArg.def) {
-					case EString(s):
+					case EString(s) | EStringLiteral(s):
 						builtArg = makeASTWithMeta(EAtom(s), builtArg.metadata, builtArg.pos);
 					default:
 				}

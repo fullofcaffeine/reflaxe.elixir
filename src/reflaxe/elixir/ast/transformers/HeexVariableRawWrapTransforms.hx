@@ -62,7 +62,9 @@ class HeexVariableRawWrapTransforms {
 					case ESigil(type, _, _) if (type == "H"):
 						found = true;
 						return;
-					case EString(str):
+					// A Haxe literal that contains `#{` is an EStringLiteral; HTML text in it still
+					// makes the variable an HTML variable.
+					case EString(str) | EStringLiteral(str):
 						if (looksLikeHtml(str)) {
 							found = true;
 							return;

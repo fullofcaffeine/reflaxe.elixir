@@ -320,6 +320,72 @@ operands. A plain `String` operand keeps the direct form and has no run-time
 check. If such a value can be null, declare it as `Null<String>`; otherwise a
 null value raises `ArgumentError` in `<>` or prints as empty text.
 
+### Note: `#{` in a string literal
+
+Haxe has no `#{...}` syntax, so these characters in a string literal are plain
+text. In an Elixir quoted string they start code. The compiler therefore prints
+the marker escaped, and Elixir reads `\#{` as the two characters `#{`:
+
+```haxe
+Sys.println("lit #{1 + 1} end"); // prints: lit #{1 + 1} end
+var heading = ~/^#{1,3} /;       // the braces are a repeat count
+```
+
+```elixir
+IO.puts("lit \#{1 + 1} end")
+heading = EReg.new("^\#{1,3} ", "")
+```
+
+The text stays text when the literal sits next to values. The compiler writes
+real values as `#{...}` and the literal marker as `\#{`:
+`"lit #{1 + 1} " + name` becomes `"lit \#{1 + 1} #{name}"`. The doc comment and
+the `shortdoc` of a `@:mixTask` class are escaped in the same way, and so is SQL
+text in migration helpers (`execute`, check constraints, an index `where`).
+
+To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
+`+`. Three places keep `#{...}` as code on purpose:
+
+- Target code injection (`untyped __elixir__('IO.puts("#{1 + 1}")')`), where you
+  write Elixir.
+- HXX template source (`HXX.hxx('<p>#{@user.name}</p>')`), where it is a
+  template marker.
+- HTML text returned from a function that takes `assigns`. The compiler turns
+  that return into a `~H` template, and `#{...}` becomes `<%= ... %>`:
+
+  ```haxe
+  public static function help(assigns:PageAssigns):String
+      return "<p>Hello #{assigns.name}</p>";
+  ```
+
+  ```elixir
+  def help(assigns) do
+    ~H"""
+    <p>Hello <%= @name %></p>
+    """
+  end
+  ```
+
+  Only a string that becomes `~H` is template source. Other strings in the same
+  function, and HTML text in a function without `assigns`, are plain text.
+  Prefer `HXX.hxx(...)` for new templates.
+
+A literal passed to a parameter of type `elixir.types.Atom` becomes a quoted
+atom with the marker escaped: `takes("c#{d}")` prints `takes(:"c\#{d}")`.
+
+Limits: three cases give Elixir "unused variable" warnings while the printed
+text stays correct.
+
+- A parameter is used nowhere, but its name stands inside a literal marker, as
+  in `function f(x:Int) return "#{x}";`. The compiler keeps the name `x`. It
+  cannot rename such a parameter, because the same text can be a template that
+  reads it.
+- A local that holds a computed value (`var x = name.length;`) is used
+  nowhere, but its name stands inside a literal marker that sits next to
+  values, such as `"#{x} " + name`. The compiler keeps the binding.
+- The string `"#{x} " + name` is in a `switch` arm on an enum, and `x` is a
+  name that the compiler knows for the matched value. The compiler adds a
+  binding for it.
+
 ### Special Type Compilations
 
 **Option<T> Pattern**:

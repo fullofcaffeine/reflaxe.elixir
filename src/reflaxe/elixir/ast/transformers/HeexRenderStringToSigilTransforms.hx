@@ -342,6 +342,18 @@ class HeexRenderStringToSigilTransforms {
 		}
 	}
 
+	/**
+	 * Rewrites one node of a LiveView module body. `render` is a template route: a Haxe literal
+	 * that becomes its ~H template is template source, every other literal stays plain text
+	 * (see `TemplateHelpers.convertWithLiteralTemplateSource`).
+	 */
+	static function rewriteRenderNode(n:ElixirAST):ElixirAST {
+		return switch (n.def) {
+			case EDef(name, _, _, _) if (name == "render"): TemplateHelpers.convertWithLiteralTemplateSource(n, rewriteRenderDef);
+			default: n;
+		}
+	}
+
 	public static function transformPass(ast:ElixirAST):ElixirAST {
 		// Operate module-wide, but only rewrite EDef("render", ...) nodes with HTML-ish strings
 		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
@@ -349,12 +361,12 @@ class HeexRenderStringToSigilTransforms {
 				case EModule(name, attrs, body):
 					if (!isLiveViewModuleNode(n))
 						return n;
-					var newBody = [for (b in body) ElixirASTTransformer.transformNode(b, rewriteRenderDef)];
+					var newBody = [for (b in body) ElixirASTTransformer.transformNode(b, rewriteRenderNode)];
 					makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
 				case EDefmodule(name, doBlock):
 					if (!isLiveViewModuleNode(n))
 						return n;
-					var newDo = ElixirASTTransformer.transformNode(doBlock, rewriteRenderDef);
+					var newDo = ElixirASTTransformer.transformNode(doBlock, rewriteRenderNode);
 					makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
 				default:
 					n;
