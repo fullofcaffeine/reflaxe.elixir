@@ -15,7 +15,7 @@ defmodule Main do
       if (Kernel.is_nil(text)) do
         "none"
       else
-        "some #{text}"
+        "some #{Reflaxe.Elixir.HaxeFloat.to_string(text)}"
       end
     else
       "skipped"

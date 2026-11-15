@@ -22,7 +22,7 @@ defmodule MyAppWeb.OptionalLive do
     summary = if (Kernel.is_nil(Map.get(payload, :bio))) do
       payload.name
     else
-      "#{payload.name}:#{Map.get(payload, :bio)}"
+      "#{payload.name}:#{Reflaxe.Elixir.HaxeFloat.to_string(Map.get(payload, :bio))}"
     end
     {:noreply, Phoenix.Component.assign(socket, :summary, summary)}
   end
