@@ -50,7 +50,7 @@ end
 ```
 
 `expected.stdout` is the output of this program on the Haxe interpreter. The
-compiler before the fix printed 30 of the 56 lines wrong. The fixture covers:
+compiler before the fix printed 34 of the 66 lines wrong. The fixture covers:
 
 - a value `switch` with a plain subject and with a call subject (the compiler
   stores a call subject in a temporary first, which makes the value a block);
@@ -114,8 +114,18 @@ The shapes, each in value and in statement position where both exist:
   of a loop) in one branch, and a `var` of that name in the other branch. The
   `var` must not hide the write.
 
-Of these 26 lines, 13 were wrong on the first version of the fix (commit
-6bbcfc12a); 7 of those were right on the base commit.
+- a `var` of that name inside a plain block of the branch: the body of a loop
+  over a constant range or array, which the compiler unrolls, and the body of
+  a `switch` arm that has a binder. Such a block prints inline, so its `var`
+  keeps the name until the branch ends;
+- a program variable that already has the name of a capture
+  (`reflaxe_outer_value_1`). The compiler picks a name that the function does
+  not use.
+
+Of the first 26 of these lines, 13 were wrong on the first version of the fix
+(commit 6bbcfc12a); 7 of those were right on the base commit. Of the 10 lines
+for the last two shapes, 5 were wrong on the second version (commit
+1d9720c8c); 4 of those were right on the base commit.
 
 Not covered, and still wrong: a control flow that assigns and is neither a
 statement nor the whole right side of a match. Examples are a call argument,

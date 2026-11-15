@@ -47,8 +47,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - What a branch returns. Where the name belongs to the other variable, the branch returns
  *     the outer value from a capture, `reflaxe_outer_<name>_<n>`, made before the control flow
  *     (pattern binder) or just before the `var` (`readsBehindBinders`, `readsAfterStatements`).
- *   Limits: this depends on the builder's metadata reaching this pass, and it follows only the
- *   statements of the branch itself. Without the metadata a `var` looks like an assignment.
+ *   The capture name is one that the function does not use (`freshCaptureName`).
+ *   Limits: this depends on the builder's metadata reaching this pass; without it a `var` looks
+ *   like an assignment. It follows the statements of the branch and of plain blocks among them
+ *   (an unrolled loop body, a `case` arm body), not a `var` inside a nested control flow.
  * - Assignment patterns may bind several values, as in a loop reducer's
  *   `{left, right} = Enum.reduce(...)`. Inspect every binding in the pattern,
  *   not only a single variable. Pinned values are reads, not new bindings.
@@ -103,6 +105,14 @@ class ControlFlowStateHoistTransforms {
 	/** Numbers the `reflaxe_outer_*` temporaries of one module. */
 	static var captureCounter:Int = 0;
 
+	/** The function or closure that is being rewritten. `captureOuter` searches it for names in use. */
+	static var scopeRoot:Null<ElixirAST> = null;
+
+	/** Names that `scopeRoot` uses, and its string and raw-code texts. Filled on the first capture. */
+	static var scopeNames:Null<Map<String, Bool>> = null;
+
+	static var scopeTexts:Null<Array<String>> = null;
+
 	public static function pass(ast:ElixirAST):ElixirAST {
 		captureCounter = 0;
 		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
@@ -111,18 +121,21 @@ class ControlFlowStateHoistTransforms {
 
 			return switch (node.def) {
 				case EDef(name, args, guards, body):
+					enterScope(node);
 					var bound = collectBoundFromArgs(args);
 					var newGuards = guards != null ? rewriteInScope(guards, bound, true) : null;
 					var newBody = rewriteInScope(body, bound, true, true);
 					makeASTWithMeta(EDef(name, args, newGuards, newBody), node.metadata, node.pos);
 
 				case EDefp(name, args, guards, body):
+					enterScope(node);
 					var bound = collectBoundFromArgs(args);
 					var newGuards = guards != null ? rewriteInScope(guards, bound, true) : null;
 					var newBody = rewriteInScope(body, bound, true, true);
 					makeASTWithMeta(EDefp(name, args, newGuards, newBody), node.metadata, node.pos);
 
 				case EFn(clauses):
+					enterScope(node);
 					var newClauses = [];
 					for (cl in clauses) {
 						var clauseBound = collectBoundFromArgs(cl.args);
@@ -820,9 +833,82 @@ class ControlFlowStateHoistTransforms {
 
 	/** Appends `temporary = name` to `into` and returns the new temporary. */
 	static function captureOuter(name:String, into:Array<ElixirAST>):String {
-		var temporary = 'reflaxe_outer_${name}_${++captureCounter}';
+		var temporary = freshCaptureName(name);
 		into.push(makeAST(EMatch(PVar(temporary), makeAST(EVar(name)))));
 		return temporary;
+	}
+
+	/** Starts the rewrite of one function or closure; its names are collected only if a capture needs them. */
+	static function enterScope(root:ElixirAST):Void {
+		scopeRoot = root;
+		scopeNames = null;
+		scopeTexts = null;
+	}
+
+	/**
+	 * Returns a capture name, `reflaxe_outer_<name>_<n>`, that the function
+	 * being rewritten does not use.
+	 *
+	 * A program may have a variable with exactly such a name. Binding the
+	 * capture would overwrite it. The search covers every variable node and
+	 * every pattern of the function, closures included. A variable can also
+	 * appear only inside the text of an interpolated string or of raw Elixir
+	 * code; a candidate that occurs anywhere in such a text is skipped.
+	 */
+	static function freshCaptureName(name:String):String {
+		if (scopeNames == null) {
+			var names = new Map<String, Bool>();
+			var texts:Array<String> = [];
+			if (scopeRoot != null)
+				collectScopeNames(scopeRoot, names, texts);
+			scopeNames = names;
+			scopeTexts = texts;
+		}
+		while (true) {
+			var candidate = 'reflaxe_outer_${name}_${++captureCounter}';
+			var taken = scopeNames.exists(candidate);
+			if (!taken) {
+				for (text in scopeTexts) {
+					if (text.indexOf(candidate) != -1) {
+						taken = true;
+						break;
+					}
+				}
+			}
+			if (!taken) {
+				scopeNames.set(candidate, true);
+				return candidate;
+			}
+		}
+	}
+
+	/** Collects the variable names and the text fragments of `root`, at any depth. */
+	static function collectScopeNames(root:ElixirAST, names:Map<String, Bool>, texts:Array<String>):Void {
+		ElixirASTTransformer.transformNode(root, function(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
+			switch (node.def) {
+				case EVar(name):
+					names.set(name, true);
+				case EString(text) | ERaw(text):
+					if (text != null)
+						texts.push(text);
+				case EMatch(pattern, _):
+					bindFromPattern(pattern, names);
+				case ECase(_, clauses):
+					for (clause in clauses)
+						bindFromPattern(clause.pattern, names);
+				case EDef(_, args, _, _) | EDefp(_, args, _, _):
+					for (arg in args)
+						bindFromPattern(arg, names);
+				case EFn(clauses):
+					for (clause in clauses)
+						for (arg in clause.args)
+							bindFromPattern(arg, names);
+				default:
+			}
+			return node;
+		});
 	}
 
 	/**
@@ -886,14 +972,45 @@ class ControlFlowStateHoistTransforms {
 	 *   the outer value again and the branch returns the name. That needs the
 	 *   Haxe identity of the write (`sourceLocal`). A name that the clause
 	 *   pattern binds (`binders`) never goes back.
-	 * - Only the statements of the branch itself are followed. A `var` deeper
-	 *   inside ends with its own Elixir scope, or a nested hoist handles it.
+	 * - A plain block that is itself a statement, such as the body of an
+	 *   unrolled loop or the body of a `case` arm behind its binder aliases,
+	 *   prints inline and shares the scope of the branch. A `var` inside it
+	 *   keeps the name after the block ends, so such blocks are followed too.
+	 *   The capture still goes just before the `var`; the block that holds it
+	 *   is merged into the statement list around it (see `followStatements`).
+	 * - A `var` inside a nested control flow or closure ends with that Elixir
+	 *   scope and is not followed here; a nested hoist handles it.
 	 */
 	static function readsAfterStatements(stmts:Array<ElixirAST>, reads:OuterReads, scope:HoistScope,
 			binders:Null<Map<String, Bool>>):{stmts:Array<ElixirAST>, reads:OuterReads} {
-		var out:Array<ElixirAST> = [];
 		var current = reads.copy();
+		return {stmts: followStatements(stmts, current, scope, binders), reads: current};
+	}
+
+	/** Does the work of `readsAfterStatements`; updates `current` in place and returns the statements to use. */
+	static function followStatements(stmts:Array<ElixirAST>, current:OuterReads, scope:HoistScope, binders:Null<Map<String, Bool>>):Array<ElixirAST> {
+		var out:Array<ElixirAST> = [];
 		for (stmt in stmts) {
+			if (stmt != null && stmt.def != null) {
+				switch (stmt.def) {
+					case EBlock(inner) | EDo(inner) if (inner != null):
+						var capturesBefore = captureCounter;
+						var followed = followStatements(inner, current, scope, binders);
+						if (captureCounter == capturesBefore) {
+							out.push(stmt);
+						} else {
+							// The block got a capture that the end of the branch reads.
+							// Later cleanup passes look for the reads of a binding in
+							// its own statement list, and would drop the capture as
+							// unused. The block prints inline anyway, so its statements
+							// move into this list.
+							for (inlined in followed)
+								out.push(inlined);
+						}
+						continue;
+					default:
+				}
+			}
 			var binder = stmt != null && stmt.def != null ? sourceBinderName(stmt) : null;
 			var source = binder != null && current.exists(binder) ? sourceLocal(stmt) : null;
 			if (source != null) {
@@ -906,7 +1023,7 @@ class ControlFlowStateHoistTransforms {
 			}
 			out.push(stmt);
 		}
-		return {stmts: out, reads: current};
+		return out;
 	}
 
 	static function makeReturnExpr(names:Array<String>):ElixirAST {

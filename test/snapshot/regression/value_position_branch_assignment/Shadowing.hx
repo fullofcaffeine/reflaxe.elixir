@@ -22,12 +22,15 @@ class Shadowing {
 			Sys.println(binderStatement(r));
 			Sys.println(binderTwoUpdates(r));
 			Sys.println(localInArm(r));
+			Sys.println(captureNameTaken(r));
 		}
 		for (o in [Main.find("payload"), Main.find("")]) {
 			Sys.println(binderOpt(o));
 			Sys.println(binderOtherWrite(o));
 			Sys.println(pushValue(o));
 			Sys.println(pushStatement(o));
+			Sys.println(armLocalInsideIf(o, true));
+			Sys.println(armLocalInsideIf(o, false));
 		}
 		for (c in [true, false]) {
 			Sys.println(localValue(c));
@@ -35,7 +38,27 @@ class Shadowing {
 			Sys.println(writeThenLocal(c));
 			Sys.println(loopValue(c, [1, 2, 3]));
 			Sys.println(loopStatement(c, [1, 2, 3]));
+			Sys.println(rangeLoopLocal(c));
+			Sys.println(arrayLoopLocal(c));
 		}
+	}
+
+	/**
+	 * The program has variables with the names that the compiler would give
+	 * its first captures. The compiler must pick other names. This function
+	 * comes first so that the numbering starts here.
+	 */
+	public static function captureNameTaken(r:Res):String {
+		var reflaxe_outer_value_1 = 7;
+		var reflaxe_outer_value_2 = 8;
+		var value = 100;
+		var ok = switch r {
+			case Ok(value): value > 0;
+			case Error(_):
+				value = value + 1;
+				false;
+		};
+		return ok + "/" + value + "/" + reflaxe_outer_value_1 + "/" + reflaxe_outer_value_2;
 	}
 
 	static function id(n:Int):Int
@@ -206,6 +229,64 @@ class Shadowing {
 			"local" + sum;
 		};
 		return r + "/" + sum;
+	}
+
+	/**
+	 * The body of a loop over a constant range declares its own `v`. The
+	 * compiler unrolls such a loop into plain blocks, one for each step.
+	 */
+	public static function rangeLoopLocal(c:Bool):String {
+		var v = 1;
+		var total = 0;
+		var r = if (c) {
+			for (x in 0...3) {
+				var v = id(x) * 2;
+				total += v;
+			}
+			total;
+		} else {
+			v = v + 1;
+			0;
+		};
+		return r + "/" + v;
+	}
+
+	/** The same with a loop over a constant array. */
+	public static function arrayLoopLocal(c:Bool):String {
+		var v = 1;
+		var total = 0;
+		var r = if (c) {
+			for (x in [1, 2, 3]) {
+				var v = id(x) * 2;
+				total += v;
+			}
+			total;
+		} else {
+			v = v + 1;
+			0;
+		};
+		return r + "/" + v;
+	}
+
+	/**
+	 * A statement `switch` inside a value `if`. One arm has a binder and
+	 * declares its own `n`; the other arm assigns the outer `n`. The body of
+	 * the first arm is a plain block behind the binder.
+	 */
+	public static function armLocalInsideIf(o:Main.Opt, c:Bool):String {
+		var n = 0;
+		var seen = 0;
+		var out = if (c) {
+			switch o {
+				case Some(x):
+					var n = x.length;
+					seen = n;
+				case None:
+					n = -1;
+			}
+			seen;
+		} else 0;
+		return out + "/" + n;
 	}
 
 	/** The same in statement position. */
