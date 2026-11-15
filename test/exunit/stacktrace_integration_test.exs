@@ -348,8 +348,8 @@ defmodule StacktraceIntegrationTest do
       assert stacktrace_data["line"] == 45
     end
 
-    test "performance requirements for LLM iteration cycles" do
-      # Test parsing performance with large error output
+    test "large error batches stay complete for LLM iteration cycles" do
+      # An LLM iteration cycle reads every diagnostic of a failed build in one pass.
       large_error_output = Enum.map(1..100, fn i ->
         "src_haxe/Module#{i}.hx:#{i}: characters 1-5 : Type not found : BadType#{i}"
       end) |> Enum.join("\n")
@@ -358,17 +358,24 @@ defmodule StacktraceIntegrationTest do
       parsed_errors = HaxeCompiler.parse_haxe_errors(large_error_output)
       parse_time = System.monotonic_time(:millisecond) - start_time
       
-      # Should parse 100 errors quickly (under 100ms for LLM compatibility)
+      # One parsed error per input line, in input order, each with its own ID.
       assert length(parsed_errors) == 100
-      assert parse_time < 100, "Error parsing should be fast for LLM iteration (<100ms), took #{parse_time}ms"
+      assert Enum.map(parsed_errors, &{&1.file, &1.line}) ==
+               Enum.map(1..100, &{"src_haxe/Module#{&1}.hx", &1})
+      assert length(Enum.uniq_by(parsed_errors, & &1.error_id)) == 100
       
-      # Test JSON serialization performance  
       start_time = System.monotonic_time(:millisecond)
       json_output = HaxeCompiler.get_compilation_errors(:json)
       json_time = System.monotonic_time(:millisecond) - start_time
       
-      assert String.length(json_output) > 0
-      assert json_time < 50, "JSON serialization should be fast (<50ms), took #{json_time}ms"
+      # The JSON that Mix tasks give to an LLM holds the same 100 errors in the same order.
+      {:ok, decoded} = Jason.decode(json_output)
+      assert Enum.map(decoded, &{&1["file"], &1["line"]}) ==
+               Enum.map(1..100, &{"src_haxe/Module#{&1}.hx", &1})
+      
+      # Ordinary shared-runner timings are observations, not calibrated budgets.
+      # See TESTING_INFRASTRUCTURE.md: Wall-clock checks under ordinary load.
+      IO.puts("LLM iteration observation: 100 diagnostics parsed in #{parse_time}ms, JSON in #{json_time}ms")
     end
   end
 

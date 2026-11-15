@@ -157,7 +157,8 @@ class GeneratedOutputOwnership {
 	/**
 	 * Stages, validates, optionally post-processes, and transactionally publishes a
 	 * generated output set. Cached version 2 publication may stage only changed
-	 * candidates when the prepared-output hook has no whole-tree dependency.
+	 * candidates, and candidates whose live file is missing, when the
+	 * prepared-output hook has no whole-tree dependency.
 	 * Returns normalized manifest-relative paths.
 	 */
 	public static function publish(compiler:BaseCompiler, outputDirectory:String, candidates:Array<GeneratedOutputCandidate>, cachedRebuild:Bool,
@@ -249,11 +250,17 @@ class GeneratedOutputOwnership {
 					if (content == null)
 						fail('Missing pending output contents for `$path`.');
 					if (usePartialStaging) {
+						var liveTarget = targetPath(root, path);
 						var candidateHashStarted = phaseTimings.start();
-						var candidateDigest = digestFor(targetPath(root, path), contentBytes(content));
+						var candidateDigest = digestFor(liveTarget, contentBytes(content));
 						phaseTimings.finish("output_candidate_content_hashing", candidateHashStarted);
 						candidateDigests.set(path, candidateDigest);
-						if (oldSet.exists(path) && previous.digests.get(path) == candidateDigest)
+						// A candidate with the same bytes as the published file needs no
+						// write, but only while that file is still on disk. If somebody
+						// deleted it, stage the candidate so that this request writes the
+						// file again, as a fresh build does. Without the check, the build
+						// reported success and the output folder stayed without the file.
+						if (oldSet.exists(path) && previous.digests.get(path) == candidateDigest && FileSystem.exists(liveTarget))
 							continue;
 					}
 					ensureDirectory(Path.directory(staged));
@@ -349,10 +356,13 @@ class GeneratedOutputOwnership {
 			for (path in nextPaths) {
 				var digest = newDigests.get(path);
 				var changed = if (usePartialStaging) {
+					// The last line covers a staged candidate whose digest equals the
+					// manifest digest: its live file was missing when it was staged.
 					legacySourceMaps.exists(path)
 					|| !oldSet.exists(path)
 					|| digest == null
-					|| previous.digests.get(path) != digest;
+					|| previous.digests.get(path) != digest
+					|| stagedPaths.exists(path);
 				} else {
 					var target = targetPath(root, path);
 					legacySourceMaps.exists(path) || !FileSystem.exists(target) || digest == null || hashOwnedFile(target) != digest;
