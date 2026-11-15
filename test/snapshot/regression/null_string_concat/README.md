@@ -9,8 +9,10 @@ path(null); // "x/null" on the Haxe interpreter
 
 The compiler passed a String operand to Elixir unchanged. Elixir then printed
 `"x/#{nil}"` as `"x/"`, so the program silently produced different text. The
-string interpolation `'x/$name'` and `text += name` had the same fault, because
-Haxe rewrites both to the same `+` expression. `"x/" + null` did not compile.
+string interpolation `'x/$name'` had the same fault, because Haxe rewrites it to
+the same `+` expression. So did `text += name`: it stays a compound assignment
+in Haxe, and the compiler lowers its `+` in the same way. `"x/" + null` did not
+compile.
 
 An operand whose Haxe type can hold null (`Null<String>`, an optional argument,
 a `Map.get` result) now goes through `Reflaxe.Elixir.HaxeFloat.to_string/1`.

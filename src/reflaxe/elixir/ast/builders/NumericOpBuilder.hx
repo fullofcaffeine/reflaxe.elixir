@@ -116,7 +116,9 @@ class NumericOpBuilder {
 	 * WHY: Haxe prints a null operand as the text `null`: `"x/" + a` gives `"x/null"` when `a`
 	 * is null. On the BEAM, `"x/" <> nil` raises and `"x/#{nil}"` gives `"x/"`, so a null
 	 * operand must be converted before the target sees it. Haxe rewrites `'x/$a'` to the same
-	 * `+` expression, so this one place also covers string interpolation and `+=`.
+	 * `+` expression, so this one place also covers string interpolation. `text += a` stays a
+	 * compound assignment in Haxe; `AssignmentBuilder` lowers its `+` through this builder,
+	 * so it gets the same conversion.
 	 *
 	 * WHAT: A non-String operand, or a String operand whose type can hold null, goes through
 	 * `Reflaxe.Elixir.HaxeFloat.to_string/1`, which returns a binary unchanged and maps `nil`
