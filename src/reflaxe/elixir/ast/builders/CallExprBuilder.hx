@@ -688,8 +688,9 @@ class CallExprBuilder {
 
 								var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
 
-								// Build inner argument AST
-								var innerAst = buildExpression(args[0]);
+								// Build inner argument AST. It is template source, so `#{...}` in its
+								// string pieces stays a template marker (see asTemplateSource).
+								var innerAst = reflaxe.elixir.ast.TemplateHelpers.asTemplateSource(buildExpression(args[0]));
 
 								if (mode == HxxMode.Tsx
 									&& reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsUntypedTemplateMarkers(innerAst)) {

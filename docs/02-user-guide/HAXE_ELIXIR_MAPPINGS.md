@@ -320,6 +320,33 @@ operands. A plain `String` operand keeps the direct form and has no run-time
 check. If such a value can be null, declare it as `Null<String>`; otherwise a
 null value raises `ArgumentError` in `<>` or prints as empty text.
 
+### Note: `#{` in a string literal
+
+Haxe has no `#{...}` syntax, so these characters in a string literal are plain
+text. In an Elixir quoted string they start code. The compiler therefore prints
+the marker escaped, and Elixir reads `\#{` as the two characters `#{`:
+
+```haxe
+Sys.println("lit #{1 + 1} end"); // prints: lit #{1 + 1} end
+var heading = ~/^#{1,3} /;       // the braces are a repeat count
+```
+
+```elixir
+IO.puts("lit \#{1 + 1} end")
+heading = EReg.new("^\#{1,3} ", "")
+```
+
+The text stays text when the literal sits next to values. The compiler writes
+real values as `#{...}` and the literal marker as `\#{`:
+`"lit #{1 + 1} " + name` becomes `"lit \#{1 + 1} #{name}"`. The doc comment and
+the `shortdoc` of a `@:mixTask` class are escaped in the same way.
+
+To build a string with Haxe values, use Haxe interpolation (`'total $n'`) or
+`+`. Two places keep `#{...}` as code on purpose: target code injection
+(`untyped __elixir__('IO.puts("#{1 + 1}")')`), where you write Elixir, and HXX
+template source (`HXX.hxx('<p>#{@user.name}</p>')`), where it is a template
+marker.
+
 ### Special Type Compilations
 
 **Option<T> Pattern**:

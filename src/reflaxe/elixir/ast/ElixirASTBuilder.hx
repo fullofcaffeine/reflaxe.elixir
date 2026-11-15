@@ -2994,7 +2994,8 @@ class ElixirASTBuilder {
 						// HXX.hxx macro tagged this string as HEEx content.
 						// Emit ~H sigil directly. Prefer fast-path for literal strings to avoid
 						// unnecessary template collection for already-EEx content.
-						var innerAst = buildFromTypedExpr(e, currentContext);
+						// The string is template source: `#{...}` stays a template marker.
+						var innerAst = TemplateHelpers.asTemplateSource(buildFromTypedExpr(e, currentContext));
 						var content:String = null;
 						switch (innerAst.def) {
 							case EString(s):
@@ -3187,6 +3188,7 @@ class ElixirASTBuilder {
 				// Convert the field value to a pattern
 				var fieldPattern = switch (fieldValue.def) {
 					case EString(s): PLiteral(makeAST(EString(s)));
+					case EStringLiteral(s): PLiteral(makeAST(EStringLiteral(s)));
 					case EInteger(i): PLiteral(makeAST(EInteger(i)));
 					case EFloat(f): PLiteral(makeAST(EFloat(f)));
 					case EBoolean(b): PLiteral(makeAST(EBoolean(b)));

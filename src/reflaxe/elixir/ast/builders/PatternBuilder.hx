@@ -154,7 +154,7 @@ class PatternBuilder {
 			case TConst(TFloat(f)):
 				PLiteral(makeAST(EFloat(Std.parseFloat(StringTools.replace(f, "_", "")))));
 			case TConst(TString(s)):
-				PLiteral(makeAST(EString(s)));
+				PLiteral(makeAST(haxeStringLiteralDef(s)));
 			case TConst(TBool(b)):
 				PLiteral(makeAST(EBoolean(b)));
 			case TConst(TNull):

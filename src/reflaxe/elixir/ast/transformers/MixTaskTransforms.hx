@@ -64,9 +64,12 @@ class MixTaskTransforms {
 		if (!hasUse)
 			result.push(makeSeparatedAST(EUse("Mix.Task", []), emitsModuledoc || hasModuledoc));
 		if (!hasShortdoc && metadata.mixTaskShortdoc != null && metadata.mixTaskShortdoc.length > 0)
-			result.push(makeSeparatedAST(EModuleAttribute("shortdoc", makeAST(EString(metadata.mixTaskShortdoc))), true));
+			result.push(makeSeparatedAST(EModuleAttribute("shortdoc", makeAST(haxeStringLiteralDef(metadata.mixTaskShortdoc))), true));
 		if (!hasRequirements && metadata.mixTaskRequirements != null && metadata.mixTaskRequirements.length > 0) {
-			var requirements = [for (requirement in metadata.mixTaskRequirements) makeAST(EString(requirement))];
+			var requirements = [
+				for (requirement in metadata.mixTaskRequirements)
+					makeAST(haxeStringLiteralDef(requirement))
+			];
 			result.push(makeAST(EModuleAttribute("requirements", makeAST(EList(requirements)))));
 		}
 

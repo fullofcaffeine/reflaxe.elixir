@@ -53,7 +53,8 @@ class CoreExprBuilder {
 			case TFloat(f):
 				ElixirASTDef.EFloat(Std.parseFloat(StringTools.replace(f, "_", "")));
 			case TString(s):
-				ElixirASTDef.EString(s);
+				// Text with `#{` stays literal data (see haxeStringLiteralDef).
+				haxeStringLiteralDef(s);
 			case TBool(b):
 				ElixirASTDef.EBoolean(b);
 			case TNull:

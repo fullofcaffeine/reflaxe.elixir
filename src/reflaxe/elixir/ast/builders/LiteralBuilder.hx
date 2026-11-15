@@ -76,8 +76,8 @@ class LiteralBuilder {
 			#if debug_ast_builder
 			#end
 			#end
-			// Regular string
-			return EString(s);
+			// Regular string. Text with `#{` stays literal data (see haxeStringLiteralDef).
+			return haxeStringLiteralDef(s);
 		}
 	}
 

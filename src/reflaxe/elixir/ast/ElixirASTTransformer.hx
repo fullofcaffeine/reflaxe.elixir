@@ -2714,8 +2714,19 @@ class ElixirASTTransformer {
 								node; // Can't fold, return unchanged
 							}
 
-						case [EString(l), EString(r)] if (op == StringConcat):
-							makeASTWithMeta(EString(l + r), node.metadata, node.pos);
+						case [EString(l) | EStringLiteral(l), EString(r) | EStringLiteral(r)] if (op == StringConcat):
+							// Both sides are Haxe literal text, so the joined text is literal too.
+							// `"#" + "{x}"` must not fold into an EString that reads as live `#{x}`.
+							// An EString that already holds `#{` is legacy interpolation source; it
+							// cannot be joined with literal text in one node, so that pair stays apart.
+							var leftIsText = left.def.match(EStringLiteral(_)) || l.indexOf("#{") == -1;
+							var rightIsText = right.def.match(EStringLiteral(_)) || r.indexOf("#{") == -1;
+							var joined:Null<ElixirASTDef> = null;
+							if (leftIsText && rightIsText)
+								joined = haxeStringLiteralDef(l + r);
+							else if (left.def.match(EString(_)) && right.def.match(EString(_)))
+								joined = EString(l + r);
+							joined != null ? makeASTWithMeta(joined, node.metadata, node.pos) : node;
 
 						case [EList(l), EList(r)] if (op == Concat):
 							makeASTWithMeta(EList(l.concat(r)), node.metadata, node.pos);
@@ -2795,8 +2806,14 @@ class ElixirASTTransformer {
 							case EBinary(StringConcat, l, r):
 								collectParts(l);
 								collectParts(r);
-							case EString(s):
-								parts.push({isString: true, value: s, expr: null});
+							case EString(s) | EStringLiteral(s):
+								// Join neighbouring literal text first. Escaping each piece alone
+								// would let `"a#" + "{" + v` meet as a live `#{` in the output.
+								var last = parts.length > 0 ? parts[parts.length - 1] : null;
+								if (last != null && last.isString)
+									last.value += s;
+								else
+									parts.push({isString: true, value: s, expr: null});
 							default:
 								parts.push({isString: false, value: null, expr: expr});
 						}

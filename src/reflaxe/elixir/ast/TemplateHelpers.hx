@@ -204,6 +204,29 @@ class TemplateHelpers {
 	}
 
 	/**
+	 * Returns an HXX template argument with every string piece marked as template source.
+	 *
+	 * WHY: The expression builder keeps a Haxe string literal that contains `#{` as
+	 * `EStringLiteral`, so ordinary code never runs literal text as Elixir. HXX template source
+	 * is the documented exception: in `HXX.hxx('<p>#{@user.name}</p>')` the `#{...}` is a
+	 * template marker, and the collectors below read markers from `EString` text only.
+	 *
+	 * WHAT: Every `EStringLiteral` in the argument becomes an `EString` with the same text. All
+	 * other nodes stay as they are.
+	 *
+	 * HOW: Call it once, on the AST built from the template argument, before any collector or
+	 * marker check runs. Do not call it on ordinary expressions: there `#{` is plain text.
+	 */
+	public static function asTemplateSource(ast:ElixirAST):ElixirAST {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EStringLiteral(text): makeASTWithMeta(EString(text), node.metadata, node.pos);
+				default: node;
+			}
+		});
+	}
+
+	/**
 	 * Collect template content from an ElixirAST node
 	 * 
 	 * Processes various AST patterns to extract template strings,
