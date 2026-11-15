@@ -12,6 +12,7 @@ defmodule Main do
     IO.puts(v)
     v = outer_reason({:ok, 5}, "why")
     IO.puts(v)
+    VisibleNames.run()
   end
   def outer_value(r, value) do
     (case r do

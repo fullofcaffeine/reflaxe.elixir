@@ -101,6 +101,19 @@ class ClauseContext {
 	public var switchAssignedNames:Map<String, Bool> = new Map();
 
 	/**
+	 * Elixir names of the Haxe locals that are in scope where this clause's
+	 * switch stands: function arguments, earlier `var`s of the enclosing blocks,
+	 * outer pattern binders, loop and catch variables.
+	 *
+	 * Later passes can move code into a clause, for example the statements after
+	 * a switch when another arm returns early. That code may read any of these
+	 * variables, so a binder name that the compiler chooses must not be one of
+	 * them. SwitchBuilder fills the set once for each switch
+	 * (`collectLocalNamesInScope`) and reads it when it names payload binders.
+	 */
+	public var switchScopeNames:Map<String, Bool> = new Map();
+
+	/**
 	 * Infrastructure temp name → binder name mapping for this clause.
 	 *
 	 * Haxe lowers some enum-index switches by extracting constructor payload into

@@ -381,6 +381,8 @@ class SwitchBuilder {
 		if (edef != null)
 			armBodies.push(edef);
 		var assignedNames = collectAssignedOuterNames(armBodies);
+		// A binder name that the compiler chooses must not hide a visible variable.
+		var scopeNames = collectLocalNamesInScope(e, context);
 
 		// Build case clauses (may generate multiple clauses per case due to guard chains)
 		var caseClauses:Array<ECaseClause> = [];
@@ -390,7 +392,7 @@ class SwitchBuilder {
 			#if debug_switch_builder
 			#if !no_traces trace('[SwitchBuilder] Building case ${i + 1}/${cases.length}'); #end
 			#end
-			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType, actualSwitchExpr, assignedNames);
+			var clausesFromCase = buildCaseClause(switchCase, targetVarName, context, i, enumType, actualSwitchExpr, assignedNames, scopeNames);
 			if (clausesFromCase.length > 0) {
 				#if debug_switch_builder
 				#if !no_traces trace('[SwitchBuilder]   Generated ${clausesFromCase.length} clause(s) from this case'); #end
@@ -457,7 +459,7 @@ class SwitchBuilder {
 	 * HOW: Analyzes case values, extracts patterns, detects guard chains, compiles bodies
 	 */
 	static function buildCaseClause(switchCase:{values:Array<TypedExpr>, expr:TypedExpr}, targetVarName:String, context:CompilationContext, caseIndex:Int,
-			enumTypeForSwitch:Null<EnumType>, receiver:TypedExpr, assignedNames:Map<String, Bool>):Array<ECaseClause> {
+			enumTypeForSwitch:Null<EnumType>, receiver:TypedExpr, assignedNames:Map<String, Bool>, scopeNames:Map<String, Bool>):Array<ECaseClause> {
 		// Multi-value cases (`case a, b:`) are compiled as multiple clauses with identical bodies.
 		if (switchCase.values.length == 0) {
 			return [];
@@ -466,7 +468,7 @@ class SwitchBuilder {
 			var out:Array<ECaseClause> = [];
 			for (v in switchCase.values) {
 				out = out.concat(buildCaseClause({values: [v], expr: switchCase.expr}, targetVarName, context, caseIndex, enumTypeForSwitch, receiver,
-					assignedNames));
+					assignedNames, scopeNames));
 			}
 			return out;
 		}
@@ -476,6 +478,7 @@ class SwitchBuilder {
 		var clauseCtx = new ClauseContext(parentCtx);
 		clauseCtx.enumReceiver = context.substituteIfNeeded(receiver);
 		clauseCtx.switchAssignedNames = assignedNames;
+		clauseCtx.switchScopeNames = scopeNames;
 		if (enumTypeForSwitch != null)
 			clauseCtx.enumType = enumTypeForSwitch;
 		context.pushClauseContext(clauseCtx);
@@ -1546,6 +1549,7 @@ class SwitchBuilder {
 			var localUsage = collectReadLocalNameUsage(caseBody);
 			var outerReadNames = collectOuterReadNames(caseBody, context);
 			var assignedBySwitch = switchAssignedNames(context);
+			var visibleAtSwitch = switchScopeNames(context);
 			#if debug_switch_builder
 			trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
 			trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
@@ -1662,12 +1666,19 @@ class SwitchBuilder {
 				// applies only to a name that the compiler chose. When the Haxe binder
 				// itself has the name of such a variable, renaming the binder does not
 				// help (haxe.elixir.codex-d2g).
+				//
+				// The same holds for every variable that is visible at the switch: a
+				// later pass can move code that reads it into the clause
+				// (haxe.elixir.codex-mj83, `ClauseContext.switchScopeNames`).
 				if (candidate != null) {
 					var elixirCandidate = VariableAnalyzer.toElixirVarName(candidate);
-					if (outerReadNames.exists(elixirCandidate) || (candidate != rb && assignedBySwitch.exists(elixirCandidate))) {
+					if (outerReadNames.exists(elixirCandidate)
+						|| (candidate != rb && (assignedBySwitch.exists(elixirCandidate) || visibleAtSwitch.exists(elixirCandidate)))) {
 						var ownBinder = (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb)) ? rb : null;
 						var takenNames = outerReadNames.copy();
 						for (name in assignedBySwitch.keys())
+							takenNames.set(name, true);
+						for (name in visibleAtSwitch.keys())
 							takenNames.set(name, true);
 						candidate = binderNameClearOfOuterReads(candidate, ownBinder, takenNames);
 					}
@@ -1928,9 +1939,22 @@ class SwitchBuilder {
 	 *   switch (r) { case Ok(v): note(v); case Error(e): value = "err " + e; }
 	 *
 	 * must not become `{:ok, value} -> ...; value`, which returns the payload.
+	 *
+	 * Every variable that is visible at the switch counts as read as well. A
+	 * later pass can move code into the clause; when another arm returns early,
+	 * the statements after the switch run inside the remaining arm:
+	 *
+	 *   function f(r, value) {
+	 *     switch (r) { case Ok(v): note(v); case Error(e): return "err " + e; }
+	 *     return "r=" + value;
+	 *   }
+	 *
+	 * must not become `{:ok, value} -> note(value); "r=" <> value`
+	 * (haxe.elixir.codex-mj83). The rule uses what is visible, not what one
+	 * known pass moves, so the next pass that moves code needs no new rule.
 	 */
 	static function canonicalResultBinderShadowsRead(caseBody:TypedExpr, canonical:String, binderName:Null<String>, context:CompilationContext):Bool {
-		if (binderName != canonical && switchAssignedNames(context).exists(canonical))
+		if (binderName != canonical && (switchAssignedNames(context).exists(canonical) || switchScopeNames(context).exists(canonical)))
 			return true;
 		for (local in collectReadLocals(caseBody)) {
 			if (local.name != binderName && VariableAnalyzer.toElixirVarName(local.name) == canonical)
@@ -2036,6 +2060,197 @@ class SwitchBuilder {
 				TypedExprTools.iter(expression, collectWrites);
 			}
 			collectWrites(body);
+		}
+		return names;
+	}
+
+	/** Returns `ClauseContext.switchScopeNames` of the clause being built, or an empty set. */
+	static function switchScopeNames(context:CompilationContext):Map<String, Bool> {
+		var clause = context.getCurrentClauseContext();
+		return clause == null ? new Map<String, Bool>() : clause.switchScopeNames;
+	}
+
+	/**
+	 * Returns the Elixir names of the Haxe locals that are visible at the switch
+	 * being built.
+	 *
+	 * WHY: Elixir variables have no identity beyond their name, and several
+	 * passes move code into a `case` clause after the builder has chosen the
+	 * binder names. Code that moves in can read any variable that is visible at
+	 * the switch. A binder name that the compiler chooses, such as `value` for
+	 * `Ok(v)`, must therefore be free of all of them, not only of the names
+	 * that the clause is known to read today (haxe.elixir.codex-mj83).
+	 *
+	 * HOW: The visible locals are the function arguments, and the locals that
+	 * the path from the function body down to the switch declares:
+	 * - a block: the `var` statements before the statement on the path. A `var`
+	 *   in an earlier, closed block is not visible and does not count, so two
+	 *   switches in a row may both use `value`;
+	 * - a closure: its arguments; a `for` loop: its variable; a `try`: the
+	 *   variable of the `catch` on the path.
+	 * The binders of the switch's own arms are declared inside the arms and are
+	 * never part of the result.
+	 *
+	 * The path comes from `ElixirASTBuilder.typedBuildStack`, the builds in
+	 * progress. Two neighbours on that stack are not always parent and child:
+	 * - A builder may build a deeper node directly, for example the body of a
+	 *   `catch`. The search walks down from the upper node to the lower one and
+	 *   reads what the nodes between them declare (`declaredOnPath`).
+	 * - A builder may build a changed copy of a node. The loop builder builds a
+	 *   loop body without its element binding, `var value = items[i]`. The copy
+	 *   is not inside the upper node, but a node further down usually still is,
+	 *   here the switch statement itself. The search therefore tries each lower
+	 *   node in turn until one is inside the upper node, and so still reads the
+	 *   element binding from the original body.
+	 * - When no lower node is inside the upper one, the search uses the source
+	 *   position that a copy keeps: it takes every local declared inside the
+	 *   nodes of the same kind at that position, or, when there is none, every
+	 *   local that the upper node declares anywhere.
+	 * Too many names only cost a canonical name; too few would bring the bug
+	 * back, so each fallback is the wider one.
+	 *
+	 * Limit: an expression that is built after its enclosing build has
+	 * returned has no enclosing scope on the stack, and only the function
+	 * arguments are found for it.
+	 *
+	 * `subject` is the switched expression. It stands for the switch when the
+	 * switch node itself is not on the stack.
+	 */
+	static function collectLocalNamesInScope(subject:TypedExpr, context:CompilationContext):Map<String, Bool> {
+		var names = new Map<String, Bool>();
+
+		function addLocal(local:TVar):Void {
+			names.set(VariableAnalyzer.toElixirVarName(local.name), true);
+			var renamed = context.tempVarRenameMap.get(Std.string(local.id));
+			if (renamed != null)
+				names.set(renamed, true);
+		}
+
+		// Function arguments: the function entry registers each one by id.
+		for (idKey in context.functionParameterIds.keys()) {
+			var argumentName = context.tempVarRenameMap.get(idKey);
+			if (argumentName != null)
+				names.set(argumentName, true);
+		}
+
+		function addDeclaredByStatement(statement:TypedExpr):Void {
+			switch (statement.expr) {
+				case TVar(local, _):
+					addLocal(local);
+				case TParenthesis(inner) | TMeta(_, inner):
+					addDeclaredByStatement(inner);
+				default:
+			}
+		}
+
+		/** Adds every local that `node` declares, at any depth. */
+		function addEveryDeclared(node:TypedExpr):Void {
+			if (node == null)
+				return;
+			switch (node.expr) {
+				case TVar(local, _):
+					addLocal(local);
+				case TFunction(func):
+					for (argument in func.args)
+						addLocal(argument.v);
+				case TFor(local, _, _):
+					addLocal(local);
+				case TTry(_, catches):
+					for (catchClause in catches)
+						addLocal(catchClause.v);
+				default:
+			}
+			TypedExprTools.iter(node, addEveryDeclared);
+		}
+
+		/**
+		 * Looks for a node that `isTarget` accepts, in `node` or below it, and adds
+		 * the locals that are visible there because of the nodes on the way down.
+		 * With `all`, it follows every accepted node, not only the first one, and
+		 * also adds what each accepted node declares inside.
+		 */
+		function declaredOnPath(node:TypedExpr, isTarget:TypedExpr->Bool, all:Bool):Bool {
+			if (node == null)
+				return false;
+			if (isTarget(node)) {
+				if (all)
+					addEveryDeclared(node);
+				return true;
+			}
+			var found = false;
+			switch (node.expr) {
+				case TBlock(statements):
+					var last = -1;
+					for (index in 0...statements.length) {
+						if (declaredOnPath(statements[index], isTarget, all)) {
+							last = index;
+							if (!all)
+								break;
+						}
+					}
+					found = last != -1;
+					for (index in 0...last)
+						addDeclaredByStatement(statements[index]);
+				case TFunction(func):
+					found = declaredOnPath(func.expr, isTarget, all);
+					if (found)
+						for (argument in func.args)
+							addLocal(argument.v);
+				case TFor(local, iterated, body):
+					found = declaredOnPath(iterated, isTarget, all);
+					if ((all || !found) && declaredOnPath(body, isTarget, all)) {
+						found = true;
+						addLocal(local);
+					}
+				case TTry(tried, catches):
+					found = declaredOnPath(tried, isTarget, all);
+					for (catchClause in catches) {
+						if (found && !all)
+							break;
+						if (declaredOnPath(catchClause.expr, isTarget, all)) {
+							found = true;
+							addLocal(catchClause.v);
+						}
+					}
+				default:
+					TypedExprTools.iter(node, function(child:TypedExpr):Void {
+						if ((all || !found) && declaredOnPath(child, isTarget, all))
+							found = true;
+					});
+			}
+			return found;
+		}
+
+		var stack = reflaxe.elixir.ast.ElixirASTBuilder.typedBuildStack;
+		for (depth in 0...stack.length) {
+			var upper = stack[depth];
+			if (upper == null)
+				continue;
+			// The nearest lower node that is still inside `upper` gives the exact path.
+			var reached = false;
+			for (below in (depth + 1)...(stack.length + 1)) {
+				var lower = below < stack.length ? stack[below] : subject;
+				if (lower == null)
+					continue;
+				if (lower == upper || declaredOnPath(upper, node -> node == lower, false)) {
+					reached = true;
+					break;
+				}
+			}
+			if (reached)
+				continue;
+			// Everything below is a changed copy. Use where the first copy's source stood.
+			var copy = depth + 1 < stack.length ? stack[depth + 1] : subject;
+			var kind = copy.expr.getIndex();
+			var place = Context.getPosInfos(copy.pos);
+			function standsAtSamePlace(node:TypedExpr):Bool {
+				if (node == upper || node.expr.getIndex() != kind)
+					return false;
+				var other = Context.getPosInfos(node.pos);
+				return other.min == place.min && other.max == place.max && other.file == place.file;
+			}
+			if (!declaredOnPath(upper, standsAtSamePlace, true))
+				addEveryDeclared(upper);
 		}
 		return names;
 	}

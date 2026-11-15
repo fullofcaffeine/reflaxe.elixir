@@ -4,3 +4,57 @@
 102
 bad/why
 why5
+  note o
+argument r=P
+  note o
+local r=d
+reasonArgument ok o
+  note o
+  note q
+twoSwitches r=P
+  note zo
+  note P
+nested r=PW
+  note o
+guarded r=P
+  note o
+  note m
+inLoop r=PP
+  note o
+closureArgument r=C
+  note o
+loopVariable r=a
+catchVariable ok o
+  note o
+outerBlock deep d
+closureValueUnread ok /C
+closureReasonUnread 1
+loopReason 2
+  note o
+pushed r=d
+  note o
+indexSet r=d
+  note o
+mapSet r=d
+  note o
+fieldSet r=d
+argument err x
+local err x
+  note x
+reasonArgument r=why
+twoSwitches err x
+nested err x
+guarded err x
+inLoop err x
+closureArgument err x
+loopVariable err x
+  note x
+catchVariable caught boom
+outerBlock err x
+closureValueUnread err x
+closureReasonUnread 30
+loopReason 50
+pushed r=d,x
+indexSet r=x
+mapSet r=x
+fieldSet r=x

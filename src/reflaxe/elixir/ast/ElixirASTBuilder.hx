@@ -357,6 +357,21 @@ class ElixirASTBuilder {
 	// Store the current context for recursive calls
 	private static var currentContext:reflaxe.elixir.CompilationContext = null;
 
+	/**
+	 * The typed expressions whose build is in progress, outermost first.
+	 *
+	 * WHY: a builder sometimes needs to know which Haxe locals are visible at
+	 * the expression it builds. `SwitchBuilder.collectLocalNamesInScope` reads
+	 * the enclosing blocks, closures, loops and catches from this stack to name
+	 * a `case` binder so that it hides no visible variable.
+	 *
+	 * HOW: `buildFromTypedExpr` adds its expression on entry and restores the
+	 * earlier length on exit, so the stack is the chain of nested builds. A
+	 * builder that builds a child without `buildFromTypedExpr` leaves a gap in
+	 * the chain; readers must tolerate that.
+	 */
+	public static var typedBuildStack:Array<TypedExpr> = [];
+
 	// Public entry point for the compiler
 	public static function buildFromTypedExpr(expr:TypedExpr, context:reflaxe.elixir.CompilationContext):ElixirAST {
 		#if debug_compilation_hang
@@ -365,7 +380,12 @@ class ElixirASTBuilder {
 		}
 		#end
 
-		return buildFromTypedExprWithContext(expr, context);
+		var depth = typedBuildStack.length;
+		typedBuildStack.push(expr);
+		var result = buildFromTypedExprWithContext(expr, context);
+		// Restore by length: an error that left a nested build early is cleared here too.
+		typedBuildStack.resize(depth);
+		return result;
 	}
 
 	private static function buildFromTypedExprWithContext(expr:TypedExpr, context:reflaxe.elixir.CompilationContext):ElixirAST {

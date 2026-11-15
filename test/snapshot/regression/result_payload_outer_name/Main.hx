@@ -22,8 +22,10 @@ enum Reply {
  *
  * Elixir code often names the payload of `{:ok, _}` `value` and the payload of
  * `{:error, _}` `reason`. The compiler must not pick that name when the clause
- * reads another variable with the same name. `expected.stdout` is the output of
- * this program on the Haxe interpreter.
+ * reads another variable with the same name. `VisibleNames` holds the shapes
+ * where the clause does not read that variable itself, but code that the
+ * compiler moves into the clause does (haxe.elixir.codex-mj83).
+ * `expected.stdout` is the output of this program on the Haxe interpreter.
  */
 @:keep
 class Main {
@@ -34,6 +36,7 @@ class Main {
 		Sys.println(localValue(Ok(2)));
 		Sys.println(outerReason(Error("bad"), "why"));
 		Sys.println(outerReason(Ok(5), "why"));
+		VisibleNames.run();
 	}
 
 	/** Reads the function argument `value` in the `Ok(v)` clause. */
