@@ -26,7 +26,8 @@ import reflaxe.elixir.ast.TypeUtils;
  * - Concrete Int-only arithmetic stays native.
  * - Float-like, Dynamic, unresolved, and `/` operations use `HaxeFloat` helpers.
  * - String concatenation uses `HaxeFloat.to_string/1` for non-string operands so specials print
- *   as `NaN`, `Infinity`, and `-Infinity` instead of raw tagged tuples.
+ *   as `NaN`, `Infinity`, and `-Infinity` instead of raw tagged tuples. It uses the same helper
+ *   for a `Null<String>` operand, so a null value prints as `null`, as in Haxe.
  */
 class NumericOpBuilder {
 	public static function buildFromAST(op:Binop, leftAST:ElixirAST, rightAST:ElixirAST, leftExpr:TypedExpr, rightExpr:TypedExpr,
@@ -106,12 +107,46 @@ class NumericOpBuilder {
 	}
 
 	static function buildStringConcat(leftAST:ElixirAST, rightAST:ElixirAST, leftExpr:TypedExpr, rightExpr:TypedExpr):ElixirAST {
-		// Control-flow shape does not determine its result type: for example,
-		// Std.random lowers to a case expression that still returns an Int.
-		var leftString = TypeUtils.isStringType(leftExpr.t) ? leftAST : toHaxeString(leftAST);
-		var rightString = TypeUtils.isStringType(rightExpr.t) ? rightAST : toHaxeString(rightAST);
+		return makeAST(EBinary(EBinaryOp.StringConcat, stringConcatOperand(leftAST, leftExpr), stringConcatOperand(rightAST, rightExpr)));
+	}
 
-		return makeAST(EBinary(EBinaryOp.StringConcat, leftString, rightString));
+	/**
+	 * Returns one operand of a Haxe string concatenation as Elixir text.
+	 *
+	 * WHY: Haxe prints a null operand as the text `null`: `"x/" + a` gives `"x/null"` when `a`
+	 * is null. On the BEAM, `"x/" <> nil` raises and `"x/#{nil}"` gives `"x/"`, so a null
+	 * operand must be converted before the target sees it. Haxe rewrites `'x/$a'` to the same
+	 * `+` expression, so this one place also covers string interpolation and `+=`.
+	 *
+	 * WHAT: A non-String operand, or a String operand whose type can hold null, goes through
+	 * `Reflaxe.Elixir.HaxeFloat.to_string/1`, which returns a binary unchanged and maps `nil`
+	 * to `"null"`. A plain `String` operand stays as it is, with no run-time check. A literal
+	 * `null` becomes the text directly.
+	 *
+	 * HOW: Control-flow shape does not show the result type: `Std.random` lowers to a `case`
+	 * that still returns an Int. So the decision reads the Haxe type and expression only.
+	 *
+	 * EXAMPLES
+	 * - `"x/" + name` with `name:String`: `"x/" <> name`
+	 * - `"x/" + name` with `name:Null<String>`: `"x/" <> Reflaxe.Elixir.HaxeFloat.to_string(name)`
+	 * - `"x/" + null`: `"x/" <> "null"`
+	 *
+	 * LIMIT: A value declared as plain `String` that holds null at run time is not converted.
+	 */
+	static function stringConcatOperand(operandAST:ElixirAST, operandExpr:TypedExpr):ElixirAST {
+		if (isNullLiteral(operandExpr))
+			return makeAST(EString("null"));
+		if (TypeUtils.isStringType(operandExpr.t) && !TypeUtils.mayBeNil(operandExpr.t))
+			return operandAST;
+		return toHaxeString(operandAST);
+	}
+
+	static function isNullLiteral(expr:TypedExpr):Bool {
+		return switch (expr.expr) {
+			case TConst(TNull): true;
+			case TParenthesis(inner) | TMeta(_, inner): isNullLiteral(inner);
+			default: false;
+		}
 	}
 
 	static function shouldUseHaxeFloatHelper(op:Binop, leftExpr:TypedExpr, rightExpr:TypedExpr):Bool {

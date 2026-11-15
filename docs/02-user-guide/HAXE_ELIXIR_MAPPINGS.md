@@ -295,6 +295,31 @@ Use it when the dataflow matters. A direct helper such as
 `Params.getString(params, "name")` is still the lighter choice for one-off
 reads.
 
+### Note: null in string concatenation
+
+Haxe prints a null operand of `+` as the text `null`. Elixir prints `nil` inside
+`"#{...}"` as empty text, and `<>` refuses `nil`. So the compiler converts an
+operand whose Haxe type can hold null:
+
+```haxe
+function path(name:Null<String>):String return "x/" + name; // also 'x/$name'
+function label(name:String):String return "x/" + name;
+```
+
+```elixir
+def path(name) do
+  "x/#{Reflaxe.Elixir.HaxeFloat.to_string(name)}" # nil gives "x/null"
+end
+def label(name) do
+  "x/#{name}"
+end
+```
+
+The conversion applies to `Null<T>`, optional arguments, `Dynamic` and non-String
+operands. A plain `String` operand keeps the direct form and has no run-time
+check. If such a value can be null, declare it as `Null<String>`; otherwise a
+null value raises `ArgumentError` in `<>` or prints as empty text.
+
 ### Special Type Compilations
 
 **Option<T> Pattern**:
