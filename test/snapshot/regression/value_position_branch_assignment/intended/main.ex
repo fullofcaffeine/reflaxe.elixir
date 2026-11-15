@@ -17,6 +17,8 @@ defmodule Main do
     IO.puts(v)
     v = shadowed_local(k == "x")
     IO.puts(v)
+    v = throwing_branch(k == "x")
+    IO.puts(v)
     k = ""
     v = switch_value(find(k))
     IO.puts(v)
@@ -33,6 +35,8 @@ defmodule Main do
     v = nested_switch(find(k), k == "")
     IO.puts(v)
     v = shadowed_local(k == "x")
+    IO.puts(v)
+    v = throwing_branch(k == "x")
     IO.puts(v)
     v = nested_ternary_binding("y")
     IO.puts(v)
@@ -162,6 +166,29 @@ defmodule Main do
       {0, seen}
     end
     "#{Reflaxe.Elixir.HaxeFloat.to_string(r)}/#{Reflaxe.Elixir.HaxeFloat.to_string(v)}/#{Reflaxe.Elixir.HaxeFloat.to_string(seen)}"
+  end
+  def throwing_branch(c) do
+    out = "d"
+    try do
+      {r, out} = if (c) do
+        out = "set"
+        {1, out}
+      else
+        raise Reflaxe.Elixir.HaxeThrow, [value: "boom"]
+      end
+      out <> Reflaxe.Elixir.HaxeFloat.to_string(r)
+    rescue
+      haxe_exception ->
+        Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
+        (case {(case haxe_exception do
+          %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+          _ -> haxe_exception
+        end), haxe_exception} do
+          {e, _} when is_binary(e) -> out <> e
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
+        end)
+    end
   end
   def allowed(names) do
     seen = false

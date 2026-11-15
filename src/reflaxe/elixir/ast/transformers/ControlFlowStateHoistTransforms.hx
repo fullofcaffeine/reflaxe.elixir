@@ -564,6 +564,8 @@ class ControlFlowStateHoistTransforms {
 	 * body has the value `nil`, as in Elixir.
 	 * - A control flow in that last position gets the tuple in each of its own
 	 *   branches, so `a ? x : (b ? y : z)` needs no temporary.
+	 * - A body that ends with `raise` or `throw` has no value and stays as it
+	 *   is. `{raise Module, [value: x], out}` is also not valid Elixir.
 	 * - Tuple elements cannot see each other's bindings. A value that itself
 	 *   binds an update is therefore bound first: `v = 2` stays a statement
 	 *   and the tuple reads `v`; any other such value goes through
@@ -586,6 +588,8 @@ class ControlFlowStateHoistTransforms {
 		}
 
 		var value:ElixirAST = stmts.length > 0 ? stmts.pop() : makeAST(ENil);
+		if (neverReturns(value))
+			return body;
 		if (valueBranchBodies(value) != null) {
 			stmts.push(returnValueWithUpdates(value, updates));
 		} else {
@@ -605,6 +609,16 @@ class ControlFlowStateHoistTransforms {
 		if (body == null || body.def == null)
 			return makeAST(EBlock(stmts));
 		return makeASTWithMeta(isDo ? EDo(stmts) : EBlock(stmts), body.metadata, body.pos);
+	}
+
+	/** True when `expr` leaves the branch by `raise` or `throw`, so it has no value to pair with updates. */
+	static function neverReturns(expr:ElixirAST):Bool {
+		return switch (expr.def) {
+			case EParen(inner) if (inner != null && inner.def != null): neverReturns(inner);
+			case ERaise(_, _) | EThrow(_): true;
+			case ECall(null, "throw" | "raise" | "reraise" | "exit", _): true;
+			default: false;
+		}
 	}
 
 	/** Temporary that holds a branch value while the branch builds its result tuple. */

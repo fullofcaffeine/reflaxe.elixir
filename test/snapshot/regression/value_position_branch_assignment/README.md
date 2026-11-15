@@ -50,7 +50,7 @@ end
 ```
 
 `expected.stdout` is the output of this program on the Haxe interpreter. The
-compiler before the fix printed 16 of the 24 lines wrong. The fixture covers:
+compiler before the fix printed 17 of the 26 lines wrong. The fixture covers:
 
 - a value `switch` with a plain subject and with a call subject (the compiler
   stores a call subject in a temporary first, which makes the value a block);
@@ -64,6 +64,8 @@ compiler before the fix printed 16 of the 24 lines wrong. The fixture covers:
   local, so the outer variable keeps its value. The statement form
   (`if (c) { var v = ...; r = v + 1; }`) overwrote the outer variable before
   this fix;
+- a branch that throws. It has no value, so it stays as it is; pairing it with
+  the updates would not even be valid Elixir (`{raise ..., out}`);
 - three loops: `for` with an early return (the shape above), `for` without one,
   and `while`.
 
@@ -71,7 +73,8 @@ Not covered, and still wrong: a control flow that assigns and is neither a
 statement nor the whole right side of a match. Examples are a call argument,
 `f(if (c) { v = 2; "a"; } else "b")`, and an operand,
 `total + switch o { case Some(x): last = x; 1; case None: 0; }`. Bind the
-control flow to a variable first.
+control flow to a variable first. A `try` in value position is also not
+covered: `var r = try { out = 1; f(); } catch (e) { 0; }` still loses `out`.
 
 Run the snapshot with
 `make -C test test-regression__value_position_branch_assignment` and the native

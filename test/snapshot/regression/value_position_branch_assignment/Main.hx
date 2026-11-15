@@ -26,6 +26,7 @@ class Main {
 			Sys.println(nestedTernaryBinding(k));
 			Sys.println(nestedSwitch(find(k), k == ""));
 			Sys.println(shadowedLocal(k == "x"));
+			Sys.println(throwingBranch(k == "x"));
 		}
 		Sys.println(nestedTernaryBinding("y"));
 		Sys.println(nestedSwitch(Some("q"), true));
@@ -142,6 +143,20 @@ class Main {
 			v + 1;
 		} else 0;
 		return r + "/" + v + "/" + seen;
+	}
+
+	/** One branch assigns and has a value; the other one throws and has none. */
+	public static function throwingBranch(c:Bool):String {
+		var out = "d";
+		try {
+			var r = if (c) {
+				out = "set";
+				1;
+			} else throw "boom";
+			return out + r;
+		} catch (e:String) {
+			return out + e;
+		}
 	}
 
 	/**
