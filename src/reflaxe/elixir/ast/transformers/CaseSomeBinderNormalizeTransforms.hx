@@ -23,6 +23,9 @@ import StringTools;
 	*   and name starts with `_` and is referenced in the clause body/guard, then:
 	*     - Rename pattern binder to `payload` (or trimmed name if safe).
 	*     - Replace EVar(old) occurrences in the clause body/guard with the new name.
+	*     - Drop a leading `alias = binder` only when `alias` is the binder's own
+	*       plain name. An assignment to any other name, such as an outer
+	*       `out = v`, is real work and stays.
 
 	*
 	* EXAMPLES
@@ -58,6 +61,13 @@ class CaseSomeBinderNormalizeTransforms {
 												candidate = "payload";
 											// rewrite clause body
 											var body2 = cl.body;
+											// Only a copy of the binder under its own plain name is an alias.
+											// `{:some, v} -> out = v` assigns an outer variable: dropping it
+											// loses the arm's value (haxe.elixir.codex-1mq).
+											var trimmedBinder = (nm.length > 1 && nm.charAt(0) == '_') ? nm.substr(1) : nm;
+											function isBinderAlias(name:String):Bool {
+												return name == trimmedBinder || name == candidate;
+											}
 											// Drop leading alias `alias = nm` in block/ do
 											inline function dropAlias(b:ElixirAST):ElixirAST {
 												return switch (b.def) {
@@ -68,10 +78,10 @@ class CaseSomeBinderNormalizeTransforms {
 															var s0 = rest[0];
 															var removed = false;
 															switch (s0.def) {
-																case EBinary(Match, {def: EVar(a)}, {def: EVar(bv)}) if (bv == nm):
+																case EBinary(Match, {def: EVar(a)}, {def: EVar(bv)}) if (bv == nm && isBinderAlias(a)):
 																	rest.shift();
 																	removed = true;
-																case EMatch(PVar(a2), {def: EVar(bv2)}) if (bv2 == nm):
+																case EMatch(PVar(a2), {def: EVar(bv2)}) if (bv2 == nm && isBinderAlias(a2)):
 																	rest.shift();
 																	removed = true;
 																default:
@@ -86,10 +96,10 @@ class CaseSomeBinderNormalizeTransforms {
 															var s00 = r2[0];
 															var removed2 = false;
 															switch (s00.def) {
-																case EBinary(Match, {def: EVar(a)}, {def: EVar(bv)}) if (bv == nm):
+																case EBinary(Match, {def: EVar(a)}, {def: EVar(bv)}) if (bv == nm && isBinderAlias(a)):
 																	r2.shift();
 																	removed2 = true;
-																case EMatch(PVar(a2), {def: EVar(bv2)}) if (bv2 == nm):
+																case EMatch(PVar(a2), {def: EVar(bv2)}) if (bv2 == nm && isBinderAlias(a2)):
 																	r2.shift();
 																	removed2 = true;
 																default:

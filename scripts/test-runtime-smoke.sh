@@ -77,6 +77,7 @@ TEST_DIRS=(
   "test/snapshot/regression/nested_enum_pattern_outer_value"
   "test/snapshot/regression/result_payload_outer_name"
   "test/snapshot/regression/nested_enum_guard_payload"
+  "test/snapshot/regression/enum_switch_arm_assignment"
   "test/snapshot/regression/module_level_final_with_app_name"
   "test/snapshot/regression/declared_then_assigned_in_branches"
   "test/snapshot/regression/enum_extraction_usage"
