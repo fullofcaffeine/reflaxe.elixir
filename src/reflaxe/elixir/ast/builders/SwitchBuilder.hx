@@ -1535,7 +1535,7 @@ class SwitchBuilder {
 			// Precompute usage to avoid repeated full-tree scans per parameter
 			var usedFlags = computeEnumParamUsage(caseBody, parameterNames.length, ef, context);
 			var localUsage = collectReadLocalNameUsage(caseBody);
-			var outerReadNames = collectOuterReadNames(caseBody);
+			var outerReadNames = collectOuterReadNames(caseBody, context);
 			#if debug_switch_builder
 			trace('[SwitchBuilder] === generateIdiomaticEnumPatternWithBody for ${ef.name} ===');
 			trace('[SwitchBuilder]   parameterNames = [${parameterNames.join(", ")}]');
@@ -1920,8 +1920,15 @@ class SwitchBuilder {
 	 * such as the payload extraction `var _g = r[0]`, an inner pattern binder, a
 	 * lambda parameter, a loop variable or a catch variable, is not an outer
 	 * variable, even when an outer variable has the same name.
+	 *
+	 * The payload extraction itself reads the switched value, as in
+	 * `var _g = message[0]`. The pattern replaces that extraction, so the read
+	 * does not reach the Elixir clause and does not count. Without this rule
+	 * `switch (message) { case SystemAlert(message, level): ... }`, where the
+	 * binder reuses the name of the switched variable, would get a renamed binder
+	 * for no reason.
 	 */
-	static function collectOuterReadNames(caseBody:TypedExpr):Map<String, Bool> {
+	static function collectOuterReadNames(caseBody:TypedExpr, context:CompilationContext):Map<String, Bool> {
 		var declaredInBody = new Map<Int, Bool>();
 		function collectDeclarations(expression:TypedExpr):Void {
 			if (expression == null)
@@ -1943,8 +1950,19 @@ class SwitchBuilder {
 		}
 		collectDeclarations(caseBody);
 
+		var clause = context.getCurrentClauseContext();
+		var receiver = clause == null ? null : clause.enumReceiver;
+		function isPayloadExtraction(expression:TypedExpr):Bool {
+			return switch (expression.expr) {
+				case TEnumParameter(subject, _, _): // As in computeEnumParamUsage, an unknown receiver counts as this clause's.
+					receiver == null || ClauseContext.sameEnumReceiver(context.substituteIfNeeded(receiver), context.substituteIfNeeded(subject));
+				default:
+					false;
+			};
+		}
+
 		var names = new Map<String, Bool>();
-		for (local in collectReadLocals(caseBody)) {
+		for (local in collectReadLocals(caseBody, isPayloadExtraction)) {
 			if (!declaredInBody.exists(local.id))
 				names.set(VariableAnalyzer.toElixirVarName(local.name), true);
 		}
@@ -1971,12 +1989,15 @@ class SwitchBuilder {
 		return name;
 	}
 
-	/** Collect read identities without treating assignment destinations as reads. */
-	static function collectReadLocals(caseBody:TypedExpr):Map<Int, TVar> {
+	/**
+	 * Collect read identities without treating assignment destinations as reads.
+	 * `skip` names expressions whose reads do not count; the walk does not enter them.
+	 */
+	static function collectReadLocals(caseBody:TypedExpr, ?skip:TypedExpr->Bool):Map<Int, TVar> {
 		var used = new Map<Int, TVar>();
 
 		function walk(te:TypedExpr, isWrite:Bool):Void {
-			if (te == null)
+			if (te == null || (skip != null && skip(te)))
 				return;
 			switch (te.expr) {
 				case TLocal(v):
