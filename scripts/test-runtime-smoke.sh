@@ -27,6 +27,7 @@ TEST_DIRS=(
   "test/snapshot/stdlib/haxe_io_bytes_streams"
   "test/runtime/loop_control_accumulators"
   "test/snapshot/regression/numeric_control_flow_concat"
+  "test/snapshot/regression/nullable_substr_slice_length"
   "test/snapshot/regression/emitted_module_identity"
   "test/snapshot/regression/reducer_loop_return_semantics"
   "test/snapshot/regression/assigned_switch_return"

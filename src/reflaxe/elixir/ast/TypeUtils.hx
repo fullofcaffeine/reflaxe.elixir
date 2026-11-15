@@ -107,6 +107,14 @@ class TypeUtils {
 		return isElixirTermTypeInner(t, 0);
 	}
 
+	/**
+	 * Returns true when the declared Haxe type can hold null: `Null<T>`, an optional
+	 * argument, `Dynamic`, or a type that is still unknown.
+	 *
+	 * A lowering calls this to decide whether it must handle `nil`. Plain `Int`, `Float`,
+	 * `Bool` and `String` return false, so their fast path has no run-time check. Example:
+	 * `"x/" + name` converts `name` to text only when `name` is a `Null<String>`.
+	 */
 	public static function mayBeNil(t:Null<Type>):Bool {
 		return mayBeNilInner(t, 0);
 	}
@@ -250,7 +258,8 @@ class TypeUtils {
 		if (depth > 20)
 			return true;
 
-		var followed = TypeTools.follow(t);
+		// A full `follow` removes `Null<T>`, so follow one layer at a time and read it first.
+		var followed = TypeTools.follow(t, true);
 		return switch (followed) {
 			case TAbstract(ref, params):
 				var abstractType = ref.get();
