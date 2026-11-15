@@ -90,6 +90,17 @@ class ClauseContext {
 	public var patternExtractedParams:Array<String> = [];
 
 	/**
+	 * Elixir names of the outer variables that any arm of this clause's switch
+	 * assigns.
+	 *
+	 * When one arm assigns an outer variable, the generated `case` returns that
+	 * variable from every arm, so each arm reads it even when its Haxe code does
+	 * not. A pattern binder must not take one of these names. SwitchBuilder fills
+	 * the set once for each switch and reads it when it names payload binders.
+	 */
+	public var switchAssignedNames:Map<String, Bool> = new Map();
+
+	/**
 	 * Infrastructure temp name → binder name mapping for this clause.
 	 *
 	 * Haxe lowers some enum-index switches by extracting constructor payload into

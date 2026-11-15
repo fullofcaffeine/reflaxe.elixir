@@ -1300,6 +1300,11 @@ class BinderTransforms {
 	 * - If a variable is reassigned to an unknown expression, remove it from both sets.
 	 * - Forget prior facts when a tuple, branch, loop, or nested expression can rebind
 	 *   a variable. This avoids using an earlier value after control flow changes it.
+	 * - A match inside a larger expression, such as the condition of
+	 *   `if (v = Map.get(m, k)) != "zzz"`, removes the facts about its names as soon as
+	 *   the walk passes it. The parts of the statement that Elixir evaluates later, here
+	 *   both branches, then see no stale fact. Regression fixture:
+	 *   `regression/condition_assignment_nil_fact`.
 	 * - Fold negated known results, boolean identities such as `true and condition`,
 	 *   and containing constant `if` expressions immediately, since the general
 	 *   constant-folding pass has already run by this stage.
@@ -1466,6 +1471,16 @@ class BinderTransforms {
 			}
 		}
 
+		// Facts valid inside one clause: the incoming facts minus every name the
+		// clause pattern binds. Each clause gets its own copies.
+		function clauseScope(pattern:EPattern, incomingNonNil:Map<String, Bool>,
+				incomingNil:Map<String, Bool>):{nonNil:Map<String, Bool>, knownNil:Map<String, Bool>} {
+			var nonNil = incomingNonNil.copy();
+			var knownNil = incomingNil.copy();
+			forgetPatternBindings(pattern, nonNil, knownNil);
+			return {nonNil: nonNil, knownNil: knownNil};
+		}
+
 		// Rewrite one node of the current function scope, from the outside in.
 		//
 		// A block gets its own copy of the known-value sets and updates it statement by
@@ -1542,6 +1557,109 @@ class BinderTransforms {
 						case EDo(_): EDo(out);
 						default: EBlock(out);
 					}, node.metadata, node.pos);
+				case ECase(subject, clauses):
+					// A clause pattern can rebind an outer name: in `case r do {:ok, value} ->`
+					// a fact about the outer `value` is false inside the clause. Rewrite each
+					// guard and body with the incoming facts minus the pattern's names
+					// (haxe.elixir.codex-c0o.9).
+					var rewrittenSubject = rewriteInScope(subject, incomingNonNil, incomingNil);
+					var rewrittenClauses = [
+						for (clause in clauses) {
+							var scope = clauseScope(clause.pattern, incomingNonNil, incomingNil);
+							{
+								pattern: clause.pattern,
+								guard: clause.guard == null ? null : rewriteInScope(clause.guard, scope.nonNil, scope.knownNil),
+								body: rewriteInScope(clause.body, scope.nonNil, scope.knownNil)
+							};
+						}
+					];
+					makeASTWithMeta(ECase(rewrittenSubject, rewrittenClauses), node.metadata, node.pos);
+				case EReceive(clauses, after):
+					var rewrittenClauses = [
+						for (clause in clauses) {
+							var scope = clauseScope(clause.pattern, incomingNonNil, incomingNil);
+							{
+								pattern: clause.pattern,
+								guard: clause.guard == null ? null : rewriteInScope(clause.guard, scope.nonNil, scope.knownNil),
+								body: rewriteInScope(clause.body, scope.nonNil, scope.knownNil)
+							};
+						}
+					];
+					var rewrittenAfter = after == null ? null : {
+						timeout: rewriteInScope(after.timeout, incomingNonNil, incomingNil),
+						body: rewriteInScope(after.body, incomingNonNil, incomingNil)
+					};
+					makeASTWithMeta(EReceive(rewrittenClauses, rewrittenAfter), node.metadata, node.pos);
+				case EWith(withClauses, doBlock, elseBlock):
+					// Each `pattern <- expr` binds names for the later clauses and the do block.
+					var nonNil = incomingNonNil.copy();
+					var knownNil = incomingNil.copy();
+					var rewrittenWithClauses = [];
+					for (clause in withClauses) {
+						var rewrittenExpr = rewriteInScope(clause.expr, nonNil, knownNil);
+						forgetNestedAssignments(clause.expr, nonNil, knownNil);
+						forgetPatternBindings(clause.pattern, nonNil, knownNil);
+						rewrittenWithClauses.push({pattern: clause.pattern, expr: rewrittenExpr});
+					}
+					// The else block runs after a failed match; earlier clauses may have
+					// rebound names, so it gets only facts that no with clause touched.
+					makeASTWithMeta(EWith(rewrittenWithClauses, rewriteInScope(doBlock, nonNil, knownNil),
+						elseBlock == null ? null : rewriteInScope(elseBlock, nonNil, knownNil)),
+						node.metadata, node.pos);
+				case EFor(generators, filters, body, into, uniq):
+					// A generator pattern binds names for the later generators, the filters
+					// and the body, as in `for value <- list, is_nil(value), do: ...`.
+					var nonNil = incomingNonNil.copy();
+					var knownNil = incomingNil.copy();
+					var rewrittenGenerators = [];
+					for (generator in generators) {
+						var rewrittenExpr = rewriteInScope(generator.expr, nonNil, knownNil);
+						forgetPatternBindings(generator.pattern, nonNil, knownNil);
+						rewrittenGenerators.push({pattern: generator.pattern, expr: rewrittenExpr});
+					}
+					var rewrittenFilters = [for (filter in filters) rewriteInScope(filter, nonNil, knownNil)];
+					makeASTWithMeta(EFor(rewrittenGenerators, rewrittenFilters, rewriteInScope(body, nonNil, knownNil),
+						into == null ? null : rewriteInScope(into, incomingNonNil, incomingNil), uniq),
+						node.metadata, node.pos);
+				case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+					var rewrittenRescue = [
+						for (clause in rescueClauses) {
+							var scope = clauseScope(clause.pattern, incomingNonNil, incomingNil);
+							if (clause.varName != null) {
+								scope.nonNil.remove(clause.varName);
+								scope.knownNil.remove(clause.varName);
+							}
+							{pattern: clause.pattern, varName: clause.varName, body: rewriteInScope(clause.body, scope.nonNil, scope.knownNil)};
+						}
+					];
+					var rewrittenCatch = [
+						for (clause in catchClauses) {
+							var scope = clauseScope(clause.pattern, incomingNonNil, incomingNil);
+							{kind: clause.kind, pattern: clause.pattern, body: rewriteInScope(clause.body, scope.nonNil, scope.knownNil)};
+						}
+					];
+					// Bindings made in the try body do not reach rescue, catch or after code
+					// in Elixir, so those see the facts from before the try.
+					makeASTWithMeta(ETry(rewriteInScope(body, incomingNonNil, incomingNil), rewrittenRescue, rewrittenCatch,
+						afterBlock == null ? null : rewriteInScope(afterBlock, incomingNonNil, incomingNil),
+						elseBlock == null ? null : rewriteInScope(elseBlock, incomingNonNil, incomingNil)),
+						node.metadata, node.pos);
+				case EMatch(pattern, value):
+					// A match inside a larger expression rebinds its names for the code
+					// that Elixir evaluates next. In
+					// `if (v = Map.get(m, k)) != "zzz", do: (if is_nil(v), ...)` the earlier
+					// fact `v = nil` is false in the branch (haxe.elixir.codex-c0o.9).
+					// Rewrite the value with the facts from before the match, then drop the
+					// bound names from the sets that the enclosing block shares with the
+					// later parts of the same statement.
+					var rewrittenValue = rewriteInScope(value, incomingNonNil, incomingNil);
+					forgetPatternBindings(pattern, incomingNonNil, incomingNil);
+					rewrittenValue == value ? node : makeASTWithMeta(EMatch(pattern, rewrittenValue), node.metadata, node.pos);
+				case EBinary(Match, target = {def: EVar(name)}, value):
+					var rewrittenValue = rewriteInScope(value, incomingNonNil, incomingNil);
+					incomingNonNil.remove(name);
+					incomingNil.remove(name);
+					rewrittenValue == value ? node : makeASTWithMeta(EBinary(Match, target, rewrittenValue), node.metadata, node.pos);
 				default:
 					rewriteProvableIsNil(ElixirASTTransformer.transformAST(node, child -> rewriteInScope(child, incomingNonNil, incomingNil)), incomingNonNil,
 						incomingNil);
@@ -2591,9 +2709,69 @@ end'))
 		});
 	}
 
+	/**
+	 * Applies `rewriteNode` to every node, children first, except inside a
+	 * function that binds `name` itself.
+	 *
+	 * WHY: The two late passes below assume that a variable called `reason` in
+	 * the body of an `{:error, binder}` clause stands for the payload, and
+	 * rename or alias the binder to match. That is wrong in a function that has
+	 * its own `reason`, as an argument or as an assigned local:
+	 *
+	 *   def describe(r, reason) do
+	 *     case r do
+	 *       {:error, e} -> up(reason) <> e      # reads the argument
+	 *
+	 * became `{:error, reason} -> reason = e; ...`, which does not compile and
+	 * would hide the argument if it did (haxe.elixir.codex-spk). A function that
+	 * binds the name is left as the builder emitted it.
+	 */
+	static function transformOutsideFunctionsBinding(ast:ElixirAST, name:String, rewriteNode:ElixirAST->ElixirAST):ElixirAST {
+		function visit(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
+			switch (node.def) {
+				case EDef(_, args, _, body) | EDefp(_, args, _, body) if (functionBindsName(args, body, name)):
+					return node;
+				default:
+			}
+			return rewriteNode(ElixirASTTransformer.transformAST(node, visit));
+		}
+		return visit(ast);
+	}
+
+	/**
+	 * Returns true when a function binds `name` as an argument or by a match
+	 * anywhere in its body. A `case` clause pattern does not count: such a
+	 * binder is visible in its own clause only.
+	 */
+	static function functionBindsName(args:Array<EPattern>, body:ElixirAST, name:String):Bool {
+		if (args != null)
+			for (argument in args)
+				if (collectPatternBinders(argument).indexOf(name) != -1)
+					return true;
+		var bound = false;
+		function visit(node:ElixirAST):Void {
+			if (bound || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EMatch(pattern, _) if (collectPatternBinders(pattern).indexOf(name) != -1):
+					bound = true;
+					return;
+				case EBinary(Match, {def: EVar(assigned)}, _) if (assigned == name):
+					bound = true;
+					return;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, visit);
+		}
+		visit(body);
+		return bound;
+	}
+
 	// Late safety net: ensure {:error, binder} arms alias reason only when the body references `reason`
 	public static function errorReasonAliasInjectionPass(ast:ElixirAST):ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+		return transformOutsideFunctionsBinding(ast, "reason", function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
 				case ECase(target, clauses):
 					var newClauses = [];
@@ -2654,7 +2832,7 @@ end'))
 				default: p;
 			}
 		}
-		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+		return transformOutsideFunctionsBinding(ast, "reason", function(node:ElixirAST):ElixirAST {
 			return switch (node.def) {
 				case EFn(clauses):
 					// Explicitly transform clause bodies to catch nested cases (e.g., in reduce_while)

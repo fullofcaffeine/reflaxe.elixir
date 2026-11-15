@@ -164,6 +164,26 @@ class VarUseAnalyzer {
 			}
 		}
 
+		// Bind the names that matches inside an expression create, such as `v` in
+		// `(v = get()) > 0`. Scoped constructs keep their own bindings, so the walk
+		// stops there; missing a binding only leaves a name counted as free.
+		function bindConditionMatches(expression:ElixirAST, scope:Map<String, Bool>):Void {
+			if (expression == null || expression.def == null)
+				return;
+			switch (expression.def) {
+				case EMatch(pattern, rhs):
+					bindConditionMatches(rhs, scope);
+					bindPattern(pattern, scope);
+				case EBinary(Match, lhs, rhs):
+					bindConditionMatches(rhs, scope);
+					bindLhs(lhs, scope);
+				case EFn(_) | ECase(_, _) | ECond(_) | EIf(_, _, _) | EReceive(_, _) | EWith(_, _, _) | EFor(_, _, _, _, _) | ETry(_, _, _, _, _) |
+					EBlock(_) | EDo(_):
+				default:
+					reflaxe.elixir.ast.ElixirASTTransformer.iterateAST(expression, child -> bindConditionMatches(child, scope));
+			}
+		}
+
 		function recordPatternPins(pattern:EPattern, scope:Map<String, Bool>, pinned:Bool = false):Void {
 			if (pattern == null)
 				return;
@@ -286,6 +306,16 @@ class VarUseAnalyzer {
 							walk(clause.guard, functionScope);
 						walk(clause.body, functionScope);
 					}
+
+				case EIf(condition, thenBranch, elseBranch):
+					// `if` evaluates its condition before choosing a branch, so a match in
+					// the condition, as in `if (v = get()) > 0`, binds `v` for both branches.
+					walk(condition, scope);
+					var branchScope = cloneScope(scope);
+					bindConditionMatches(condition, branchScope);
+					walk(thenBranch, branchScope);
+					if (elseBranch != null)
+						walk(elseBranch, branchScope);
 
 				case ECase(target, clauses):
 					walk(target, scope);

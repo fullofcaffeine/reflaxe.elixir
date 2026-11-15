@@ -1769,6 +1769,12 @@ class ElixirASTBuilder {
 				};
 				if (matchNode != null) {
 					matchNode.def; // Return the ElixirASTDef for TVar case
+				} else if (init != null) {
+					// The initialized declaration was skipped on purpose: the clause
+					// pattern already binds this value. Emitting `name = nil` here would
+					// overwrite that binder, e.g. `{:err, g} -> g = nil; case g do`
+					// (haxe.elixir.codex-lrl). TBlock drops the null statement.
+					null;
 				} else {
 					// Handle uninitialized variable declaration
 					EMatch(PVar(finalVarName), makeAST(ENil));
