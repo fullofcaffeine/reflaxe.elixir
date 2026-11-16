@@ -1,0 +1,5 @@
+block_arg=[3,4,5]
+iife_side_out=[0,2,2]
+iife_side=[]
+comp_block_arg=[2,4,6]
+[exit status 0]

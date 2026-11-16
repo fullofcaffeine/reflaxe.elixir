@@ -77,6 +77,8 @@ test/
 │   ├── loops/            # Loop-specific tests (3 tests)
 │   └── regression/       # Bug fix validations (~30 tests)
 │
+├── differential/         # Programs compared on haxe --interp and on BEAM (not snapshots;
+│                         # see scripts/test-differential.sh and its known-differences.txt)
 ├── *.exs                 # Elixir integration tests
 ├── Makefile              # Test runner (parallel execution)
 ├── Test.hxml             # Main Haxe compilation config
