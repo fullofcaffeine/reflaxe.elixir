@@ -4384,7 +4384,8 @@ class LoopBuilder {
 		if (compilationContext == null)
 			return [];
 		return [
-			for (id => tvar in mutatedVars) {id: id, name: VariableBuilder.resolveVariableName(tvar, compilationContext)}
+			for (id => tvar in mutatedVars)
+				{id: id, name: VariableBuilder.resolveVariableName(tvar, compilationContext)}
 		];
 	}
 
