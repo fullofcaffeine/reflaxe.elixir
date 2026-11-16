@@ -284,6 +284,28 @@ class CaseOkBinderAlignTransforms {
 		return undefined.length == 1 ? originalByLower.get(undefined[0]) : null;
 	}
 
+	/**
+	 * Returns the lower-case names that the clause body binds anywhere: match left
+	 * sides, nested `case`, `fn` and `receive` patterns, and `rescue` and `catch`
+	 * binders.
+	 *
+	 * WHY
+	 * - `chooseDesiredName` treats a name that the body reads but never binds as
+	 *   the missing payload name, and renames the `{:ok, binder}` payload to it.
+	 *   A name that a nested construct binds is not missing.
+	 * - A Haxe `catch` lowers to `rescue haxe_exception -> ...`, and the dispatch
+	 *   inside reads `haxe_exception`. Without the `rescue` binder, that name was
+	 *   the one unbound name in the clause, so the payload was renamed to it and
+	 *   every payload read inside the rescue read the exception instead
+	 *   (haxe.elixir.codex-1h8a):
+	 *
+	 *     {:ok, haxe_exception} ->
+	 *       try do ... rescue
+	 *         haxe_exception -> ... {value, _} when is_binary(value) -> value <> haxe_exception
+	 *
+	 *   The `Error` arm pass counts the same binders
+	 *   (`CaseErrorVarUnifyTransforms.collectDeclared`).
+	 */
 	static function collectDeclaredLocals(body:ElixirAST):Map<String, Bool> {
 		var declared = new Map<String, Bool>();
 		function collectFromPattern(p:EPattern):Void {
@@ -326,6 +348,16 @@ class CaseOkBinderAlignTransforms {
 				case EReceive(clauses, _):
 					for (cl in clauses)
 						collectFromPattern(cl.pattern);
+				case ETry(_, rescueClauses, catchClauses, _, _):
+					if (rescueClauses != null)
+						for (cl in rescueClauses) {
+							collectFromPattern(cl.pattern);
+							if (cl.varName != null)
+								declared.set(cl.varName.toLowerCase(), true);
+						}
+					if (catchClauses != null)
+						for (cl in catchClauses)
+							collectFromPattern(cl.pattern);
 				default:
 			}
 			return x;

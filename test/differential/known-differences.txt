@@ -8,7 +8,7 @@
 # (stdout plus the exit-status line). Record it with --update-known only after
 # you review the diff. A known/ file without a DIFF entry is an error.
 #
-# A listed fixture that crashes (o06, o11, p03, p05, q07, q09) stops at the
+# A listed fixture that crashes (p03, p05, q07, q09) stops at the
 # crash: the shapes after it are not checked until that bug is fixed.
 #
 # This list may only shrink. When a listed fixture matches, the command fails
@@ -16,8 +16,6 @@
 # an open Beads id.
 #
 # First run: main 00b361013, 2026-11-16, 34 of 52 fixtures match.
-o06_inner DIFF haxe.elixir.codex-1h8a armCatch: Ok-arm catch binder named like the payload reads the rescue value; ArgumentError ends the run, later lines missing
-o11_unused_catch DIFF haxe.elixir.codex-1h8a okCatchNamedValue: same catch-binder bug; ArgumentError, later lines missing
 p03_iters DIFF haxe.elixir.codex-rrsr item 6: user-class iterator (Countdown) in a comprehension, inner a_custom crashes and outer custom_a also fails; a_kvarr and a_str match when run alone
 p04_scopes COMPILE-FAIL:elixir haxe.elixir.codex-rrsr item 2: throw in a comprehension element prints Enum.concat(g_acc, [raise ..., [...]]), an Elixir syntax error
 p05_names DIFF haxe.elixir.codex-rrsr item 1: user local g_acc read in a nested comprehension is hidden by the reducer parameter; ArithmeticError, later lines missing
