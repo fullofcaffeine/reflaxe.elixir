@@ -35,10 +35,13 @@ class Main {
 		show("prod", prod);
 		var cnt = 0;
 		var r3 = [
-			for (x in xs) for (y in xs) for (z in xs) if (x < y && y < z) {
-				cnt++;
-				x * 100 + y * 10 + z;
-			}
+			for (x in xs)
+				for (y in xs)
+					for (z in xs)
+						if (x < y && y < z) {
+							cnt++;
+							x * 100 + y * 10 + z;
+						}
 		];
 		show("r3", r3);
 		show("cnt", [cnt]);

@@ -45,21 +45,24 @@ class Main {
 			}
 		show("enum_payload", got);
 		var r = [
-			for (o in opts) switch (o) {
-				case Some(v):
-					v;
-				case None:
-					-1;
-			}
+			for (o in opts)
+				switch (o) {
+					case Some(v):
+						v;
+					case None:
+						-1;
+				}
 		];
 		show("enum_comp", r);
 		var r2 = [
-			for (o in opts) for (y in ys) switch (o) {
-				case Some(v):
-					v + y;
-				case None:
-					y;
-			}
+			for (o in opts)
+				for (y in ys)
+					switch (o) {
+						case Some(v):
+							v + y;
+						case None:
+							y;
+					}
 		];
 		show("enum_nested_comp", r2);
 		var total = 0;

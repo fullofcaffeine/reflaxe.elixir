@@ -12,7 +12,8 @@ class Main {
 		var flags = [true, false];
 		var im = [1 => "one", 2 => "two"];
 		show("r_if_else", [
-			for (i in 0...2) if (flags[i]) for (x in xs) for (k in im.keys()) x * 10 + k else for (k in im.keys()) k + 100
+			for (i in 0...2)
+				if (flags[i]) for (x in xs) for (k in im.keys()) x * 10 + k else for (k in im.keys()) k + 100
 		]);
 	}
 }

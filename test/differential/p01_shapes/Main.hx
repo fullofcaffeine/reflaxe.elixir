@@ -16,12 +16,16 @@ class Main {
 		show("rr", [for (i in 0...n) for (j in i...n) i * 10 + j]);
 		show("f_outer", [for (x in xs) if (x != 2) for (y in ys) x + y]);
 		show("f_inner", [
-			for (x in xs) for (y in ys) if (x * y > 20)
-				x * y
+			for (x in xs)
+				for (y in ys)
+					if (x * y > 20)
+						x * y
 		]);
 		show("f_both", [
-			for (x in xs) if (x > 1) for (y in ys) if (y > 10)
-				x * y
+			for (x in xs)
+				if (x > 1) for (y in ys)
+					if (y > 10)
+						x * y
 		]);
 		show("aa_str", [for (x in ["a", "b"]) for (y in ["c", "d"]) x + y]);
 		var stored = [for (x in xs) for (y in ys) x * y];
@@ -31,10 +35,11 @@ class Main {
 		show("empty_inner", [for (x in xs) for (y in ([] : Array<Int>)) x + y]);
 		show("aa_then_aa", [for (x in xs) for (y in ys) x - y].concat([for (x in ys) for (y in xs) x - y]));
 		show("block_body", [
-			for (x in xs) for (y in ys) {
-				var t = x * y;
-				t + 1;
-			}
+			for (x in xs)
+				for (y in ys) {
+					var t = x * y;
+					t + 1;
+				}
 		]);
 	}
 }

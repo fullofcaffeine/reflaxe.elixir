@@ -35,12 +35,13 @@ class Main {
 
 	static function tryComp(m:Map<String, Int>):Array<Int> {
 		return [
-			for (k in m.keys()) try {
-				if (k == "b")
-					throw "x";
-				m.get(k);
-			} catch (e:String)
-				-1
+			for (k in m.keys())
+				try {
+					if (k == "b")
+						throw "x";
+					m.get(k);
+				} catch (e:String)
+					-1
 		];
 	}
 

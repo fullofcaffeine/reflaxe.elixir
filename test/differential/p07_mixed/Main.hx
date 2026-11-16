@@ -9,19 +9,21 @@ class Main {
 		var ys = [10, 20];
 		var log:Array<String> = [];
 		var r = [
-			for (x in xs) for (y in ys) {
-				log.push(x + ":" + y);
-				x + y;
-			}
+			for (x in xs)
+				for (y in ys) {
+					log.push(x + ":" + y);
+					x + y;
+				}
 		];
 		show("r", r);
 		show("log", log);
 		var total = 0;
 		var r2 = [
-			for (x in xs) for (y in ys) {
-				total += x * y;
-				total;
-			}
+			for (x in xs)
+				for (y in ys) {
+					total += x * y;
+					total;
+				}
 		];
 		show("r2", r2);
 		show("total", [total]);

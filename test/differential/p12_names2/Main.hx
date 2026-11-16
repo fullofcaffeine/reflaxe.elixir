@@ -25,8 +25,10 @@ class Main {
 		show("stmt_push_both", out2);
 		var r = [for (x in xs) for (y in ys) x + y];
 		var r2 = [
-			for (x in r) for (y in r) if (x == y)
-				x
+			for (x in r)
+				for (y in r)
+					if (x == y)
+						x
 		];
 		show("chained", r2);
 		show("after", [g, acc]);

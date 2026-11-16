@@ -17,8 +17,10 @@ class Main {
 		show("keys_a", [for (k in m.keys()) for (x in xs) k + x]);
 		show("keys_keys", [for (k in m.keys()) for (j in im.keys()) k + j]);
 		show("keys_filter", [
-			for (x in xs) for (k in m.keys()) if (m.get(k) != x)
-				k + x
+			for (x in xs)
+				for (k in m.keys())
+					if (m.get(k) != x)
+						k + x
 		]);
 		show("aaa_keys", [for (x in xs) for (y in xs) for (k in m.keys()) k + x + y]);
 		show("r_keys", [for (i in 0...2) for (k in im.keys()) i * 10 + k]);

@@ -15,10 +15,12 @@ class Main {
 	static function tryIt(xs:Array<Int>, ys:Array<Int>):Array<Int> {
 		try {
 			var r = [
-				for (x in xs) for (y in ys) if (y == 0)
-					throw "zero"
-				else
-					x * y
+				for (x in xs)
+					for (y in ys)
+						if (y == 0)
+							throw "zero"
+						else
+							x * y
 			];
 			return r;
 		} catch (e:String) {

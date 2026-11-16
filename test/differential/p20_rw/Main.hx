@@ -40,8 +40,10 @@ class Main {
 		show("keys_a_ret", keysA(m, xs));
 		show("keys_empty", [for (k in empty.keys()) for (x in xs) k + x]);
 		show("keys_a_filter", [
-			for (k in m.keys()) if (k != "a") for (x in xs) if (x > 1)
-				k + x
+			for (k in m.keys())
+				if (k != "a") for (x in xs)
+					if (x > 1)
+						k + x
 		]);
 		var stored = [for (k in m.keys()) for (x in xs) k + x];
 		show("stored_len", [stored.length]);

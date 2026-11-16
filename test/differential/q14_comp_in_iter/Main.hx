@@ -12,7 +12,9 @@ class Main {
 		var im = [1 => "one", 2 => "two"];
 		// inner comprehension as the iterable of an inner clause; outer values differ from inner values
 		show("r_in_r", [
-			for (i in 0...2) for (v in [for (a in 0...2) for (k in im.keys()) k + a * 10]) v + (i + 1) * 100
+			for (i in 0...2)
+				for (v in [for (a in 0...2) for (k in im.keys()) k + a * 10])
+					v + (i + 1) * 100
 		]);
 		show("for_in_keys", [for (x in xs) for (v in [for (k in im.keys()) k]) v + x * 100]);
 		show("keys_in_keys", [for (j in im.keys()) for (v in [for (k in im.keys()) k]) v + j * 100]);

@@ -25,7 +25,8 @@ class Main {
 		show("iife_side_out", out2);
 		show("iife_side", side);
 		var lens = [
-			for (x in xs) id({var t:Array<Int> = []; for (y in ys) t.push(y); t.length * x;})
+			for (x in xs)
+				id({var t:Array<Int> = []; for (y in ys) t.push(y); t.length * x;})
 		];
 		show("comp_block_arg", lens);
 	}

@@ -35,20 +35,25 @@ class Main {
 		show("plainRangeThenWhile", plainRangeThenWhile(n));
 		// comprehension temps: unrolled outer range, arms of different loop kinds
 		show("c_range_then_keys", [
-			for (a in 0...2) if (a == 0) for (i in 0...n) i else for (k in im.keys()) k + 100
+			for (a in 0...2)
+				if (a == 0) for (i in 0...n) i else for (k in im.keys()) k + 100
 		]);
 		show("c_keys_then_range", [
-			for (a in 0...2) if (a == 1) for (i in 0...n) i else for (k in im.keys()) k + 100
+			for (a in 0...2)
+				if (a == 1) for (i in 0...n) i else for (k in im.keys()) k + 100
 		]);
 		show("c_flags_range_keys", [
-			for (a in 0...2) if (flags[a]) for (i in 0...n) i else for (k in im.keys()) k + 100
+			for (a in 0...2)
+				if (flags[a]) for (i in 0...n) i else for (k in im.keys()) k + 100
 		]);
 		show("c_flags_keys_range", [
-			for (a in 0...2) if (!flags[a]) for (i in 0...n) i else for (k in im.keys()) k + 100
+			for (a in 0...2)
+				if (!flags[a]) for (i in 0...n) i else for (k in im.keys()) k + 100
 		]);
 		show("c_flags_for_keys", [for (a in 0...2) if (flags[a]) for (x in xs) x else for (k in im.keys()) k + 100]);
 		show("c_flags_rangekeys_keys", [
-			for (a in 0...2) if (flags[a]) for (i in 0...n) for (k in im.keys()) i * 10 + k else for (k in im.keys()) k + 100
+			for (a in 0...2)
+				if (flags[a]) for (i in 0...n) for (k in im.keys()) i * 10 + k else for (k in im.keys()) k + 100
 		]);
 		show("c_range_keys", [for (i in 0...n) for (k in im.keys()) i * 10 + k]);
 		show("c_keys_range", [for (k in im.keys()) for (i in 0...n) i * 10 + k]);

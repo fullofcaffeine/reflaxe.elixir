@@ -40,32 +40,40 @@ class Main {
 		var m = ["a" => 1, "b" => 2];
 		var im = [1 => "one", 2 => "two"];
 		show("if3_arms", [
-			for (i in 0...3) if (i == 0) for (k in im.keys()) k else if (i == 1) for (x in xs) for (k in im.keys()) k + x * 10 else for (x in xs) x + 500
+			for (i in 0...3)
+				if (i == 0) for (k in im.keys()) k else if (i == 1) for (x in xs) for (k in im.keys()) k + x * 10 else for (x in xs) x + 500
 		]);
 		show("if3_arms_rev", [
-			for (i in 0...3) if (i == 2) for (k in im.keys()) k else if (i == 1) for (x in xs) for (k in im.keys()) k + x * 10 else for (x in xs) x + 500
+			for (i in 0...3)
+				if (i == 2) for (k in im.keys()) k else if (i == 1) for (x in xs) for (k in im.keys()) k + x * 10 else for (x in xs) x + 500
 		]);
 		show("try_elem", [
-			for (i in 0...2) for (k in m.keys()) try
-				parse(k) + i
-			catch (e:String)
-				-1]);
+			for (i in 0...2)
+				for (k in m.keys())
+					try
+						parse(k) + i
+					catch (e:String)
+						-1]);
 		show("break_inner", [
-			for (x in xs) for (k in im.keys()) {
-				if (k > 1)
-					break;
-				x * 10 + k;
-			}
+			for (x in xs)
+				for (k in im.keys()) {
+					if (k > 1)
+						break;
+					x * 10 + k;
+				}
 		]);
 		show("continue_keys", [
-			for (k in im.keys()) for (x in xs) {
-				if (x == 1)
-					continue;
-				x * 10 + k;
-			}
+			for (k in im.keys())
+				for (x in xs) {
+					if (x == 1)
+						continue;
+					x * 10 + k;
+				}
 		]);
 		show("r_in_r", [
-			for (i in 0...2) for (v in [for (a in 0...2) for (k in im.keys()) k + a * 10]) v + i * 100
+			for (i in 0...2)
+				for (v in [for (a in 0...2) for (k in im.keys()) k + a * 10])
+					v + i * 100
 		]);
 		show("compInWhile", compInWhile(im));
 		show("compInKv", compInKv(m, im));
