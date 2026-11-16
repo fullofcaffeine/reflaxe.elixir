@@ -126,6 +126,8 @@ class GeneratedOutputOwnership {
 	@:persistent static var rememberedDigests:Null<Map<String, Array<RememberedDigest>>> = null;
 	@:persistent static var rememberedByteCount:Int = 0;
 	@:persistent static var rememberedManifest:Null<RememberedManifest> = null;
+	// True when the last `readOwnership` reused the remembered manifest state.
+	static var lastManifestReused = false;
 
 	/**
 	 * Recovers a previously activated publication transaction, or removes a prepare
@@ -188,6 +190,8 @@ class GeneratedOutputOwnership {
 		try {
 			var preflightStarted = phaseTimings.start();
 			var previous = readOwnership(root);
+			if (lastManifestReused)
+				phaseTimings.record("output_manifest_reused", 0.0);
 			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;
 			var pending = new Map<String, StringOrBytes>();
 			var pendingOrder:Array<String> = [];
@@ -482,6 +486,22 @@ class GeneratedOutputOwnership {
 			var manifestTemp = Path.join([root, MANIFEST_TEMP_FILENAME]);
 			File.copy(Path.join([active, NEXT_MANIFEST_FILENAME]), manifestTemp);
 			replaceFile(manifestTemp, manifestPath);
+			// Each request writes a new manifest (its `id` grows), so remember the
+			// one just written: it holds exactly these paths, digests, generation,
+			// and id. The next request then reuses this state when the live
+			// manifest still has these bytes, instead of parsing and hashing it.
+			rememberedManifest = {
+				path: manifestPath,
+				bytes: haxe.io.Bytes.ofString(nextManifest),
+				state: {
+					exists: true,
+					legacy: false,
+					id: nextId,
+					paths: nextPaths.copy(),
+					digests: newDigests.copy(),
+					generation: generation
+				}
+			};
 
 			removeTransactionTemps(root, journal);
 			safeRemoveTree(active);
@@ -527,12 +547,15 @@ class GeneratedOutputOwnership {
 		// result is the same, and the JSON parse and the SHA-256 check are skipped.
 		var bytes = File.getBytes(manifestPath);
 		var remembered = rememberedManifest;
+		lastManifestReused = false;
 		#if !reflaxe_elixir_full_ownership_check
 		if (remembered != null
 			&& remembered.path == manifestPath
 			&& remembered.bytes.length == bytes.length
-			&& remembered.bytes.compare(bytes) == 0)
+			&& remembered.bytes.compare(bytes) == 0) {
+			lastManifestReused = true;
 			return copyOwnershipState(remembered.state);
+		}
 		#end
 		var state = parseOwnership(manifestPath, bytes);
 		rememberedManifest = {path: manifestPath, bytes: bytes, state: copyOwnershipState(state)};
