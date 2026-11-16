@@ -226,6 +226,7 @@ successfully contributes a compatibility pass.
 | Generated Elixir acceptance | `npm run test:elixir-validate`, `test:examples-elixir` | `test:elixir-validate` parses already-generated snapshot `out/` trees that exist and skips absent ones; example WAE lanes compile maintained examples and reject warnings | Snapshot generation, absent `out/` trees, or correct runtime semantics |
 | Portable BEAM runtime | `npm run test:haxe-exunit-stdlib` | Selected ordinary Haxe stdlib behavior executes on BEAM/ExUnit, and all compilation steps reject Elixir warnings | Complete official Haxe `unit.TestMain` coverage |
 | Mixed BEAM aggregate | `npm run test:runtime-smoke`, `test:mix-fast` | Selected portable runtime, compiler integration, and native OTP/Mix behavior execute, and all compilation steps reject Elixir warnings | A pass cannot be attributed wholly to either evidence axis. Route each error to its owning test. |
+| Interpreter-versus-BEAM differential | `npm run test:differential` | Each fixture program prints the same stdout bytes and exits with the same status on the BEAM as on `haxe --interp`; each known bug is listed with a Beads id and its exact wrong output | Effects the program does not print, stderr text, warning-free output (warnings are only counted), or code that the fixtures do not run |
 | Official `unitstd` subset | `npm run guard:upstream-unitstd`, `test:haxe-exunit-stdlib` | The currently enabled/adapted checked-in specs remain inventoried and execute | Shared top-level language classes, issue corpus, or all 120 manifest entries |
 | Output quality | `npm run test:handwritten-output`, `test:generated-formatting` | Representative generated Elixir stays formatted and within reviewed structural budgets | Semantic correctness alone |
 | Examples | `test:examples`, `test:examples-output`, `test:examples-elixir`, `test:examples-runtime` | Maintained examples compile, keep reviewed output, pass strict Elixir checks, and run where declared | Unlisted examples or unsupported capabilities |
@@ -622,6 +623,9 @@ npm run test:haxe-exunit-stdlib
 npm run test:runtime-smoke
 npm run test:mix-fast
 
+# Interpreter-versus-BEAM differential (stdout and exit status)
+npm run test:differential
+
 # Pure Mix tasks and deterministic tooling policies
 npm run test:mix-tooling
 
@@ -652,6 +656,113 @@ isolation. This catches undefined calls, unused values, module conflicts, and
 other target warnings without making one monolithic example job. The owning
 runner is `scripts/test-examples-elixir.sh`; failures retain logs under
 `_tmp/examples-elixir-wae/`.
+
+### Interpreter-versus-BEAM differential check
+
+`scripts/test-differential.sh` (`npm run test:differential`) finds silent
+wrong code: Elixir that compiles without a warning but computes a different
+value. It runs each fixture program two ways and compares the results:
+
+1. on the Haxe interpreter, `haxe --interp`, which is the reference;
+2. compiled with `-lib reflaxe.elixir`, checked by
+   `scripts/ci/validate-generated-elixir-warnings.exs`, and run on the BEAM.
+
+For example, before PR #83, `return [for (k in m.keys()) k];` returned `[]`
+on the BEAM. The intended snapshot accepted the generated text, and the program
+printed `[]` where the interpreter printed `[a,b]`. This command reports that as `DIFF`
+with a unified diff.
+
+Each fixture is a folder with `Main.hx` (a `Main` class with
+`static function main()`) and an optional `compile.hxml` with extra flags for
+both runs. Paths in `compile.hxml` resolve against the scope directory (see
+below), so keep it to flags such as `-D` defines. The first set lives in
+`test/differential/`. It holds small programs from the compiler reviews of
+PRs #81, #82 and #83, which found several wrong-code bugs by hand in exactly
+this way. Two review probes are left out because they are byte-identical to
+the runtime-smoke fixtures `nested_comprehension_accumulator` and
+`reduce_while_comprehension_accumulator`.
+
+```bash
+npm run test:differential                          # the whole set, one at a time
+scripts/test-differential.sh --fixture q03_scopes  # one fixture
+scripts/test-differential.sh -j 4                  # four fixtures at a time
+scripts/test-differential.sh path/to/fixtures      # another fixture set
+```
+
+The command prints one line per fixture, in a fixed order:
+
+| Status | Meaning |
+|---|---|
+| `MATCH` | Same stdout bytes and same exit status on both sides |
+| `DIFF` | Stdout or exit status differs; a unified diff follows the table |
+| `COMPILE-FAIL` | Haxe-to-Elixir compilation or Elixir compilation failed |
+| `INTERP-FAIL` | The reference failed: `haxe --interp` exited non-zero, so fix the fixture |
+| `TIMEOUT` | A step ran longer than its limit (`--timeout`, default 30 s per program run; `--compile-timeout`, default 600 s per compile step) |
+
+The comparison is one file per side: stdout followed by a line such as
+`[exit status 0]`. A BEAM crash therefore shows in the diff as missing output
+and `[exit status 1]`. Elixir warnings do not fail the comparison, because the
+strict-warning gates own them, but the line reports `warnings=N`. An unused
+variable warning often marks a dropped value.
+
+`test/differential/known-differences.txt` lets the gate pass while known bugs
+are open. Each line is `<id> <STATUS> <beads-id> <reason>`, where `STATUS` is
+`DIFF`, `COMPILE-FAIL:<haxe|elixir>` or `TIMEOUT:<interp|haxe|elixir|beam>`.
+The stage must match too: an entry for an Elixir syntax error does not cover a
+Haxe compile that starts to fail. For a `DIFF` entry, `test/differential/known/<id>.out` records the exact wrong
+BEAM output. A listed fixture passes only if it fails in exactly the recorded
+way. So a new wrong line in a program that already has one known bug still
+fails the gate. The list can only shrink:
+
+- A listed fixture that now matches fails the gate with
+  `FIXED: remove it from known-differences.txt and known/`.
+- A listed fixture whose wrong output changed fails with
+  `known output CHANGED` and shows both diffs. After review,
+  `--update-known` records the new output. It never adds or removes list
+  entries.
+- A line that names a missing fixture, has no Beads id, or repeats a fixture
+  is a usage error. So is a file in `known/` without a `DIFF` entry.
+- A listed fixture that crashes stops at the crash. The shapes after it are
+  not checked until that bug is fixed. In the first set this applies to six
+  fixtures: o06, o11, p03, p05, q07 and q09.
+
+Exit status: `0` when every fixture matches or fails exactly as listed, `1`
+otherwise, `2` for a usage or setup error. Outputs go to
+`_tmp/differential/<set>/<id>/` (`interp.out`, `beam.out`, `diff`, the
+generated Elixir, and every log). Before it starts the workers, the command
+deletes the old result of each selected fixture, so a worker that cannot start
+or dies shows `RUNNER-ERROR` and fails the gate; it never reuses an old status.
+
+`--reclassify` runs nothing and classifies the stored results again, for
+example after you edit the list. Its header and its last line say
+`reclassified, nothing was run`. Each result records the scope's git commit,
+a digest of its uncommitted tracked changes, and a digest of the fixture
+sources. If any of them changed since the run, `--reclassify` reports that
+fixture as a stale result and fails.
+
+`npm run test:differential-runner` checks these runner rules with stand-in
+`haxe` and `elixir` commands, in a few seconds and without a real compile.
+
+The command runs Haxe in the scope directory, by default this checkout, so
+`-lib reflaxe.elixir` resolves to the source tree. To test a release package,
+pass `--scope DIR` for a consumer directory whose `haxe_libraries` install the
+packaged library (`haxe.elixir.codex-0yn.10.5`). Another repository can run its
+own fixture set the same way:
+`<reflaxe.elixir>/scripts/test-differential.sh --scope <its root> <its fixtures>`.
+
+What it does not prove:
+
+- It compares stdout and exit status only. It does not see effects that the
+  program does not print: files, messages, process state, or stderr text.
+- It covers only the code paths the fixtures run. A `MATCH` is evidence for
+  those programs, not for the compiler as a whole.
+- The interpreter is the reference. A fixture whose behavior differs by
+  design between targets (for example `Sys.time`, hash order, Unicode
+  length with `-D no-utf16`, or float printing edge cases) does not belong in
+  the set; print sorted and target-independent values instead.
+- Each run is a clean cold compile. It does not test the Haxe server or warm
+  rebuilds.
+- It is not in hosted CI yet; run it locally before a compiler change merges.
 
 ### Snapshot runner internals
 

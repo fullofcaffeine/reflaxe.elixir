@@ -1,0 +1,6 @@
+r_in_r=1,11,12,2,201,202,211,212
+for_in_keys=1,2,201,202
+keys_in_keys=1,2,201,202
+r_in_keys=1,2,201,202
+for_in_for=101,102,201,202
+[exit status 0]

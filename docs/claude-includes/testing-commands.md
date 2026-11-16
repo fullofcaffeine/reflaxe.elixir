@@ -18,6 +18,7 @@ npm run test:regression                   # Focused regressions
 ### R1 — Runtime/Claim Smoke
 ```bash
 npm run test:runtime-smoke                 # Small Haxe -> Elixir -> BEAM path
+npm run test:differential                  # Same stdout on haxe --interp and on BEAM
 npm run test:haxe-exunit-stdlib           # Haxe-authored stdlib semantics on BEAM
 npm run test:mix-fast                     # Mix/compiler integration
 ```

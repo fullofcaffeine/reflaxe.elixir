@@ -1,0 +1,9 @@
+errUnused returned ok o
+okUnused outer caught int 5
+closureErr returned oR
+closureOk outer caught int 5
+errUnused outer caught int 5
+okUnused returned err x
+closureErr outer caught int 5
+closureOk returned xV
+[exit status 1]
