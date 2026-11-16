@@ -590,9 +590,31 @@ class ElixirASTTransformer {
 	}
 
 	/**
-	 * Get list of enabled transformation passes
+	 * The pass list of the current compilation request. It is not `@:persistent`,
+	 * so Haxe resets it at the start of each request, also on a compilation server.
+	 */
+	static var requestPasses:Null<Array<PassConfig>> = null;
+
+	/**
+	 * Returns the enabled transformation passes, built once for each request.
+	 *
+	 * Building and validating the registry took about 30 ms. It ran for each
+	 * generated module: about 6 s of a cold todo-app build (196 modules), and
+	 * about 0.1 s of a warm one-class edit. The list depends only on the registry
+	 * code and on the defines, which do not change during a request. Each entry
+	 * holds a name, flags, and a function that refers to static code; no entry
+	 * keeps state from one module to the next.
 	 */
 	static function getEnabledPasses():Array<PassConfig> {
+		var known = requestPasses;
+		if (known != null)
+			return known;
+		var passes = buildEnabledPasses();
+		requestPasses = passes;
+		return passes;
+	}
+
+	static function buildEnabledPasses():Array<PassConfig> {
 		var passes = reflaxe.elixir.ast.transformers.registry.ElixirASTPassRegistry.getEnabledPasses();
 
 		#if macro
