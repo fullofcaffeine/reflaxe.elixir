@@ -264,7 +264,7 @@ class ModuleBuilder {
 		// not another module: recording it makes later qualification redirect
 		// valid root calls (for example Shared_Fields_.value()) to absent modules.
 		// Application-owned classes already receive their prefix in extractModuleName.
-		reflaxe.elixir.ElixirCompiler.registerModule(moduleName);
+		reflaxe.elixir.ElixirCompiler.registerClassModule(classType, moduleName);
 		var attributes:Array<EAttribute> = [];
 
 		// Use provided metadata or create empty object

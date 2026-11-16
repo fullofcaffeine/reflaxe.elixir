@@ -123,6 +123,26 @@ builds no enum module, and each of its variants still compares the complete
 warm output with a fresh build. This patch stays local until upstream Reflaxe
 tracks rebuilt enums.
 
+### Public Query For Classes That Haxe Typed Again
+
+`ReflectCompiler.wasTypedThisRequest(cls)` returns true when the global build
+macro recorded `cls` in this compilation request, or when the request cannot
+tell (the first server request, a build without a server, or
+`reflaxe.disallow_build_cache_check`). It reuses the list and the
+`sourceTypeKey` comparison that the cache filter already uses, so a class with
+`@:native` is found under its Haxe path.
+
+Reflaxe.Elixir uses it to keep per-class results between server requests:
+private-method export uses, clean reference-semantics scans, and the module
+name that each class registers (`ClassResultCache`). Before, each warm request
+scanned every class body two times (about 0.6 s on the todo-app under load),
+and the printer's module registry missed the classes that the request did not
+build, so a one-class edit printed `FlashTypeTools` where a fresh build printed
+`TodoApp.FlashTypeTools`. The `private-exports` case of
+`test:reflaxe-server-cache` checks that a one-class edit scans fewer classes
+than a full scan and still equals a fresh build. This patch stays local until
+upstream Reflaxe offers an equivalent query.
+
 ### 1. `Run.hx`: Build Root File Copy
 
 Status: local patch, submitted upstream in

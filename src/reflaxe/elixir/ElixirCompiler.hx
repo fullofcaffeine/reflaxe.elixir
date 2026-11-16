@@ -116,9 +116,51 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	// Global module registry for cross-file qualification decisions
 	static var globalModuleRegistry:Map<String, Bool> = new Map();
 
+	/**
+	 * The module name that each class registered when it was last built.
+	 *
+	 * The printer qualifies a call in `TodoAppWeb.AuditLogLive` from
+	 * `FlashTypeTools` to `TodoApp.FlashTypeTools` only when a class registered
+	 * `TodoApp.FlashTypeTools`. A warm request builds only the classes that Haxe
+	 * typed again, so without these kept names the registry missed the other
+	 * classes, and a one-class edit printed a different call than a fresh build.
+	 */
+	@:persistent static var keptModuleNames:Null<ClassResultCache<String>> = null;
+
 	public static function registerModule(name:String):Void {
 		if (name != null && name.length > 0)
 			globalModuleRegistry.set(name, true);
+	}
+
+	/** Registers the module that `classType` emits, and keeps it for warm requests. */
+	public static function registerClassModule(classType:ClassType, name:String):Void {
+		registerModule(name);
+		if (keptModuleNames != null && name != null && name.length > 0)
+			keptModuleNames.record(classType, name);
+	}
+
+	/**
+	 * Registers, at the start of a request, the module names of the live classes
+	 * that Haxe did not type again. A fresh build registers the same names when
+	 * it builds these classes, because a name depends only on the class and the
+	 * defines.
+	 */
+	static function registerKeptModuleNames(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+		var names = keptModuleNames;
+		if (names == null) {
+			names = new ClassResultCache();
+			keptModuleNames = names;
+		}
+		names.begin();
+		for (moduleType in moduleTypes) {
+			switch (moduleType) {
+				case TClassDecl(classRef):
+					var name = names.reuse(classRef.get());
+					if (name != null)
+						registerModule(name);
+				case _:
+			}
+		}
 	}
 
 	public static function isModuleKnown(name:String):Bool {
@@ -369,6 +411,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			phaseTimings.record("reference_semantics_class_scan", ReferenceSemanticsDiagnostics.lastScanDurationMs,
 				ReferenceSemanticsDiagnostics.lastScannedClassCount);
 		var result = filterTypesBody(moduleTypes);
+		registerKeptModuleNames(result);
 		var exportsStarted = phaseTimings.start();
 		if (keptPrivateMethodExports == null)
 			keptPrivateMethodExports = new ClassResultCache();
@@ -6561,6 +6604,8 @@ left_name == right_name and left_params == right_params';
 		// after the output that used them was published.
 		if (keptPrivateMethodExports != null)
 			keptPrivateMethodExports.commit();
+		if (keptModuleNames != null)
+			keptModuleNames.commit();
 		ReferenceSemanticsDiagnostics.commitRequest();
 	}
 
