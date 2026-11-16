@@ -2257,6 +2257,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					// The same rename as for a function body: `{ var g = 10; ... }` gets `local_g`.
 					var initRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsWithTempNames(initExpr);
 					initExpr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(initExpr, initRenames);
+					// An inner local that would overwrite an outer one in Elixir gets a fresh name.
+					var initShadowRenames = reflaxe.elixir.ast.naming.ShadowedLocals.renamesForShadowingLocals(initExpr);
+					initExpr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(initExpr, initShadowRenames);
 					reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(initExpr, context);
 				} else {
 					ast(ENil);
@@ -2414,6 +2417,19 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsWithTempNames(expr, argumentNames, argumentVars);
 				if (sourceLocalRenames.keys().hasNext()) {
 					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, sourceLocalRenames);
+				}
+				// Elixir has no block scope: an inner local (often from an inlined function) that
+				// has the name of an outer local read later gets a fresh name (`q` -> `q1`), so it
+				// cannot overwrite the outer value when a pass flattens the inner block.
+				var renamedArgumentVars = [
+					for (v in argumentVars)
+						sourceLocalRenames.exists(v.id) ? sourceLocalRenames.get(v.id) : v
+				];
+				var shadowRenames = reflaxe.elixir.ast.naming.ShadowedLocals.renamesForShadowingLocals(expr, argumentNames, renamedArgumentVars);
+				if (shadowRenames.keys().hasNext()) {
+					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, shadowRenames);
+					for (id => v in shadowRenames)
+						sourceLocalRenames.set(id, v);
 				}
 				if (sourceLocalRenames.keys().hasNext() && context.infraVarSubstitutions != null) {
 					var renamedSubstitutions = new Map<Int, TypedExpr>();

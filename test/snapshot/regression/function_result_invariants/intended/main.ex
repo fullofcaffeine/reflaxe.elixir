@@ -62,14 +62,14 @@ defmodule Main do
     old = 99
     unsigned_counter = -1
     {unsigned_counter, reflaxe_call_value_1} = (fn ->
-      old = unsigned_counter
+      old1 = unsigned_counter
       unsigned_counter = (
             case Bitwise.band(unsigned_counter + 1, 0xFFFFFFFF) do
               v when v >= 0x80000000 -> v - 0x100000000
               v -> v
             end
       )
-      {unsigned_counter, old}
+      {unsigned_counter, old1}
     end).()
     if (identity_int(reflaxe_call_value_1) != -1) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "function argument post-increment returned the wrong prior value"]
