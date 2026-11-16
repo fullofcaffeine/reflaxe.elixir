@@ -32,32 +32,32 @@ defmodule Main do
   end
   defp check_order() do
     Main.events("")
-    g = record("a")
+    local_g = record("a")
     record("b")
-    if (g != 1 or Main.events() != "ab") do
+    if (local_g != 1 or Main.events() != "ab") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "A saved call moved past a later effect."]
     end
   end
   defp check_unused() do
     Main.events("")
-    _g = record("a")
+    _local_g = record("a")
     if (Main.events() != "a") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "An unused result erased its effect."]
     end
   end
   defp check_captured_local() do
     source = 3
-    g = source
+    local_g = source
     source = 9
-    if (g != 3 or source != 9) do
+    if (local_g != 3 or source != 9) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "A saved local became a later read."]
     end
   end
   defp check_written_local() do
-    g = 4
-    g = g + 2
-    g = g + 1
-    if (g != 7) do
+    local_g = 4
+    local_g = local_g + 2
+    local_g = local_g + 1
+    if (local_g != 7) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Literal substitution erased later writes."]
     end
   end
@@ -74,9 +74,9 @@ defmodule Main do
   end
   defp caught_at_original_position() do
     try do
-      g = maybe_fail(true)
+      local_g = maybe_fail(true)
       record("b")
-      g == 0
+      local_g == 0
     rescue
       haxe_exception ->
         Process.put(:__reflaxe_last_stacktrace__, __STACKTRACE__)
@@ -96,20 +96,20 @@ defmodule Main do
       raise Reflaxe.Elixir.HaxeThrow, [value: "A saved call changed exception order."]
     end
     Main.events("")
-    g = maybe_fail(false)
+    local_g = maybe_fail(false)
     record("b")
-    if (g != 0 or Main.events() != "ab") do
+    if (local_g != 0 or Main.events() != "ab") do
       raise Reflaxe.Elixir.HaxeThrow, [value: "A successful call changed effect order."]
     end
   end
   defp check_literal_switch() do
-    g = 2
-    result = (case g do
+    local_g = 2
+    result = (case local_g do
       1 -> "one"
       2 -> "two"
       _ -> "other"
     end)
-    if (result != "two" or g != 2) do
+    if (result != "two" or local_g != 2) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Stable literal substitution changed a switch."]
     end
   end
@@ -137,9 +137,9 @@ defmodule Main do
     PatternBindingProbe.main()
     check_compound_condition()
     Main.calls(0)
-    g = pair()
-    key = g.key
-    value = g.value
+    local_g = pair()
+    key = local_g.key
+    value = local_g.value
     if (Main.calls() != 1 or key != 1 or value != 10) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "A captured pair must be evaluated once."]
     end

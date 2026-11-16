@@ -31,6 +31,9 @@ import haxe.macro.TypedExprTools;
  *   entry, and neither its name nor any of those entries starts with a backtick.
  * - A local without `@:realPath`, such as a `TVar` that this compiler builds, keeps the
  *   old name rule. Only locals that Haxe proves are program locals change behaviour.
+ * - Before the builders run, `renamesForSourceLocalsWithTempNames` moves every program
+ *   local out of the temp names (`g` -> `local_g`). After that, a name check such as
+ *   "`g` is a temp" downstream is true for the locals that reach it.
  *
  * EXAMPLES (Haxe 4.3.7, as the compiler sees them after Haxe's filters)
  * - `var g = [];`                  -> name `g`,  `@:realPath("g")`           -> source local
@@ -92,46 +95,46 @@ class HaxeTempLocals {
 	}
 
 	/**
-	 * Picks a new name for each program local that shares its name with a Haxe temp
-	 * of the same function: `g` becomes `local_g`. Returns the renamed `TVar` copies by
-	 * ID; apply them with `applyRenames`.
+	 * Picks a new name for each program local whose name looks like a Haxe temp:
+	 * `g` becomes `local_g`. Returns the renamed `TVar` copies by ID; apply them with
+	 * `applyRenames`, and use them for the function's own arguments.
 	 *
 	 * WHAT
-	 * - When the program declares a local such as `g` or `g1` with `var`, and the body
-	 *   still declares a Haxe temp with that name, with or without the leading
-	 *   underscore, the program local gets the name `local_g` (`local_g1`, ...). The
-	 *   copy keeps the ID, so ID-keyed tracking is unchanged.
-	 * - For a plain local, every temp that is still declared counts: a loop counter or
-	 *   iterator (`_g < _g1`, `_g.hasNext()`), and also the subject of a switch on a
-	 *   computed value (`var _g = s.toUpperCase(); switch (_g)`).
-	 * - For a match binder (`case RGB(r, g, b)` types as `var g = _g1`, see
-	 *   `isMatchBinderInit`), only a temp that a loop condition reads counts. The case
-	 *   pattern binds it, so the subject temp of its own switch does not clash with it,
-	 *   and `case RGB(r, g, b)` keeps `g`.
+	 * - A program local is a local that the program declared and that Haxe recorded
+	 *   with its source name (`isSourceLocal`). When its name has the temp shape
+	 *   (`g`, `g1`, `_g`, `_g2`, ...), it gets the name `local_g` (`local_g1`, ...).
+	 *   The leading underscores go: `var _g` also becomes `local_g`.
+	 * - This applies to every kind of declaration: `var`, the function's own
+	 *   arguments (`arguments`), the arguments of a local function, and `catch`
+	 *   variables. Loop variables are `var` declarations by this stage.
+	 * - It applies whether or not the function also has a Haxe temp. The rename does
+	 *   not depend on what else is in the function.
+	 * - One exception keeps a common pattern readable. A match binder
+	 *   (`case RGB(r, g, b)` types as `var g = _g1`, see `isMatchBinderInit`) keeps its
+	 *   name, unless a loop condition in the same function reads a temp with the same
+	 *   base name. Its case pattern binds it, and `{:rgb, r, g, b}` reads better than
+	 *   `{:rgb, r, local_g, b}`.
 	 * - A name that the function already uses is skipped (`local_g_2` is next). The
-	 *   enclosing function's argument names (`argumentNames`, in Elixir form) always
-	 *   count as used, read or not. Function arguments and `catch` variables keep
-	 *   their names.
+	 *   names in `argumentNames` (Elixir form) always count as used. The copy keeps
+	 *   the ID, so ID-keyed tracking is unchanged.
 	 * - Call it on the body that the builders compile, after
-	 *   `TypedExprPreprocessor.preprocess`: a temp that the preprocessor replaced by
-	 *   its value is gone and does not count.
+	 *   `TypedExprPreprocessor.preprocess`.
 	 *
 	 * WHY
-	 * - Elixir treats `_g` as the unused spelling of `g`, and hygiene passes promote
-	 *   `_g` to `g` when `g` is read later. With a program `g` and the counter `_g` of
-	 *   a `for (i in 0...n)` loop in one function, the counter took the name `g` and
-	 *   overwrote the program local: the loop appended to `0` (`:erlang.++(0, [0])`).
-	 *   With two `for (k => v in m)` loops, the program `g` and the iterator temp `_g`
-	 *   shared one name, and `g.key` read the wrong value.
-	 *   A switch subject temp behaves the same way: `var g = "pre"` followed by
-	 *   `switch (s.toUpperCase())` overwrote `g` with the subject.
+	 * - Many builder paths and ElixirAST passes decide by name alone that a local is
+	 *   a Haxe temp: `g`, `_g` and `g1` are temps there. After this rename, only Haxe
+	 *   temps have those names, so those checks are correct by construction. Before
+	 *   it, a program local with such a name could be silently miscompiled:
+	 *   - `var g = x * 2; var h = 0; if (c) { g = 1; h = 2; } else { h = g; }` lost
+	 *     `h = g`, with no temp in the function at all;
+	 *   - an argument `g` next to `for (i in 0...n)` was overwritten by the loop
+	 *     counter `_g = 0`, which a hygiene pass promotes to `g` when it sees `g` read;
+	 *   - a program local `_g` read after a loop was rewritten to `g`, an undefined
+	 *     variable in Elixir.
 	 * - The temps keep their names because many passes recognise temps by them.
 	 */
-	public static function renamesForSourceLocalsSharingTempNames(body:Null<TypedExpr>, ?argumentNames:Array<String>):Map<Int, TVar> {
+	public static function renamesForSourceLocalsWithTempNames(body:Null<TypedExpr>, ?argumentNames:Array<String>, ?arguments:Array<TVar>):Map<Int, TVar> {
 		final renamed = new Map<Int, TVar>();
-		if (body == null)
-			return renamed;
-		final tempBases = new Map<String, Bool>();
 		final loopTempBases = new Map<String, Bool>();
 		final binders = new Map<Int, Bool>();
 		final usedNames = new Map<String, Bool>();
@@ -140,10 +143,19 @@ class HaxeTempLocals {
 		if (argumentNames != null)
 			for (name in argumentNames)
 				usedNames.set(name, true);
-		function note(v:TVar):Void {
+		function note(v:Null<TVar>):Void {
 			if (v == null || v.name == null)
 				return;
 			usedNames.set(ElixirNaming.toVarName(v.name), true);
+		}
+		function consider(v:Null<TVar>, ?init:TypedExpr):Void {
+			note(v);
+			if (v == null || v.name == null || seen.exists(v.id) || !TEMP_NAME.match(v.name) || !isSourceLocal(v))
+				return;
+			seen.set(v.id, true);
+			candidates.push(v);
+			if (isMatchBinderInit(init))
+				binders.set(v.id, true);
 		}
 		function noteLoopTemps(cond:TypedExpr):Void {
 			switch (cond.expr) {
@@ -158,32 +170,28 @@ class HaxeTempLocals {
 				case TWhile(cond, _, _):
 					noteLoopTemps(cond);
 				case TVar(v, init):
-					note(v);
-					if (isTemp(v))
-						tempBases.set(stripLeadingUnderscores(v.name), true);
-					if (v != null && !seen.exists(v.id) && TEMP_NAME.match(v.name) && isSourceLocal(v)) {
-						seen.set(v.id, true);
-						candidates.push(v);
-						if (isMatchBinderInit(init))
-							binders.set(v.id, true);
-					}
+					consider(v, init);
 				case TLocal(v):
 					note(v);
 				case TFunction(fn):
 					for (arg in fn.args)
-						note(arg.v);
+						consider(arg.v);
 				case TTry(_, catches):
 					for (c in catches)
-						note(c.v);
+						consider(c.v);
 				default:
 			}
 			TypedExprTools.iter(e, scan);
 		}
-		scan(body);
+		if (arguments != null)
+			for (v in arguments)
+				consider(v);
+		if (body != null)
+			scan(body);
 
 		for (v in candidates) {
 			final base = stripLeadingUnderscores(v.name);
-			if (!(binders.exists(v.id) ? loopTempBases : tempBases).exists(base))
+			if (binders.exists(v.id) && !loopTempBases.exists(base))
 				continue;
 			var name = 'local_$base';
 			var suffix = 2;
@@ -220,17 +228,26 @@ class HaxeTempLocals {
 
 	/**
 	 * Returns `e` with every declaration and read of a renamed local replaced by its
-	 * renamed copy from `renamesForSourceLocalsSharingTempNames`.
+	 * renamed copy from `renamesForSourceLocalsWithTempNames`. Declarations are `var`,
+	 * local function arguments and `catch` variables.
 	 */
 	public static function applyRenames(e:Null<TypedExpr>, renamed:Map<Int, TVar>):Null<TypedExpr> {
 		if (e == null || !renamed.keys().hasNext())
 			return e;
+		function renamedVar(v:TVar):TVar
+			return v != null && renamed.exists(v.id) ? renamed.get(v.id) : v;
 		function rewrite(e:TypedExpr):TypedExpr {
 			return switch (e.expr) {
 				case TLocal(v) if (v != null && renamed.exists(v.id)):
 					{expr: TLocal(renamed.get(v.id)), pos: e.pos, t: e.t};
 				case TVar(v, init) if (v != null && renamed.exists(v.id)):
 					{expr: TVar(renamed.get(v.id), init == null ? null : rewrite(init)), pos: e.pos, t: e.t};
+				case TFunction(fn) if (Lambda.exists(fn.args, arg -> arg.v != null && renamed.exists(arg.v.id))):
+					final args = fn.args.map(arg -> {v: renamedVar(arg.v), value: arg.value == null ? null : rewrite(arg.value)});
+					{expr: TFunction({args: args, t: fn.t, expr: rewrite(fn.expr)}), pos: e.pos, t: e.t};
+				case TTry(tryExpr, catches) if (Lambda.exists(catches, c -> c.v != null && renamed.exists(c.v.id))):
+					final renamedCatches = catches.map(c -> {v: renamedVar(c.v), expr: rewrite(c.expr)});
+					{expr: TTry(rewrite(tryExpr), renamedCatches), pos: e.pos, t: e.t};
 				default:
 					TypedExprTools.map(e, rewrite);
 			}

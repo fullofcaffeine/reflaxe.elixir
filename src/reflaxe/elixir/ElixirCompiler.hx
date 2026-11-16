@@ -2400,14 +2400,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				// Capture infrastructure-variable substitutions produced by the preprocessor for
 				// any builder paths that recompile sub-expressions by TVar.id.
 				context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
-				// A program local named like a Haxe temp that is still in this body (`g` and
-				// `_g`) gets its own Elixir name, so the two never share one binding.
+				// A program local or argument named like a Haxe temp (`g`, `_g`, `g1`) gets
+				// another Elixir name (`local_g`), so name-based temp checks never see it.
 				// Argument names count as taken even when the body never reads them.
 				var argumentNames = [
 					for (arg in funcData.args)
 						reflaxe.elixir.ast.naming.ElixirNaming.toVarName(arg.tvar != null ? arg.tvar.name : arg.getName())
 				];
-				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsSharingTempNames(expr, argumentNames);
+				var argumentVars = funcData.tfunc != null ? [for (arg in funcData.tfunc.args) arg.v] : [];
+				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsWithTempNames(expr, argumentNames, argumentVars);
 				if (sourceLocalRenames.keys().hasNext()) {
 					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, sourceLocalRenames);
 				}
@@ -2502,7 +2503,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					#end
 
 					for (arg in funcData.tfunc.args) {
-						var originalName = arg.v.name;
+						// An argument named like a Haxe temp uses its renamed spelling (`local_g`).
+						var originalName = sourceLocalRenames.exists(arg.v.id) ? sourceLocalRenames.get(arg.v.id).name : arg.v.name;
 						var idKey = Std.string(arg.v.id);
 						functionParameterIdKeys.push(idKey);
 						context.functionParameterIds.set(idKey, true);

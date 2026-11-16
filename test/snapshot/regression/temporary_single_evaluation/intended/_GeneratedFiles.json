@@ -32,7 +32,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "3d6b54c4451f5a096ef57f7dc0ee0ce37f60ba2477fe90e87cc354046486c902"
+			"sha256": "37e8882070c64c838ee2fb4d5c9932f477cb221913bdad9d3a626a2d5d65197e"
 		},
 		{
 			"path": "pattern_binding_probe.ex",
