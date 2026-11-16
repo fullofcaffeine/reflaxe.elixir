@@ -2402,7 +2402,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
 				// A program local named like a Haxe temp that is still in this body (`g` and
 				// `_g`) gets its own Elixir name, so the two never share one binding.
-				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsSharingTempNames(expr);
+				// Argument names count as taken even when the body never reads them.
+				var argumentNames = [
+					for (arg in funcData.args)
+						reflaxe.elixir.ast.naming.ElixirNaming.toVarName(arg.tvar != null ? arg.tvar.name : arg.getName())
+				];
+				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsSharingTempNames(expr, argumentNames);
 				if (sourceLocalRenames.keys().hasNext()) {
 					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, sourceLocalRenames);
 				}

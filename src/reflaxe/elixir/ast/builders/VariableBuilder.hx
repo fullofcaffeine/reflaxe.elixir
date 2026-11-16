@@ -200,7 +200,9 @@ class VariableBuilder {
 		// Check if this is an infrastructure variable that should be skipped. A pattern
 		// binder named like a temp (`case Error(g)` types as `var g = _g1`) keeps the
 		// temp path: the case pattern already binds it.
-		if (isInfrastructureVariableToSkip(v) || (reflaxe.elixir.ast.naming.HaxeTempLocals.hasTempName(v) && isTempAlias(init))) {
+		if (isInfrastructureVariableToSkip(v)
+			|| (reflaxe.elixir.ast.naming.HaxeTempLocals.hasTempName(v)
+				&& reflaxe.elixir.ast.naming.HaxeTempLocals.isMatchBinderInit(init))) {
 			return handleInfrastructureDeclaration(v, init, context);
 		}
 
@@ -314,18 +316,6 @@ class VariableBuilder {
 	 */
 	static function isInfrastructureVariableToSkip(v:TVar):Bool {
 		return reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(v);
-	}
-
-	/** True when `init` only reads a Haxe temp or an enum parameter, as a match binder does. */
-	static function isTempAlias(init:Null<TypedExpr>):Bool {
-		if (init == null)
-			return false;
-		return switch (init.expr) {
-			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null): isTempAlias(inner);
-			case TLocal(local): reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(local);
-			case TEnumParameter(_, _, _): true;
-			default: false;
-		};
 	}
 
 	/**

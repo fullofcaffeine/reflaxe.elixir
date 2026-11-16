@@ -22,10 +22,11 @@ import haxe.macro.TypedExprTools;
  *     counter `_g = 0` took the name `g`, so the loop appended to `0`.
  *
  * HOW
- * - Haxe types a temp with the name "`" (a backtick; an inlined local gets "`name").
- *   Haxe's final renaming filter then gives it a printable name (`_g`, `_g1`, ...) and
- *   records each earlier name in `@:realPath`. A program local records its source
- *   spelling there instead. Haxe 5 can keep the backtick in the name itself.
+ * - Haxe types a temp with the name "`" (a backtick). Haxe's final renaming filter
+ *   then gives it a printable name (`_g`, `_g1`, ...) and records each earlier name in
+ *   `@:realPath`. A program local records its source spelling there instead; a local
+ *   from an inlined function keeps its own name. Haxe 5 can keep the backtick in the
+ *   name itself.
  * - So the rule is structural: a local is a program local when it has a `@:realPath`
  *   entry, and neither its name nor any of those entries starts with a backtick.
  * - A local without `@:realPath`, such as a `TVar` that this compiler builds, keeps the
@@ -96,17 +97,24 @@ class HaxeTempLocals {
 	 * ID; apply them with `applyRenames`.
 	 *
 	 * WHAT
-	 * - When the program declares a local such as `g` or `g1` with `var`, and a loop
-	 *   condition reads a Haxe temp with that name, with or without the leading
-	 *   underscore (`_g < _g1` for `for (i in 0...n)`, `_g.hasNext()` for an iterator),
-	 *   the program local gets the name `local_g` (`local_g1`, ...). The copy keeps the
-	 *   ID, so ID-keyed tracking is unchanged.
-	 * - A name that the function already uses is skipped (`local_g_2` is next).
-	 * - Only loop temps count, because the loop lowerings keep them as bindings. Other
-	 *   temps, such as the scrutinee `_g` of `switch (color) { case RGB(r, g, b): }`,
-	 *   leave `g` as it is. Function arguments and `catch` variables keep their names.
+	 * - When the program declares a local such as `g` or `g1` with `var`, and the body
+	 *   still declares a Haxe temp with that name, with or without the leading
+	 *   underscore, the program local gets the name `local_g` (`local_g1`, ...). The
+	 *   copy keeps the ID, so ID-keyed tracking is unchanged.
+	 * - For a plain local, every temp that is still declared counts: a loop counter or
+	 *   iterator (`_g < _g1`, `_g.hasNext()`), and also the subject of a switch on a
+	 *   computed value (`var _g = s.toUpperCase(); switch (_g)`).
+	 * - For a match binder (`case RGB(r, g, b)` types as `var g = _g1`, see
+	 *   `isMatchBinderInit`), only a temp that a loop condition reads counts. The case
+	 *   pattern binds it, so the subject temp of its own switch does not clash with it,
+	 *   and `case RGB(r, g, b)` keeps `g`.
+	 * - A name that the function already uses is skipped (`local_g_2` is next). The
+	 *   enclosing function's argument names (`argumentNames`, in Elixir form) always
+	 *   count as used, read or not. Function arguments and `catch` variables keep
+	 *   their names.
 	 * - Call it on the body that the builders compile, after
-	 *   `TypedExprPreprocessor.preprocess`.
+	 *   `TypedExprPreprocessor.preprocess`: a temp that the preprocessor replaced by
+	 *   its value is gone and does not count.
 	 *
 	 * WHY
 	 * - Elixir treats `_g` as the unused spelling of `g`, and hygiene passes promote
@@ -115,16 +123,23 @@ class HaxeTempLocals {
 	 *   overwrote the program local: the loop appended to `0` (`:erlang.++(0, [0])`).
 	 *   With two `for (k => v in m)` loops, the program `g` and the iterator temp `_g`
 	 *   shared one name, and `g.key` read the wrong value.
+	 *   A switch subject temp behaves the same way: `var g = "pre"` followed by
+	 *   `switch (s.toUpperCase())` overwrote `g` with the subject.
 	 * - The temps keep their names because many passes recognise temps by them.
 	 */
-	public static function renamesForSourceLocalsSharingTempNames(body:Null<TypedExpr>):Map<Int, TVar> {
+	public static function renamesForSourceLocalsSharingTempNames(body:Null<TypedExpr>, ?argumentNames:Array<String>):Map<Int, TVar> {
 		final renamed = new Map<Int, TVar>();
 		if (body == null)
 			return renamed;
 		final tempBases = new Map<String, Bool>();
+		final loopTempBases = new Map<String, Bool>();
+		final binders = new Map<Int, Bool>();
 		final usedNames = new Map<String, Bool>();
 		final candidates:Array<TVar> = [];
 		final seen = new Map<Int, Bool>();
+		if (argumentNames != null)
+			for (name in argumentNames)
+				usedNames.set(name, true);
 		function note(v:TVar):Void {
 			if (v == null || v.name == null)
 				return;
@@ -133,7 +148,7 @@ class HaxeTempLocals {
 		function noteLoopTemps(cond:TypedExpr):Void {
 			switch (cond.expr) {
 				case TLocal(v) if (isTemp(v)):
-					tempBases.set(stripLeadingUnderscores(v.name), true);
+					loopTempBases.set(stripLeadingUnderscores(v.name), true);
 				default:
 			}
 			TypedExprTools.iter(cond, noteLoopTemps);
@@ -142,11 +157,15 @@ class HaxeTempLocals {
 			switch (e.expr) {
 				case TWhile(cond, _, _):
 					noteLoopTemps(cond);
-				case TVar(v, _):
+				case TVar(v, init):
 					note(v);
+					if (isTemp(v))
+						tempBases.set(stripLeadingUnderscores(v.name), true);
 					if (v != null && !seen.exists(v.id) && TEMP_NAME.match(v.name) && isSourceLocal(v)) {
 						seen.set(v.id, true);
 						candidates.push(v);
+						if (isMatchBinderInit(init))
+							binders.set(v.id, true);
 					}
 				case TLocal(v):
 					note(v);
@@ -164,7 +183,7 @@ class HaxeTempLocals {
 
 		for (v in candidates) {
 			final base = stripLeadingUnderscores(v.name);
-			if (!tempBases.exists(base))
+			if (!(binders.exists(v.id) ? loopTempBases : tempBases).exists(base))
 				continue;
 			var name = 'local_$base';
 			var suffix = 2;
@@ -182,6 +201,21 @@ class HaxeTempLocals {
 			});
 		}
 		return renamed;
+	}
+
+	/**
+	 * Returns true when `init` only reads a Haxe temp or an enum parameter, as the
+	 * declaration of a match binder does: `case Error(g)` types as `var g = _g1`.
+	 */
+	public static function isMatchBinderInit(init:Null<TypedExpr>):Bool {
+		if (init == null)
+			return false;
+		return switch (init.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null): isMatchBinderInit(inner);
+			case TLocal(local): isTemp(local);
+			case TEnumParameter(_, _, _): true;
+			default: false;
+		};
 	}
 
 	/**
