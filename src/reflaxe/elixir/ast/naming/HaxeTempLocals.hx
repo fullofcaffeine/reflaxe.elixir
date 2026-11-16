@@ -169,9 +169,6 @@ class HaxeTempLocals {
 			candidates.push(v);
 			if (isMatchBinderInit(init))
 				binders.set(v.id, true);
-			final iterator = iteratorOfNextCall(init);
-			if (iterator != null)
-				nextOf.set(v.id, iterator);
 		}
 		function noteLoopTemps(cond:TypedExpr):Void {
 			switch (cond.expr) {
@@ -183,8 +180,11 @@ class HaxeTempLocals {
 		}
 		function scan(e:TypedExpr):Void {
 			switch (e.expr) {
-				case TWhile(cond, _, _):
+				case TWhile(cond, loopBody, _):
 					noteLoopTemps(cond);
+					final head = iteratorLoopHead(cond, loopBody);
+					if (head != null)
+						nextOf.set(head.element.id, head.iterator);
 				case TVar(v, init):
 					consider(v, init);
 				case TLocal(v):
@@ -249,8 +249,48 @@ class HaxeTempLocals {
 	}
 
 	/**
+	 * Returns the iterator `it` and the loop variable `x` of a loop with the shape
+	 * `while (it.hasNext()) { var x = it.next(); ... }`, which Haxe gives `for (x in it)`;
+	 * null for any other loop. Both calls must be on the same local (by ID), and the
+	 * declaration must be the first statement of the body.
+	 *
+	 * Use this, not `iteratorOfNextCall` alone, to pair a loop variable with its iterator:
+	 * `var g = g.next()` outside such a loop (a linked-list step) is not a loop variable.
+	 */
+	static function iteratorLoopHead(cond:TypedExpr, body:TypedExpr):Null<{iterator:TVar, element:TVar}> {
+		final iterator = receiverOfZeroArgumentCall(cond, "hasNext");
+		if (iterator == null)
+			return null;
+		final first = switch (body.expr) {
+			case TBlock(statements) if (statements.length > 0): statements[0];
+			default: body;
+		};
+		return switch (first.expr) {
+			case TVar(element, init) if (element != null): final nextReceiver = iteratorOfNextCall(init); nextReceiver != null && nextReceiver.id == iterator.id ? {
+					iterator: iterator,
+					element: element
+				} : null;
+			default:
+				null;
+		};
+	}
+
+	/** Returns the local `it` when `e` is the call `it.method()` with no arguments; null otherwise. */
+	static function receiverOfZeroArgumentCall(e:Null<TypedExpr>, method:String):Null<TVar> {
+		if (e == null)
+			return null;
+		return switch (e.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null): receiverOfZeroArgumentCall(inner, method);
+			case TCall({expr: TField({expr: TLocal(it)}, field)}, []) if (fieldName(field) == method): it;
+			default: null;
+		};
+	}
+
+	/**
 	 * Returns the local `it` when `init` is the call `it.next()`, as in the loop variable
 	 * `var g = g.next()` that Haxe declares for `for (g in m.keys())`; null otherwise.
+	 * This checks the call only: `iteratorLoopHead` also checks the enclosing
+	 * `while (it.hasNext())` loop.
 	 */
 	static function iteratorOfNextCall(init:Null<TypedExpr>):Null<TVar> {
 		if (init == null)
