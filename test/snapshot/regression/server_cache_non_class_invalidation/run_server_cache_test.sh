@@ -703,8 +703,10 @@ os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
 PY
 	cp "$owned" "$tampered"
 
-	# The source edit below changes a different generated file. The warm request
-	# must still read every owned file, find the hand edit, and publish nothing.
+	# The source edit below changes CacheNative. Main uses CacheNative, so Haxe
+	# types Main again and the warm request builds main.ex again. The request
+	# checks each owned file that it builds, finds the hand edit, and publishes
+	# nothing.
 	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
 	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
 		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
@@ -734,6 +736,67 @@ PY
 	compile_server "$SERVER_OUTPUT"
 	compile_direct "$direct_after"
 	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "tampered-output-restored"
+
+	# Now a hand edit of a generated file that the next warm request does not
+	# build again: std.ex. That request does not read, write, or delete the
+	# file, so it does not check it. It publishes the source edit and keeps the
+	# hand edit. The manifest keeps the compiler's digest, so a fresh build, or
+	# a later request that builds std.ex again, still refuses.
+	local bystander="$SERVER_OUTPUT/std.ex"
+	local bystander_original="$TMP_ROOT/tampered-bystander-original.ex"
+	local bystander_tampered="$TMP_ROOT/tampered-bystander-tampered.ex"
+	local direct_before="$TMP_ROOT/direct-tampered-bystander-before"
+	local fresh_log="$TMP_ROOT/tampered-bystander-fresh.log"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	if [[ ! -f "$bystander" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fixture generated no std.ex" >&2
+		return 1
+	fi
+	cp "$bystander" "$bystander_original"
+	python3 - "$bystander" <<'PY'
+import os
+import sys
+
+path = sys.argv[1]
+before = os.stat(path)
+data = open(path, "rb").read()
+changed = data.replace(b"defmodule", b"defmodulf", 1)
+if changed == data or len(changed) != len(data):
+    raise SystemExit("tampered-bystander fixture could not change std.ex")
+open(path, "wb").write(changed)
+os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+PY
+	cp "$bystander" "$bystander_tampered"
+	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	cmp -s "$bystander" "$bystander_tampered" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander warm build changed a file that it did not build" >&2
+		return 1
+	}
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander warm build did not publish the source edit" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$SERVER_OUTPUT" >"$fresh_log" 2>&1
+	then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build accepted a hand-edited generated file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$fresh_log" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build failed for the wrong reason" >&2
+		sed -n '1,160p' "$fresh_log" >&2
+		return 1
+	}
+	cmp -s "$bystander" "$bystander_tampered" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build overwrote the hand-edited file" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_OWNERSHIP:tampered-bystander-kept-and-fresh-refused:PASS"
+	cp "$bystander_original" "$bystander"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "tampered-bystander-restored"
 
 	restore_baseline_sources
 	rm -f "$PROJECT_DIR/src/CacheNative.hx"
