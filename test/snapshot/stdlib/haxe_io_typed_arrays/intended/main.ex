@@ -2,7 +2,7 @@ defmodule Main do
   def main() do
     floats = (fn ->
       size = 8
-      _ = ArrayBufferViewImpl.new(Bytes.alloc(size), 0, size)
+      _this1_shadow = ArrayBufferViewImpl.new(Bytes.alloc(size), 0, size)
     end).()
     if (0 < Bitwise.bsr(floats.byte_length, 2)) do
       reflaxe_dispatch_receiver_node_0 = floats.bytes

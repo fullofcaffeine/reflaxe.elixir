@@ -26,7 +26,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "883987e099996579dcaa06106932ce1704ce5d162b3b2f9072c993a5a020a0e0"
+			"sha256": "5eea2cb0393481dc6b85f1735070d1797d4c77f56f50da28a576701885b826f5"
 		},
 		{
 			"path": "native_result_cases.ex",

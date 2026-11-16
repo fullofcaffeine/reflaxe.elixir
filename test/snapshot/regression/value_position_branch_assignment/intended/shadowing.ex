@@ -141,8 +141,8 @@ defmodule Shadowing do
     {label, count} = (case r do
       {:ok, value} ->
         v = value
-        count1 = id(v) * 2
-        {"ok#{Reflaxe.Elixir.HaxeFloat.to_string(count1)}", count}
+        count_shadow = id(v) * 2
+        {"ok#{Reflaxe.Elixir.HaxeFloat.to_string(count_shadow)}", count}
       {:error, reason} ->
         e = reason
         count = count + StringTools.haxe_length(e)
@@ -183,8 +183,8 @@ defmodule Shadowing do
         items = items ++ [v]
         {1, items}
       {:none} ->
-        items1 = fresh()
-        {length(items1) + 10, items}
+        items_shadow = fresh()
+        {length(items_shadow) + 10, items}
     end)
     "#{Reflaxe.Elixir.HaxeFloat.to_string(r)}/#{Enum.join(items, ",")}"
   end
@@ -197,8 +197,8 @@ defmodule Shadowing do
         r = r + 1
         {items, r}
       {:none} ->
-        items1 = fresh()
-        r = r + length(items1) + 10
+        items_shadow = fresh()
+        r = r + length(items_shadow) + 10
         {items, r}
     end)
     "#{Reflaxe.Elixir.HaxeFloat.to_string(r)}/#{Enum.join(items, ",")}"
@@ -206,8 +206,8 @@ defmodule Shadowing do
   def local_value(c) do
     v = 1
     {r, v} = if (c) do
-      v1 = id(5)
-      {v1 + 1, v}
+      v_shadow = id(5)
+      {v_shadow + 1, v}
     else
       v = v + 1
       {0, v}
@@ -218,8 +218,8 @@ defmodule Shadowing do
     v = 1
     r = 0
     {r, v} = if (c) do
-      v1 = id(5)
-      r = v1 + 1
+      v_shadow = id(5)
+      r = v_shadow + 1
       {r, v}
     else
       v = v + 1
@@ -231,8 +231,8 @@ defmodule Shadowing do
     v = 1
     {r, v} = if (c) do
       v = v + 1
-      v1 = id(5)
-      {v1 + 1, v}
+      v_shadow = id(5)
+      {v_shadow + 1, v}
     else
       {0, v}
     end
@@ -244,8 +244,8 @@ defmodule Shadowing do
       sum = Enum.reduce(xs, sum, fn x, sum_acc -> sum_acc + x end)
       {"loop", sum}
     else
-      sum1 = id(7)
-      {"local#{Reflaxe.Elixir.HaxeFloat.to_string(sum1)}", sum}
+      sum_shadow = id(7)
+      {"local#{Reflaxe.Elixir.HaxeFloat.to_string(sum_shadow)}", sum}
     end
     "#{r}/#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}"
   end
@@ -253,12 +253,12 @@ defmodule Shadowing do
     v = 1
     total = 0
     {r, _total, v} = if (c) do
-      v1 = id(0) * 2
-      total = total + v1
-      v2 = id(1) * 2
-      total = total + v2
-      v3 = id(2) * 2
-      total = total + v3
+      v_shadow = id(0) * 2
+      total = total + v_shadow
+      v_shadow_shadow = id(1) * 2
+      total = total + v_shadow_shadow
+      v_shadow_shadow_shadow = id(2) * 2
+      total = total + v_shadow_shadow_shadow
       {total, total, v}
     else
       v = v + 1
@@ -271,14 +271,14 @@ defmodule Shadowing do
     total = 0
     {r, _total, v} = if (c) do
       x = 1
-      v1 = id(x) * 2
-      total = total + v1
+      v_shadow = id(x) * 2
+      total = total + v_shadow
       x = 2
-      v2 = id(x) * 2
-      total = total + v2
+      v_shadow_shadow = id(x) * 2
+      total = total + v_shadow_shadow
       x = 3
-      v3 = id(x) * 2
-      total = total + v3
+      v_shadow_shadow_shadow = id(x) * 2
+      total = total + v_shadow_shadow_shadow
       {total, total, v}
     else
       v = v + 1
@@ -292,8 +292,8 @@ defmodule Shadowing do
     {out, n, _seen} = if (c) do
       {n, seen} = (case o do
         {:some, x} ->
-          n1 = StringTools.haxe_length(x)
-          seen = n1
+          n_shadow = StringTools.haxe_length(x)
+          seen = n_shadow
           {n, seen}
         {:none} ->
           n = -1
@@ -313,8 +313,8 @@ defmodule Shadowing do
       r = "#{r}loop"
       {r, sum}
     else
-      sum1 = id(7)
-      r = "#{r}local#{Reflaxe.Elixir.HaxeFloat.to_string(sum1)}"
+      sum_shadow = id(7)
+      r = "#{r}local#{Reflaxe.Elixir.HaxeFloat.to_string(sum_shadow)}"
       {r, sum}
     end
     "#{r}/#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}"

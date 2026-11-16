@@ -2419,7 +2419,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, sourceLocalRenames);
 				}
 				// Elixir has no block scope: an inner local (often from an inlined function) that
-				// has the name of an outer local read later gets a fresh name (`q` -> `q1`), so it
+				// has the name of an outer local read later gets a fresh name (`q` -> `q_shadow`), so it
 				// cannot overwrite the outer value when a pass flattens the inner block.
 				var renamedArgumentVars = [
 					for (v in argumentVars)

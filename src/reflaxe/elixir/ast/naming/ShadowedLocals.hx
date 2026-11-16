@@ -1,6 +1,8 @@
 package reflaxe.elixir.ast.naming;
 
 #if (macro || reflaxe_runtime)
+import haxe.macro.Expr.Unop;
+import haxe.macro.Type.FieldAccess;
 import haxe.macro.Type.TVar;
 import haxe.macro.Type.TypedExpr;
 import haxe.macro.TypedExprTools;
@@ -17,9 +19,15 @@ import haxe.macro.TypedExprTools;
  *   variable, and the inner value replaces the outer value.
  * - `renamesForShadowingLocals` finds each inner `var` whose Elixir name equals the
  *   name of a local declared in an enclosing scope, where that outer local is read
- *   again after the inner declaration. It gives the inner local the next free name in
- *   Haxe's own style (`q` -> `q1`, then `q2`, ...). Apply the result with
+ *   again after the inner declaration. It gives the inner local a fresh name with a
+ *   `_shadow` suffix (`q` -> `q_shadow`, then `q_shadow_shadow`). Apply the result with
  *   `HaxeTempLocals.applyRenames`.
+ * - The new name never ends in a digit. Several passes treat `name` and `nameN` as
+ *   one variable that drifted (`LocalVarReferenceFixTransforms` rules 2 and 3, the
+ *   undefined-variable repair in `ElixirASTTransformer`, `GuardConditionFlattener`),
+ *   and would map a `q1` back to `q` or a `q` to `q1`. A search of the name rules
+ *   (trailing digits, a leading underscore, suffix checks with `endsWith`) found none
+ *   that matches a `_shadow` suffix.
  *
  * WHY
  * - Haxe renames a shadowing local only when the outer local is read inside the
@@ -33,8 +41,10 @@ import haxe.macro.TypedExprTools;
  *   `q = 0; ...; a = q`, and the loop lowering threads accumulators by name. The
  *   caller's `q` was silently overwritten (`var q = 100; var a = sum(xs); q += a;`
  *   gave 15 on the BEAM instead of 109).
- * - A rename at the Haxe level, before any builder runs, keeps every later pass safe:
- *   two Haxe locals that can be alive at the same time never share an Elixir name.
+ * - A rename at the Haxe level, before any builder runs, gives the two locals
+ *   different Elixir names, so a pass that flattens the inner block can no longer
+ *   merge them. It does not make later passes safe in general: a pass that rewrites
+ *   names by their shape can still merge other locals.
  *
  * HOW
  * - One walk over the function body in evaluation order numbers each node. It
@@ -50,17 +60,24 @@ import haxe.macro.TypedExprTools;
  *     bindings, so reads after it ends are safe), or
  *   - anywhere inside a loop that contains the inner declaration but not the outer
  *     declaration: the next iteration reads the outer local again.
- * - A loop variable `var k = k.next()` keeps the name of its iterator `k`, which Haxe
- *   names after the loop variable; the loop lowering matches that shape by name.
+ * - A variable that the loop or switch lowering binds as an Elixir `fn` argument or a
+ *   clause pattern is never renamed, because Elixir already scopes it: the element of
+ *   a `for` loop or comprehension (`var x = _g1[_g]`), the index of a range loop
+ *   (`var i = _g++`), an iterator element (`var x = it.next()`), a key or value of a
+ *   key-value loop (`var k = _g1.key`), and a match binder (`var value = _g1`). See
+ *   `isLoweredBinderInit`.
+ * - A loop variable `var k = k.next()` always has the Elixir name of its iterator `k`,
+ *   which Haxe names after the loop variable: when the iterator is renamed, the loop
+ *   variable gets the same new name, because the loop lowering matches the
+ *   `k = k.next()` shape by name.
  * - Only `var` declarations of locals that Haxe recorded with a source name are
  *   renamed (`HaxeTempLocals.isSourceLocal`): the program's own locals and the locals
  *   of inlined functions. Haxe temps (a backtick name or a backtick `@:realPath`,
  *   `_g`, `g1`) keep their names, because many passes recognise temps by name, and
  *   program locals with temp names are already unique after `HaxeTempLocals`.
- *   Function arguments, `catch` variables and match binders (`case Ok(value)`, see
- *   `HaxeTempLocals.isMatchBinderInit`) bind in their own Elixir clause and keep their
- *   names; `ControlFlowStateHoistTransforms` already keeps an outer value that a case
- *   clause binder hides.
+ *   Function arguments and `catch` variables bind in their own Elixir clause and keep
+ *   their names; `ControlFlowStateHoistTransforms` already keeps an outer value that
+ *   a case clause binder hides.
  * - The copy keeps the TVar ID, so ID-keyed tracking is unchanged.
  *
  * EXAMPLES
@@ -75,9 +92,9 @@ import haxe.macro.TypedExprTools;
  *   q = q + a
  * Elixir after:
  *   q = 100
- *   q1 = 0
- *   q1 = Enum.reduce(xs, q1, fn x, q1_acc -> q1_acc + x end)
- *   a = q1
+ *   q_shadow = 0
+ *   q_shadow = Enum.reduce(xs, q_shadow, fn x, q_shadow_acc -> q_shadow_acc + x end)
+ *   a = q_shadow
  *   q = q + a
  *
  * LIMITS
@@ -85,7 +102,10 @@ import haxe.macro.TypedExprTools;
  *   the shared name: the rebinding is then invisible.
  * - Haxe temps (`_g`, `_g1`, backtick names) and locals that this compiler builds
  *   are not renamed by this rule.
- * - Covered by test/differential/r14_inline_locals.
+ * - Haxe's own renames (`q1` for a shadow whose outer local is read inside the inner
+ *   block) keep their digit names, so the name-drift passes above can still merge
+ *   them with `q`.
+ * - Covered by test/differential/r14_inline_locals and r15_shadow_binders.
  */
 class ShadowedLocals {
 	/**
@@ -112,24 +132,60 @@ class ShadowedLocals {
 		for (pair in scan.pairs) {
 			if (renamed.exists(pair.inner.id) || !scan.isReadAfter(pair))
 				continue;
-			final base = pair.inner.name;
-			var suffix = 1;
-			var name = base + suffix;
+			var name = pair.inner.name + SHADOW_SUFFIX;
 			while (scan.usedNames.exists(ElixirNaming.toVarName(name)))
-				name = base + (++suffix);
+				name += SHADOW_SUFFIX;
 			scan.usedNames.set(ElixirNaming.toVarName(name), true);
-			final v = pair.inner;
-			renamed.set(v.id, {
-				id: v.id,
-				name: name,
-				t: v.t,
-				capture: v.capture,
-				extra: v.extra,
-				meta: v.meta,
-				isStatic: v.isStatic
-			});
+			renamed.set(pair.inner.id, renamedCopy(pair.inner, name));
 		}
+		// `for (k in m.keys())`: the loop variable `var k = k.next()` follows its iterator.
+		for (pair in scan.loopVariables)
+			if (renamed.exists(pair.iterator.id))
+				renamed.set(pair.loopVariable.id, renamedCopy(pair.loopVariable, renamed.get(pair.iterator.id).name));
 		return renamed;
+	}
+
+	/**
+	 * Returns true when `init` is the value that a loop or switch lowering binds as an
+	 * Elixir `fn` argument or clause pattern, not as a `=` statement: `_g1[_g]` (the
+	 * element of a `for` loop or comprehension), `_g++` (a range index), `it.next()`
+	 * (an iterator element), `_g1.key` and `_g1.value` (a key-value loop), and a match
+	 * binder's value (`_g1`, an enum parameter). Elixir already scopes such a binding,
+	 * so renaming it is unnecessary, and the lowering may not carry the new name to
+	 * every read.
+	 */
+	public static function isLoweredBinderInit(init:Null<TypedExpr>):Bool {
+		if (init == null)
+			return false;
+		return switch (init.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null):
+				isLoweredBinderInit(inner);
+			case TArray(_, {expr: TLocal(index)}) if (HaxeTempLocals.isTemp(index)):
+				true;
+			case TUnop(OpIncrement | OpDecrement, true, {expr: TLocal(counter)}) if (HaxeTempLocals.isTemp(counter)):
+				true;
+			case TField({expr: TLocal(entry)}, FAnon(cf)) if (HaxeTempLocals.isTemp(entry)
+				&& (cf.get().name == "key" || cf.get().name == "value")):
+				true;
+			case TField({expr: TLocal(entry)}, FInstance(_, _, cf)) if (HaxeTempLocals.isTemp(entry)
+				&& (cf.get().name == "key" || cf.get().name == "value")):
+				true;
+			default: HaxeTempLocals.iteratorOfNextCall(init) != null || HaxeTempLocals.isMatchBinderInit(init);
+		};
+	}
+
+	static final SHADOW_SUFFIX = "_shadow";
+
+	static function renamedCopy(v:TVar, name:String):TVar {
+		return {
+			id: v.id,
+			name: name,
+			t: v.t,
+			capture: v.capture,
+			extra: v.extra,
+			meta: v.meta,
+			isStatic: v.isStatic
+		};
 	}
 }
 
@@ -162,6 +218,9 @@ private typedef ShadowPair = {
 private class ShadowScan {
 	public final usedNames = new Map<String, Bool>();
 	public final pairs:Array<ShadowPair> = [];
+
+	/** Each loop variable `var k = k.next()` and its same-named iterator `k`. */
+	public final loopVariables:Array<{loopVariable:TVar, iterator:TVar}> = [];
 
 	final scopes:Array<Map<String, Array<TVar>>> = [];
 	final declaredAt = new Map<Int, Int>();
@@ -257,9 +316,12 @@ private class ShadowScan {
 			case TVar(v, init):
 				if (init != null)
 					walk(init);
-				// A match binder (`case Ok(value)` types as `var value = _g1`) binds in its own
-				// Elixir case clause and keeps its pattern name.
-				declare(v, !HaxeTempLocals.isMatchBinderInit(init), HaxeTempLocals.iteratorOfNextCall(init));
+				// A loop element, range index, iterator element or match binder binds as an
+				// Elixir fn argument or clause pattern and keeps its name.
+				final iterator = HaxeTempLocals.iteratorOfNextCall(init);
+				if (iterator != null && v != null && iterator.name == v.name)
+					loopVariables.push({loopVariable: v, iterator: iterator});
+				declare(v, !ShadowedLocals.isLoweredBinderInit(init), iterator);
 			case TBlock(exprs):
 				openScope();
 				for (child in exprs)

@@ -168,9 +168,9 @@ defmodule Main do
     v = 1
     seen = 0
     {r, seen} = if (c) do
-      v1 = score("x")
-      seen = v1
-      {v1 + 1, seen}
+      v_shadow = score("x")
+      seen = v_shadow
+      {v_shadow + 1, seen}
     else
       {0, seen}
     end
