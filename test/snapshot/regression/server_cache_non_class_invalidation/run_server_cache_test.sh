@@ -1263,10 +1263,102 @@ run_private_exports_variant() {
           if actual != expected <> "\n", do: raise("private export runtime mismatch: #{inspect(actual)}")
         ' "$SERVER_OUTPUT" "$expected_stdout"
 	done
-	restore_baseline_sources
+
+	# Dead-code elimination can change the members of a class that Haxe did not
+	# type again. Under `-dce full`, PrivateDceCaller.relay() is private and
+	# unused, so DCE removes it, and with it the only use of the private
+	# PrivateDceOwner.secret(). The edit of PrivateDceUser then calls relay().
+	# Haxe types only PrivateDceUser and Main again, but relay() is back, so
+	# secret() must be generated as `def`. A kept scan result of
+	# PrivateDceCaller from before the edit must not be reused.
+	local dce_args=(-dce full -main Main)
 	rm -f "$PROJECT_DIR/src/PrivateCacheScope.hx"
+	cp "$variants/MainDce.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/PrivateDceCaller.hx" "$PROJECT_DIR/src/PrivateDceCaller.hx"
+	cp "$variants/PrivateDceOwner.hx" "$PROJECT_DIR/src/PrivateDceOwner.hx"
+	cp "$variants/PrivateDceUserBefore.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-private-dce-before" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-private-dce-before" "$SERVER_OUTPUT" "private-exports-dce-before"
+	cp "$variants/PrivateDceUserAfter.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-private-dce-after" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-private-dce-after" "$SERVER_OUTPUT" "private-exports-dce-made-live"
+	grep -Fxq '  def secret() do' "$SERVER_OUTPUT/private_dce_owner.ex" || {
+		echo "SERVER_CACHE_PARITY:private-exports-dce-made-live did not export secret()" >&2
+		return 1
+	}
+	rm -f "$PROJECT_DIR/src/PrivateDceCaller.hx" "$PROJECT_DIR/src/PrivateDceOwner.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+
+	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "private-exports-baseline-restored"
+}
+
+# A request that fails after Reflaxe started must not lose what the next warm
+# request needs. With `-D app_name=Cache`, the printer writes a bare
+# `RegistryTools.run()` in the Web module `CacheWeb.RegistryPage` as
+# `Cache.RegistryTools.run()` only while the module registry knows
+# `Cache.RegistryTools`. Only the class support.RegistryTools registers that
+# name, when it is built. The request fails on a hand-edited output file; the
+# retry builds RegistryPage again, but not RegistryTools, so the registry needs
+# the module name kept from before the failed request.
+run_failed_request_registry_variant() {
+	local variants="$FIXTURE_DIR/variants/registry-failure"
+	local app_args=(-D app_name=Cache)
+	local failure_log="$TMP_ROOT/registry-failure.log"
+	mkdir -p "$PROJECT_DIR/src/support"
+	cp "$variants/MainRegistry.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/RegistryToolsNative.hx" "$PROJECT_DIR/src/RegistryToolsNative.hx"
+	cp "$variants/support/RegistryTools.hx" "$PROJECT_DIR/src/support/RegistryTools.hx"
+	cp "$variants/RegistryPage1.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_direct "$TMP_ROOT/direct-registry-before" "${app_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-registry-before" "$SERVER_OUTPUT" "registry-failure-before"
+	local page="$SERVER_OUTPUT/cache_web/registry_page.ex"
+	grep -Fq 'Cache.RegistryTools.run()' "$page" || {
+		echo "SERVER_CACHE_PARITY:registry-failure fixture did not qualify RegistryTools" >&2
+		return 1
+	}
+
+	local page_copy="$TMP_ROOT/registry-page-original.ex"
+	cp "$page" "$page_copy"
+	cp "$variants/RegistryPage2.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	python3 - "$page" <<'PY'
+import sys
+
+path = sys.argv[1]
+data = open(path, "rb").read()
+changed = data.replace(b"defmodule", b"defmodulf", 1)
+if changed == data:
+    raise SystemExit("registry-failure fixture could not change registry_page.ex")
+open(path, "wb").write(changed)
+PY
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" "${app_args[@]}" \
+		>"$failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:registry-failure request accepted a hand-edited generated file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$failure_log" || {
+		echo "SERVER_CACHE_PARITY:registry-failure request failed for the wrong reason" >&2
+		sed -n '1,160p' "$failure_log" >&2
+		return 1
+	}
+	cp "$page_copy" "$page"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_direct "$TMP_ROOT/direct-registry-after" "${app_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-registry-after" "$SERVER_OUTPUT" "registry-failure-retry"
+	echo "SERVER_CACHE_REUSE:module-names-kept-after-failed-request:PASS"
+
+	restore_baseline_sources
+	rm -rf "$PROJECT_DIR/src/support"
+	rm -f "$PROJECT_DIR/src/RegistryToolsNative.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "registry-failure-removed"
 }
 
 HAXE_BIN="$(resolve_haxe_server_binary)"
@@ -1361,6 +1453,7 @@ run_external_macro_input_variant
 run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
+run_failed_request_registry_variant
 run_native_class_variant
 run_tampered_output_variant
 run_missing_output_variant

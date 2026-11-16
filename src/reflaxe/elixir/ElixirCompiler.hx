@@ -148,7 +148,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	static function registerKeptModuleNames(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
 		var names = keptModuleNames;
 		if (names == null) {
-			names = new ClassResultCache();
+			// A module name depends only on the class declaration and the defines,
+			// and is observed only while a class is built, so it must survive a
+			// failed request (see DECLARATION RESULTS in ClassResultCache).
+			names = new ClassResultCache(true);
 			keptModuleNames = names;
 		}
 		names.begin();
@@ -364,7 +367,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	@:persistent static var previousPrivateMethodExports:Null<Map<String, Bool>> = null;
 
 	/** Each caller class's private-method uses, kept for classes that Haxe does not type again. */
-	@:persistent static var keptPrivateMethodExports:Null<ClassResultCache<Array<String>>> = null;
+	@:persistent static var keptPrivateMethodExports:Null<ClassResultCache<PrivateMethodExports.CallerExports>> = null;
 
 	/**
 	 * Constructor - Initialize the compiler with type mapping and pattern matching systems

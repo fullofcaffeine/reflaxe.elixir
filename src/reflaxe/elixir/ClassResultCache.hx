@@ -38,29 +38,45 @@ import reflaxe.ReflectCompiler;
  * - The key holds the source module, the Haxe path, and the source file. A class
  *   that a request does not see is dropped at `commit`.
  *
+ * DECLARATION RESULTS
+ * - `new ClassResultCache(true)` is for a result that depends only on the
+ *   class's own declaration and the defines, such as its Elixir module name.
+ *   Such a result stays correct while Haxe does not type the class again, also
+ *   after a failed request and for another project on the same server. These
+ *   results are never dropped as a whole, `commit` adds the request's results to
+ *   the kept ones, and a class that Haxe typed again loses its kept result until
+ *   the request records a new one. This matters when a caller cannot compute a
+ *   missing result, because the result is only observed while a class is built.
+ *
  * EXAMPLE
  * - A person edits a string in `AuditLogLive`. Haxe types `AuditLogLive` and
  *   `TodoAppRouter` again. The scan reads these two classes and takes the kept
  *   results of the other 140 classes.
  *
  * `-D reflaxe_elixir_no_kept_class_results` computes every class in every
- * request, as before this cache existed.
+ * request, as before this cache existed. It does not apply to declaration
+ * results.
  */
 class ClassResultCache<T> {
 	var kept:Map<String, T> = new Map();
 	var next:Map<String, T> = new Map();
 	var requestOpen = false;
 	var identity = "";
+	final declarationOnly:Bool;
 
-	public function new() {}
+	/** `declarationOnly`: see DECLARATION RESULTS in the class documentation. */
+	public function new(declarationOnly:Bool = false) {
+		this.declarationOnly = declarationOnly;
+	}
 
 	/**
-	 * Starts a request. When the previous request did not reach `commit`, its
-	 * kept results are dropped, so that each class is computed again.
+	 * Starts a request. When the previous request did not reach `commit`, or the
+	 * working directory or class paths changed, the kept results are dropped, so
+	 * that each class is computed again. Declaration results are kept.
 	 */
 	public function begin():Void {
 		var current = requestIdentity();
-		if (requestOpen || current != identity)
+		if (!declarationOnly && (requestOpen || current != identity))
 			kept = new Map();
 		identity = current;
 		next = new Map();
@@ -87,8 +103,14 @@ class ClassResultCache<T> {
 	public function reuse(classType:ClassType):Null<T> {
 		var key = keyFor(classType);
 		var known = kept.get(key);
-		if (known == null || mustCompute(classType))
+		if (known == null)
 			return null;
+		if (mustCompute(classType)) {
+			// A declaration result is merged at commit, so drop the old one now.
+			if (declarationOnly)
+				kept.remove(key);
+			return null;
+		}
 		next.set(key, known);
 		return known;
 	}
@@ -102,7 +124,12 @@ class ClassResultCache<T> {
 	public function commit():Void {
 		if (!requestOpen)
 			return;
-		kept = next;
+		if (declarationOnly) {
+			for (key => result in next)
+				kept.set(key, result);
+		} else {
+			kept = next;
+		}
 		next = new Map();
 		requestOpen = false;
 	}
@@ -112,9 +139,11 @@ class ClassResultCache<T> {
 		return Sys.getCwd() + "\u0000" + Context.getClassPath().join("\u0000");
 	}
 
-	static function mustCompute(classType:ClassType):Bool {
+	function mustCompute(classType:ClassType):Bool {
 		#if reflaxe_elixir_no_kept_class_results
-		return true;
+		// Declaration results are not a scan; a compiler that builds only the
+		// re-typed classes still needs them.
+		return !declarationOnly || ReflectCompiler.wasTypedThisRequest(classType);
 		#else
 		return ReflectCompiler.wasTypedThisRequest(classType);
 		#end
