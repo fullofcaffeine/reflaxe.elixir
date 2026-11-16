@@ -64,8 +64,12 @@ class CompilerPhaseTimings {
 			record(name, nowMs() - startedMs);
 	}
 
-	/** Records an already measured duration. Public for focused contract tests. */
-	public function record(name:String, durationMs:Float):Void {
+	/**
+	 * Records an already measured duration. `count` says how many runs of the
+	 * phase the duration covers, for example the number of classes scanned.
+	 * Public for focused contract tests.
+	 */
+	public function record(name:String, durationMs:Float, count:Int = 1):Void {
 		if (!enabled)
 			return;
 		if (name == null || name.length == 0)
@@ -75,8 +79,10 @@ class CompilerPhaseTimings {
 
 		var previous = totals.get(name);
 		totals.set(name, (previous == null ? 0.0 : previous) + durationMs);
-		var count = counts.get(name);
-		counts.set(name, (count == null ? 0 : count) + 1);
+		if (count < 1)
+			throw 'Compiler timing phase `$name` reported a count below one.';
+		var previousCount = counts.get(name);
+		counts.set(name, (previousCount == null ? 0 : previousCount) + count);
 	}
 
 	/** Stable snapshot used by the report and focused tests. */

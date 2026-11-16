@@ -703,8 +703,10 @@ os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
 PY
 	cp "$owned" "$tampered"
 
-	# The source edit below changes a different generated file. The warm request
-	# must still read every owned file, find the hand edit, and publish nothing.
+	# The source edit below changes CacheNative. Main uses CacheNative, so Haxe
+	# types Main again and the warm request builds main.ex again. The request
+	# checks each owned file that it builds, finds the hand edit, and publishes
+	# nothing.
 	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
 	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
 		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
@@ -734,6 +736,67 @@ PY
 	compile_server "$SERVER_OUTPUT"
 	compile_direct "$direct_after"
 	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "tampered-output-restored"
+
+	# Now a hand edit of a generated file that the next warm request does not
+	# build again: std.ex. That request does not read, write, or delete the
+	# file, so it does not check it. It publishes the source edit and keeps the
+	# hand edit. The manifest keeps the compiler's digest, so a fresh build, or
+	# a later request that builds std.ex again, still refuses.
+	local bystander="$SERVER_OUTPUT/std.ex"
+	local bystander_original="$TMP_ROOT/tampered-bystander-original.ex"
+	local bystander_tampered="$TMP_ROOT/tampered-bystander-tampered.ex"
+	local direct_before="$TMP_ROOT/direct-tampered-bystander-before"
+	local fresh_log="$TMP_ROOT/tampered-bystander-fresh.log"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	if [[ ! -f "$bystander" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fixture generated no std.ex" >&2
+		return 1
+	fi
+	cp "$bystander" "$bystander_original"
+	python3 - "$bystander" <<'PY'
+import os
+import sys
+
+path = sys.argv[1]
+before = os.stat(path)
+data = open(path, "rb").read()
+changed = data.replace(b"defmodule", b"defmodulf", 1)
+if changed == data or len(changed) != len(data):
+    raise SystemExit("tampered-bystander fixture could not change std.ex")
+open(path, "wb").write(changed)
+os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+PY
+	cp "$bystander" "$bystander_tampered"
+	cp "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	cmp -s "$bystander" "$bystander_tampered" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander warm build changed a file that it did not build" >&2
+		return 1
+	}
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander warm build did not publish the source edit" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$SERVER_OUTPUT" >"$fresh_log" 2>&1
+	then
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build accepted a hand-edited generated file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$fresh_log" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build failed for the wrong reason" >&2
+		sed -n '1,160p' "$fresh_log" >&2
+		return 1
+	}
+	cmp -s "$bystander" "$bystander_tampered" || {
+		echo "SERVER_CACHE_OWNERSHIP:tampered-bystander fresh build overwrote the hand-edited file" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_OWNERSHIP:tampered-bystander-kept-and-fresh-refused:PASS"
+	cp "$bystander_original" "$bystander"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "tampered-bystander-restored"
 
 	restore_baseline_sources
 	rm -f "$PROJECT_DIR/src/CacheNative.hx"
@@ -1131,10 +1194,37 @@ run_discovery_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "discovery-removed"
 }
 
+# Reads the phase report of one request and prints how many classes it
+# scanned for one per-class phase, or 0 when the phase did not run.
+scanned_class_count() {
+	python3 - "$1" "$2" <<'PY'
+import json
+import sys
+
+count = None
+for line in open(sys.argv[1], encoding="utf-8"):
+    if line.startswith("REFLAXE_ELIXIR_TIMINGS "):
+        phases = json.loads(line.split(" ", 1)[1])["phases"]
+        count = sum(phase["count"] for phase in phases if phase["name"] == sys.argv[2])
+if count is None:
+    raise SystemExit("no phase report in " + sys.argv[1])
+print(count)
+PY
+}
+
 run_private_exports_variant() {
 	local variants="$FIXTURE_DIR/variants/private-exports"
 	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
 	local phase source expected_visibility expected_stdout
+
+	# How many classes a request scans when it keeps no per-class result. The
+	# define starts a new macro context; the next request starts another one.
+	cp "$variants/MainLocal.hx" "$PROJECT_DIR/src/Main.hx"
+	compile_server "$TMP_ROOT/private-full-scan-output" -D reflaxe_elixir_no_kept_class_results >"$TMP_ROOT/private-full-scan.log"
+	local full_exports full_references
+	full_exports="$(scanned_class_count "$TMP_ROOT/private-full-scan.log" private_method_exports_class_scan)"
+	full_references="$(scanned_class_count "$TMP_ROOT/private-full-scan.log" reference_semantics_class_scan)"
+
 	for phase in local-before remote local-after; do
 		if [[ "$phase" == remote ]]; then
 			source=MainRemote.hx
@@ -1148,10 +1238,23 @@ run_private_exports_variant() {
 		# Only the caller changes. anchor() keeps secret() and its owning module
 		# alive in every phase, so ordinary DCE cannot hide missing invalidation.
 		cp "$variants/$source" "$PROJECT_DIR/src/Main.hx"
-		compile_server "$SERVER_OUTPUT"
+		compile_server "$SERVER_OUTPUT" >"$TMP_ROOT/private-$phase.log"
 		compile_direct "$TMP_ROOT/direct-private-$phase"
 		compare_generated_output "$TMP_ROOT/direct-private-$phase" "$SERVER_OUTPUT" "private-exports-$phase"
 		grep -Fxq "$expected_visibility" "$SERVER_OUTPUT/private_cache_scope.ex"
+		if [[ "$phase" == remote ]]; then
+			# Only Main changed, so Haxe typed Main again and nothing else. The
+			# request must scan Main again (its new remote use made `secret` a
+			# `def`, checked above), and keep the results of the other classes.
+			local warm_exports warm_references
+			warm_exports="$(scanned_class_count "$TMP_ROOT/private-$phase.log" private_method_exports_class_scan)"
+			warm_references="$(scanned_class_count "$TMP_ROOT/private-$phase.log" reference_semantics_class_scan)"
+			if ((warm_exports < 1 || warm_exports >= full_exports || warm_references < 1 || warm_references >= full_references)); then
+				echo "SERVER_CACHE_REUSE:private-exports-remote scanned exports=$warm_exports/$full_exports references=$warm_references/$full_references classes" >&2
+				return 1
+			fi
+			echo "SERVER_CACHE_REUSE:kept-class-results exports=$warm_exports/$full_exports references=$warm_references/$full_references:PASS"
+		fi
 		"$TIMEOUT" --secs 60 --cwd "$PROJECT_DIR" -- elixir -e '
           [root, expected] = System.argv()
           {:ok, _, []} = Kernel.ParallelCompiler.compile(Path.wildcard(Path.join(root, "**/*.ex")))
@@ -1160,10 +1263,102 @@ run_private_exports_variant() {
           if actual != expected <> "\n", do: raise("private export runtime mismatch: #{inspect(actual)}")
         ' "$SERVER_OUTPUT" "$expected_stdout"
 	done
-	restore_baseline_sources
+
+	# Dead-code elimination can change the members of a class that Haxe did not
+	# type again. Under `-dce full`, PrivateDceCaller.relay() is private and
+	# unused, so DCE removes it, and with it the only use of the private
+	# PrivateDceOwner.secret(). The edit of PrivateDceUser then calls relay().
+	# Haxe types only PrivateDceUser and Main again, but relay() is back, so
+	# secret() must be generated as `def`. A kept scan result of
+	# PrivateDceCaller from before the edit must not be reused.
+	local dce_args=(-dce full -main Main)
 	rm -f "$PROJECT_DIR/src/PrivateCacheScope.hx"
+	cp "$variants/MainDce.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/PrivateDceCaller.hx" "$PROJECT_DIR/src/PrivateDceCaller.hx"
+	cp "$variants/PrivateDceOwner.hx" "$PROJECT_DIR/src/PrivateDceOwner.hx"
+	cp "$variants/PrivateDceUserBefore.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-private-dce-before" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-private-dce-before" "$SERVER_OUTPUT" "private-exports-dce-before"
+	cp "$variants/PrivateDceUserAfter.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-private-dce-after" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-private-dce-after" "$SERVER_OUTPUT" "private-exports-dce-made-live"
+	grep -Fxq '  def secret() do' "$SERVER_OUTPUT/private_dce_owner.ex" || {
+		echo "SERVER_CACHE_PARITY:private-exports-dce-made-live did not export secret()" >&2
+		return 1
+	}
+	rm -f "$PROJECT_DIR/src/PrivateDceCaller.hx" "$PROJECT_DIR/src/PrivateDceOwner.hx" "$PROJECT_DIR/src/PrivateDceUser.hx"
+
+	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "private-exports-baseline-restored"
+}
+
+# A request that fails after Reflaxe started must not lose what the next warm
+# request needs. With `-D app_name=Cache`, the printer writes a bare
+# `RegistryTools.run()` in the Web module `CacheWeb.RegistryPage` as
+# `Cache.RegistryTools.run()` only while the module registry knows
+# `Cache.RegistryTools`. Only the class support.RegistryTools registers that
+# name, when it is built. The request fails on a hand-edited output file; the
+# retry builds RegistryPage again, but not RegistryTools, so the registry needs
+# the module name kept from before the failed request.
+run_failed_request_registry_variant() {
+	local variants="$FIXTURE_DIR/variants/registry-failure"
+	local app_args=(-D app_name=Cache)
+	local failure_log="$TMP_ROOT/registry-failure.log"
+	mkdir -p "$PROJECT_DIR/src/support"
+	cp "$variants/MainRegistry.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/RegistryToolsNative.hx" "$PROJECT_DIR/src/RegistryToolsNative.hx"
+	cp "$variants/support/RegistryTools.hx" "$PROJECT_DIR/src/support/RegistryTools.hx"
+	cp "$variants/RegistryPage1.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_direct "$TMP_ROOT/direct-registry-before" "${app_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-registry-before" "$SERVER_OUTPUT" "registry-failure-before"
+	local page="$SERVER_OUTPUT/cache_web/registry_page.ex"
+	grep -Fq 'Cache.RegistryTools.run()' "$page" || {
+		echo "SERVER_CACHE_PARITY:registry-failure fixture did not qualify RegistryTools" >&2
+		return 1
+	}
+
+	local page_copy="$TMP_ROOT/registry-page-original.ex"
+	cp "$page" "$page_copy"
+	cp "$variants/RegistryPage2.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	python3 - "$page" <<'PY'
+import sys
+
+path = sys.argv[1]
+data = open(path, "rb").read()
+changed = data.replace(b"defmodule", b"defmodulf", 1)
+if changed == data:
+    raise SystemExit("registry-failure fixture could not change registry_page.ex")
+open(path, "wb").write(changed)
+PY
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" "${app_args[@]}" \
+		>"$failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:registry-failure request accepted a hand-edited generated file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$failure_log" || {
+		echo "SERVER_CACHE_PARITY:registry-failure request failed for the wrong reason" >&2
+		sed -n '1,160p' "$failure_log" >&2
+		return 1
+	}
+	cp "$page_copy" "$page"
+	compile_server "$SERVER_OUTPUT" "${app_args[@]}"
+	compile_direct "$TMP_ROOT/direct-registry-after" "${app_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-registry-after" "$SERVER_OUTPUT" "registry-failure-retry"
+	echo "SERVER_CACHE_REUSE:module-names-kept-after-failed-request:PASS"
+
+	restore_baseline_sources
+	rm -rf "$PROJECT_DIR/src/support"
+	rm -f "$PROJECT_DIR/src/RegistryToolsNative.hx" "$PROJECT_DIR/src/RegistryPage.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "registry-failure-removed"
 }
 
 HAXE_BIN="$(resolve_haxe_server_binary)"
@@ -1258,6 +1453,7 @@ run_external_macro_input_variant
 run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
+run_failed_request_registry_variant
 run_native_class_variant
 run_tampered_output_variant
 run_missing_output_variant

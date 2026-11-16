@@ -46,6 +46,7 @@ import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.debug.CompilerPhaseTimings;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 import reflaxe.elixir.macros.MixTaskMetadata;
+import reflaxe.elixir.macros.ReferenceSemanticsDiagnostics;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -115,9 +116,54 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	// Global module registry for cross-file qualification decisions
 	static var globalModuleRegistry:Map<String, Bool> = new Map();
 
+	/**
+	 * The module name that each class registered when it was last built.
+	 *
+	 * The printer qualifies a call in `TodoAppWeb.AuditLogLive` from
+	 * `FlashTypeTools` to `TodoApp.FlashTypeTools` only when a class registered
+	 * `TodoApp.FlashTypeTools`. A warm request builds only the classes that Haxe
+	 * typed again, so without these kept names the registry missed the other
+	 * classes, and a one-class edit printed a different call than a fresh build.
+	 */
+	@:persistent static var keptModuleNames:Null<ClassResultCache<String>> = null;
+
 	public static function registerModule(name:String):Void {
 		if (name != null && name.length > 0)
 			globalModuleRegistry.set(name, true);
+	}
+
+	/** Registers the module that `classType` emits, and keeps it for warm requests. */
+	public static function registerClassModule(classType:ClassType, name:String):Void {
+		registerModule(name);
+		if (keptModuleNames != null && name != null && name.length > 0)
+			keptModuleNames.record(classType, name);
+	}
+
+	/**
+	 * Registers, at the start of a request, the module names of the live classes
+	 * that Haxe did not type again. A fresh build registers the same names when
+	 * it builds these classes, because a name depends only on the class and the
+	 * defines.
+	 */
+	static function registerKeptModuleNames(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+		var names = keptModuleNames;
+		if (names == null) {
+			// A module name depends only on the class declaration and the defines,
+			// and is observed only while a class is built, so it must survive a
+			// failed request (see DECLARATION RESULTS in ClassResultCache).
+			names = new ClassResultCache(true);
+			keptModuleNames = names;
+		}
+		names.begin();
+		for (moduleType in moduleTypes) {
+			switch (moduleType) {
+				case TClassDecl(classRef):
+					var name = names.reuse(classRef.get());
+					if (name != null)
+						registerModule(name);
+				case _:
+			}
+		}
 	}
 
 	public static function isModuleKnown(name:String):Bool {
@@ -320,6 +366,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/** Warm-server dependency state advances only after successful publication. */
 	@:persistent static var previousPrivateMethodExports:Null<Map<String, Bool>> = null;
 
+	/** Each caller class's private-method uses, kept for classes that Haxe does not type again. */
+	@:persistent static var keptPrivateMethodExports:Null<ClassResultCache<PrivateMethodExports.CallerExports>> = null;
+
 	/**
 	 * Constructor - Initialize the compiler with type mapping and pattern matching systems
 	 */
@@ -359,8 +408,19 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		// The diagnostic ran in Haxe's after-typing callback, before this reset.
+		phaseTimings.record("reference_semantics_diagnostics", ReferenceSemanticsDiagnostics.lastDurationMs);
+		if (ReferenceSemanticsDiagnostics.lastScannedClassCount > 0)
+			phaseTimings.record("reference_semantics_class_scan", ReferenceSemanticsDiagnostics.lastScanDurationMs,
+				ReferenceSemanticsDiagnostics.lastScannedClassCount);
 		var result = filterTypesBody(moduleTypes);
-		privateMethodExports = PrivateMethodExports.collect(result);
+		registerKeptModuleNames(result);
+		var exportsStarted = phaseTimings.start();
+		if (keptPrivateMethodExports == null)
+			keptPrivateMethodExports = new ClassResultCache();
+		privateMethodExports = PrivateMethodExports.collect(result, keptPrivateMethodExports,
+			durationMs -> phaseTimings.record("private_method_exports_class_scan", durationMs));
+		phaseTimings.finish("private_method_exports", exportsStarted);
 		// ReflectCompiler applies its define/server-cache filters and initialization
 		// callbacks after this method returns and before onCompileStart().
 		reflaxeFiltersStarted = phaseTimings.start();
@@ -6543,6 +6603,13 @@ left_name == right_name and left_params == right_params';
 	public override function onOutputComplete() {
 		pruneEmptyOutputDirectories();
 		previousPrivateMethodExports = privateMethodExports;
+		// Results computed in this request become the kept results only now,
+		// after the output that used them was published.
+		if (keptPrivateMethodExports != null)
+			keptPrivateMethodExports.commit();
+		if (keptModuleNames != null)
+			keptModuleNames.commit();
+		ReferenceSemanticsDiagnostics.commitRequest();
 	}
 
 	function pruneEmptyOutputDirectories():Void {

@@ -48,7 +48,10 @@ The compiler applies these rules before publication:
 
 1. Parse and validate every old ownership path; absolute paths, traversal, duplicates, reserved
    control paths, and symlink escapes fail.
-2. Verify every existing version 2 owned file still matches its recorded digest.
+2. Verify that existing version 2 owned files still match their recorded digests. A full build,
+   a legacy-manifest upgrade, or a build with the formatter on checks every owned file. A version 2
+   cached rebuild with formatting off checks only the owned files that it renders again, because it
+   does not read, copy, write, or delete the others.
 3. Reject any generated target that already exists but is not owned.
 4. Generate the next tree in staging. A full build, legacy-manifest upgrade, or enabled formatter
    stages the complete tree. A version 2 cached rebuild with formatting off stages only candidates
@@ -60,7 +63,10 @@ The compiler applies these rules before publication:
 Unchanged generated files are not rewritten. Removed Haxe modules and namespace moves delete only
 stale owned paths. With `-D source-map`, each `.ex.map` sidecar enters the same transaction as its
 `.ex` file, so a rename cannot leave an obsolete map behind. Editing a generated file by hand
-changes its digest, so the next build and clean both stop instead of silently discarding the edit.
+changes its digest, so the next build that would replace or delete that file, every full build, and
+clean all stop instead of silently discarding the edit. A warm cached rebuild that does not render
+the edited file's module leaves the file and its manifest digest as they are. Use
+`-D reflaxe_elixir_full_ownership_check` to check every owned file in each build.
 
 If someone deletes an owned file, a cached rebuild that renders that file's module again writes it
 back in the same request, with the same bytes as a full build. A cached rebuild that does not render

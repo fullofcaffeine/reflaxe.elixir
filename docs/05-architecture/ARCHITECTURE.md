@@ -19,11 +19,19 @@ This document is the canonical “how the compiler is structured today” overvi
 
 ### Ownership check on a Haxe compilation server
 
-Before the compiler changes a generated file, it reads every file that
-`_GeneratedFiles.json` owns and compares its SHA-256 digest with the manifest. A
-file that someone edited by hand stops the build, and nothing is overwritten.
-The compiler does this two times for each build: before staging, and again after
-the formatter hook.
+Before the compiler changes a generated file, it reads the file and compares its
+SHA-256 digest with `_GeneratedFiles.json`. A file that someone edited by hand
+stops the build, and nothing is overwritten. The compiler does this two times for
+each build: before staging, and again after the formatter hook.
+
+Which files it checks: a full build, a build with a legacy manifest, and a build
+with the formatter on check every owned file, because they write, delete, or copy
+each one. A warm cached rebuild with the formatter off checks only the owned files
+that it renders again. It does not read, write, or delete the other files, and the
+new manifest keeps their digests from the old one. A hand edit of such a file
+stays until a build renders that module again or a full build runs; both refuse.
+Before this rule, each warm request read every owned file two times (about 0.13 s
+for the todo-app's 124 files on a loaded machine).
 
 Haxe runs this check in its macro interpreter, where SHA-256 is slow. For 185
 generated files the two checks took about 2 seconds of each warm build. On a
@@ -34,11 +42,18 @@ digest is used; any other content is hashed again. A file time, a file size, or 
 shorter hash is never trusted. The result of each check is therefore the same as
 before, and a hand edit that keeps the size and the file time is still refused.
 
+The same rule covers `_GeneratedFiles.json` itself. When its bytes equal the
+bytes that this server last validated, the parsed result is reused, and the
+digest of the previous manifest comes from the remembered bytes. When the owned
+paths and digests do not change, the previous generation digest is reused.
+
 Nothing is remembered on disk. A new compiler process, and a server after a
 compiler source change, hashes each file. `-D reflaxe_elixir_full_ownership_check`
-makes each check compute SHA-256, which is useful to compare the two paths. The
-`tampered-output` case of `npm run test:reflaxe-server-cache` edits a generated
-file on a warm server and requires the refusal.
+makes each check compute SHA-256 and check every owned file, which is useful to
+compare the two paths. The `tampered-output` case of
+`npm run test:reflaxe-server-cache` edits a generated file that a warm request
+renders again and requires the refusal; it also edits one that the request does
+not render, and requires that the warm request keeps it and a fresh build refuses.
 
 ## Accepted staged evolution: structure before text
 

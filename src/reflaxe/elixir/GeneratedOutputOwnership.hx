@@ -30,6 +30,14 @@ private typedef OwnershipState = {
 	var id:Int;
 	var paths:Array<String>;
 	var digests:Map<String, String>;
+	var generation:Null<String>;
+}
+
+/** Manifest bytes that this compiler process already validated, and the result. */
+private typedef RememberedManifest = {
+	var path:String;
+	var bytes:Bytes;
+	var state:OwnershipState;
 }
 
 /** File bytes that this compiler process already hashed, and their SHA-256 digest. */
@@ -117,6 +125,9 @@ class GeneratedOutputOwnership {
 	// A new compiler process starts with nothing remembered.
 	@:persistent static var rememberedDigests:Null<Map<String, Array<RememberedDigest>>> = null;
 	@:persistent static var rememberedByteCount:Int = 0;
+	@:persistent static var rememberedManifest:Null<RememberedManifest> = null;
+	// True when the last `readOwnership` reused the remembered manifest state.
+	static var lastManifestReused = false;
 
 	/**
 	 * Recovers a previously activated publication transaction, or removes a prepare
@@ -179,6 +190,8 @@ class GeneratedOutputOwnership {
 		try {
 			var preflightStarted = phaseTimings.start();
 			var previous = readOwnership(root);
+			if (lastManifestReused)
+				phaseTimings.record("output_manifest_reused", 0.0);
 			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;
 			var pending = new Map<String, StringOrBytes>();
 			var pendingOrder:Array<String> = [];
@@ -193,7 +206,10 @@ class GeneratedOutputOwnership {
 				pendingOrder.push(path);
 			}
 
-			verifyOwnedFiles(root, previous);
+			// The owned files that this request may write, replace, delete, or copy.
+			// See `verifiedOwnedPaths` for why a cached rebuild checks fewer files.
+			var verifiedPaths = verifiedOwnedPaths(previous, pendingOrder, usePartialStaging);
+			verifyOwnedFiles(root, previous, verifiedPaths);
 			var oldSet = stringSet(previous.paths);
 			var legacySourceMaps = new Map<String, String>();
 			for (path in pendingOrder) {
@@ -295,7 +311,7 @@ class GeneratedOutputOwnership {
 			// another process that edits live generated output must never have those
 			// bytes adopted as the transaction's new rollback baseline.
 			var liveOwnershipRecheckStarted = phaseTimings.start();
-			verifyOwnedFiles(root, previous);
+			verifyOwnedFiles(root, previous, verifiedPaths);
 			phaseTimings.finish("output_live_ownership_recheck", liveOwnershipRecheckStarted);
 
 			var owned:Array<OwnedFileRecord> = [];
@@ -336,7 +352,10 @@ class GeneratedOutputOwnership {
 				manifestOwned.push(manifestRecord);
 			}
 
-			var generation = generationDigest(owned);
+			// The same owned files and digests give the same generation digest, so a
+			// request that changed no file reuses the verified previous one.
+			var generation = previous.generation != null
+				&& sameOwnedRecords(owned, previous) ? previous.generation : generationDigest(owned);
 			var nextId = #if reflaxe.dont_output_metadata_id 0 #else previous.id + 1 #end;
 			var nextManifest = Json.stringify({
 				filesGenerated: nextPaths,
@@ -411,7 +430,9 @@ class GeneratedOutputOwnership {
 			if (previous.exists) {
 				var previousManifestPath = Path.join([prepare, PREVIOUS_MANIFEST_FILENAME]);
 				File.copy(manifestPath, previousManifestPath);
-				previousManifestDigest = hashFile(previousManifestPath);
+				// The live manifest is usually the one this process wrote last time, so
+				// `digestFor` finds its bytes and does not run SHA-256 again.
+				previousManifestDigest = digestFor(manifestPath, File.getBytes(previousManifestPath));
 			}
 			var nextManifestPath = Path.join([prepare, NEXT_MANIFEST_FILENAME]);
 			File.saveContent(nextManifestPath, nextManifest);
@@ -421,7 +442,7 @@ class GeneratedOutputOwnership {
 				paths: transactionPaths,
 				previousManifest: previous.exists,
 				previousManifestDigest: previousManifestDigest,
-				nextManifestDigest: hashFile(nextManifestPath)
+				nextManifestDigest: digestFor(manifestPath, File.getBytes(nextManifestPath))
 			};
 			File.saveContent(Path.join([prepare, JOURNAL_FILENAME]), Json.stringify(journal, null, "\t") + "\n");
 
@@ -465,6 +486,22 @@ class GeneratedOutputOwnership {
 			var manifestTemp = Path.join([root, MANIFEST_TEMP_FILENAME]);
 			File.copy(Path.join([active, NEXT_MANIFEST_FILENAME]), manifestTemp);
 			replaceFile(manifestTemp, manifestPath);
+			// Each request writes a new manifest (its `id` grows), so remember the
+			// one just written: it holds exactly these paths, digests, generation,
+			// and id. The next request then reuses this state when the live
+			// manifest still has these bytes, instead of parsing and hashing it.
+			rememberedManifest = {
+				path: manifestPath,
+				bytes: haxe.io.Bytes.ofString(nextManifest),
+				state: {
+					exists: true,
+					legacy: false,
+					id: nextId,
+					paths: nextPaths.copy(),
+					digests: newDigests.copy(),
+					generation: generation
+				}
+			};
 
 			removeTransactionTemps(root, journal);
 			safeRemoveTree(active);
@@ -497,14 +534,49 @@ class GeneratedOutputOwnership {
 				legacy: false,
 				id: 0,
 				paths: [],
-				digests: []
+				digests: [],
+				generation: null
 			};
 		}
 		if (FileSystem.isDirectory(manifestPath))
 			fail('Generated-output ownership manifest is a directory: $manifestPath');
 		ensureCanonicalWithin(root, manifestPath, "generated-output ownership manifest");
 
-		var raw:Dynamic = try Json.parse(File.getContent(manifestPath)) catch (error:Dynamic) {
+		// Parsing and validation depend only on the manifest bytes. When the bytes
+		// equal the bytes validated by an earlier request of this process, the
+		// result is the same, and the JSON parse and the SHA-256 check are skipped.
+		var bytes = File.getBytes(manifestPath);
+		var remembered = rememberedManifest;
+		lastManifestReused = false;
+		#if !reflaxe_elixir_full_ownership_check
+		if (remembered != null
+			&& remembered.path == manifestPath
+			&& remembered.bytes.length == bytes.length
+			&& remembered.bytes.compare(bytes) == 0) {
+			lastManifestReused = true;
+			return copyOwnershipState(remembered.state);
+		}
+		#end
+		var state = parseOwnership(manifestPath, bytes);
+		rememberedManifest = {path: manifestPath, bytes: bytes, state: copyOwnershipState(state)};
+		return state;
+	}
+
+	/** Returns a copy that a caller can change without changing the remembered state. */
+	static function copyOwnershipState(state:OwnershipState):OwnershipState {
+		return {
+			exists: state.exists,
+			legacy: state.legacy,
+			id: state.id,
+			paths: state.paths.copy(),
+			digests: state.digests.copy(),
+			generation: state.generation
+		};
+	}
+
+	/** Parses and validates the bytes of an existing `_GeneratedFiles.json`. */
+	static function parseOwnership(manifestPath:String, bytes:Bytes):OwnershipState {
+		var raw:Dynamic = try Json.parse(bytes.toString()) catch (error:Dynamic) {
 			fail('Cannot parse generated-output ownership manifest `$manifestPath`: ${Std.string(error)}');
 			{};
 		};
@@ -520,7 +592,8 @@ class GeneratedOutputOwnership {
 				legacy: true,
 				id: id,
 				paths: paths,
-				digests: []
+				digests: [],
+				generation: null
 			};
 		}
 		if (version != MANIFEST_VERSION)
@@ -561,12 +634,58 @@ class GeneratedOutputOwnership {
 			legacy: false,
 			id: id,
 			paths: paths,
-			digests: digests
+			digests: digests,
+			generation: expectedGeneration
 		};
 	}
 
-	static function verifyOwnedFiles(root:String, ownership:OwnershipState):Void {
-		for (path in ownership.paths) {
+	/** True when `owned` lists exactly the paths and digests of the previous manifest. */
+	static function sameOwnedRecords(owned:Array<OwnedFileRecord>, previous:OwnershipState):Bool {
+		if (previous.legacy || owned.length != previous.paths.length)
+			return false;
+		for (record in owned) {
+			if (previous.digests.get(record.path) != record.digest)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Returns the owned paths whose live bytes this request must check against
+	 * the manifest before it publishes, or null for every owned path.
+	 *
+	 * The check exists so that the compiler never overwrites, deletes, or adopts
+	 * a generated file that somebody changed by hand. Which files that covers:
+	 * - A full build, a build with a legacy manifest, or a build whose prepared
+	 *   output hook (the formatter) needs the complete tree writes or deletes each
+	 *   owned file, or copies it into the new output set and records the digest of
+	 *   the copy. Each owned file is checked, as before.
+	 * - A cached rebuild with partial staging touches only its candidates. An
+	 *   owned file that is not a candidate is not read, written, copied, or
+	 *   deleted, and the new manifest keeps its digest from the previous manifest.
+	 *   Only the candidates are checked.
+	 *
+	 * What this gives up: on a warm request, a hand edit of a generated file that
+	 * the request does not build again is no longer reported by that request. The
+	 * file keeps the hand edit, and the manifest keeps the compiler's digest. The
+	 * first request that builds the file again, and every fresh build, still finds
+	 * the edit and stops before it changes anything.
+	 *
+	 * `-D reflaxe_elixir_full_ownership_check` checks every owned file again.
+	 */
+	static function verifiedOwnedPaths(previous:OwnershipState, pendingOrder:Array<String>, usePartialStaging:Bool):Null<Array<String>> {
+		#if reflaxe_elixir_full_ownership_check
+		return null;
+		#else
+		if (!usePartialStaging)
+			return null;
+		var owned = stringSet(previous.paths);
+		return pendingOrder.filter(path -> owned.exists(path));
+		#end
+	}
+
+	static function verifyOwnedFiles(root:String, ownership:OwnershipState, ?onlyPaths:Array<String>):Void {
+		for (path in (onlyPaths != null ? onlyPaths : ownership.paths)) {
 			var target = targetPath(root, path);
 			if (!FileSystem.exists(target))
 				continue;
