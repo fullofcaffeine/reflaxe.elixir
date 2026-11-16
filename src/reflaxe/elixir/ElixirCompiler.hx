@@ -2400,6 +2400,23 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				// Capture infrastructure-variable substitutions produced by the preprocessor for
 				// any builder paths that recompile sub-expressions by TVar.id.
 				context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
+				// A program local named like a Haxe temp that is still in this body (`g` and
+				// `_g`) gets its own Elixir name, so the two never share one binding.
+				// Argument names count as taken even when the body never reads them.
+				var argumentNames = [
+					for (arg in funcData.args)
+						reflaxe.elixir.ast.naming.ElixirNaming.toVarName(arg.tvar != null ? arg.tvar.name : arg.getName())
+				];
+				var sourceLocalRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsSharingTempNames(expr, argumentNames);
+				if (sourceLocalRenames.keys().hasNext()) {
+					expr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(expr, sourceLocalRenames);
+				}
+				if (sourceLocalRenames.keys().hasNext() && context.infraVarSubstitutions != null) {
+					var renamedSubstitutions = new Map<Int, TypedExpr>();
+					for (id => value in context.infraVarSubstitutions)
+						renamedSubstitutions.set(id, reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(value, sourceLocalRenames));
+					context.infraVarSubstitutions = renamedSubstitutions;
+				}
 
 				#if debug_ast_builder
 				if (expr != null) {

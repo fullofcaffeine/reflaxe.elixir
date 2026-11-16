@@ -197,8 +197,12 @@ class VariableBuilder {
 		deriveStableNameForAnonymousLocalFromInit(v, init, context);
 		registerArrayReadBinding(v, init, context);
 
-		// Check if this is an infrastructure variable that should be skipped
-		if (isInfrastructureVariableToSkip(v.name)) {
+		// Check if this is an infrastructure variable that should be skipped. A pattern
+		// binder named like a temp (`case Error(g)` types as `var g = _g1`) keeps the
+		// temp path: the case pattern already binds it.
+		if (isInfrastructureVariableToSkip(v)
+			|| (reflaxe.elixir.ast.naming.HaxeTempLocals.hasTempName(v)
+				&& reflaxe.elixir.ast.naming.HaxeTempLocals.isMatchBinderInit(init))) {
 			return handleInfrastructureDeclaration(v, init, context);
 		}
 
@@ -233,7 +237,7 @@ class VariableBuilder {
 	 * lookups, without a second cache or repeated full-function scans.
 	 */
 	static function registerArrayReadBinding(variable:TVar, init:Null<TypedExpr>, context:CompilationContext):Void {
-		if (init == null || !isInfrastructureVariableToSkip(variable.name))
+		if (init == null || !isInfrastructureVariableToSkip(variable))
 			return;
 		switch (init.expr) {
 			case TParenthesis(inner) | TMeta(_, inner):
@@ -267,7 +271,7 @@ class VariableBuilder {
 					switch (expression.expr) {
 						case TVar(local, initializer):
 							reserve(local);
-							if (isInfrastructureVariableToSkip(local.name) && isRead(initializer))
+							if (isInfrastructureVariableToSkip(local) && isRead(initializer))
 								add(local);
 						case TLocal(local):
 							reserve(local);
@@ -306,43 +310,12 @@ class VariableBuilder {
 	 * Check if a variable should be skipped (infrastructure variables)
 	 * 
 	 * WHY: Haxe generates temporary variables for internal operations
-	 * WHAT: Identifies g, _g, g1, _g1, etc. patterns
-	 * HOW: Pattern matching on variable name
+	 * WHAT: Identifies Haxe temps named g, _g, g1, _g1, etc. A program local with
+	 *       such a name (`var g = [];`) is not a temp; see `HaxeTempLocals`.
+	 * HOW: Temp-shaped name, and Haxe did not record that the program declared it
 	 */
-	static function isInfrastructureVariableToSkip(name:String):Bool {
-		// Infrastructure variables: g, _g, g followed by numbers, _g followed by numbers
-		if (name == "g" || name == "_g")
-			return true;
-
-		// Check for g1, g2, etc.
-		if (name.length > 1 && name.charAt(0) == 'g') {
-			var rest = name.substr(1);
-			if (isAllDigits(rest))
-				return true;
-		}
-
-		// Check for _g1, _g2, etc.
-		if (name.length > 2 && name.substr(0, 2) == "_g") {
-			var rest = name.substr(2);
-			if (isAllDigits(rest))
-				return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Check if a string contains only digits
-	 */
-	static function isAllDigits(s:String):Bool {
-		if (s.length == 0)
-			return false;
-		for (i in 0...s.length) {
-			var c = s.charCodeAt(i);
-			if (c < 48 || c > 57)
-				return false; // Not 0-9
-		}
-		return true;
+	static function isInfrastructureVariableToSkip(v:TVar):Bool {
+		return reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(v);
 	}
 
 	/**
@@ -414,8 +387,10 @@ class VariableBuilder {
 				}
 
 			case TLocal(localVar):
-				// Check if assigning from another infrastructure variable
-				if (isInfrastructureVariableToSkip(localVar.name)) {
+				// Check if assigning from another infrastructure variable. The declared local
+				// is a Haxe temp here; its alias of any temp-named local (`_g1 = _g`, or a
+				// match temp `_g = g`) is not emitted, as before.
+				if (reflaxe.elixir.ast.naming.HaxeTempLocals.hasTempName(localVar)) {
 					// Skip infrastructure variable chains: g1 = g
 					#if debug_infrastructure_vars
 					#end
