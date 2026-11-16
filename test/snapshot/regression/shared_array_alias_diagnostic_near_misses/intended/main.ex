@@ -13,7 +13,6 @@ defmodule Main do
   end
   def overwritten_alias() do
     values = [1]
-    _alias_ = values
     _ = values ++ [2]
     alias_ = []
     length(alias_)
@@ -46,7 +45,6 @@ defmodule Main do
   end
   def nested_overwrite() do
     values = [1]
-    _alias_ = values
     _ = values ++ [2]
     alias_ = []
     length(alias_)
