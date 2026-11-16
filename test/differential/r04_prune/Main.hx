@@ -149,6 +149,7 @@ class Main {
 
 	static function main() {
 		run("initElse1", () -> initElse(true, 5));
+		run("initElse2", () -> initElse(false, 5));
 		run("initBoth1", () -> initBoth(true, 5));
 		run("initBoth2", () -> initBoth(false, 5));
 		run("initLoopZero0", () -> initLoopZero(0, 4));

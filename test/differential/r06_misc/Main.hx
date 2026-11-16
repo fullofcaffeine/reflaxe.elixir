@@ -154,6 +154,7 @@ class Main {
 		run("ctor", () -> new Counter(4).total);
 		run("grow", () -> new Counter(4).grow(3));
 		run("useInline", () -> useInline([1, 2, 3]));
+		run("argG", () -> argG(5, 3));
 		run("argG1", () -> argG1(5, 3));
 		run("catchG", () -> catchG(3));
 		run("doWhile", () -> doWhile());

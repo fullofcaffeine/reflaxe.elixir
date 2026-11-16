@@ -100,6 +100,7 @@ class Main {
 
 	static function main() {
 		run("elseAliasG1", () -> elseAliasG(true, 5));
+		run("elseAliasG2", () -> elseAliasG(false, 5));
 		run("elseAliasQ1", () -> elseAliasQ(true, 5));
 		run("elseAliasQ2", () -> elseAliasQ(false, 5));
 		run("objField", () -> objField(4));

@@ -114,6 +114,7 @@ class Main {
 		run("enumSubjectMut3", () -> enumSubjectMut(3));
 		run("enumSubjectMut1", () -> enumSubjectMut(1));
 		run("tupleSubject", () -> tupleSubject(4));
+		run("paramG", () -> paramG(7, 4));
 		run("stringSubject", () -> stringSubject("b"));
 	}
 }
