@@ -24,10 +24,7 @@
 		"elixir/types/_task_ref/task_ref_impl_.ex",
 		"elixir/types/_registry_key/registry_key_impl_.ex",
 		"elixir/types/_reference/reference_impl_.ex",
-		"elixir/types/_process_flag/process_flag_impl_.ex",
-		"elixir/types/_priority/priority_impl_.ex",
 		"elixir/types/_pid/pid_impl_.ex",
-		"elixir/types/_message_queue_data/message_queue_data_impl_.ex",
 		"elixir/types/_gen_server_ref/gen_server_ref_impl_.ex",
 		"elixir/registry_error.ex",
 		"elixir/otp/supervisor_strategy.ex",
@@ -85,24 +82,12 @@
 			"sha256": "3671bb50eafa5759381ef979a86a5ed3d4e2c267a4d1fb7af40151f623b7170e"
 		},
 		{
-			"path": "elixir/types/_message_queue_data/message_queue_data_impl_.ex",
-			"sha256": "54576cb63a349ab6ec9cc54d5744c20cecb768992ef87cc31c6138a034fc8a61"
-		},
-		{
 			"path": "elixir/types/_pid/pid_impl_.ex",
-			"sha256": "f387d330024b7810e8608cf27e3d5d3af2e47193a96897b9758cedc7c61d8e82"
-		},
-		{
-			"path": "elixir/types/_priority/priority_impl_.ex",
-			"sha256": "c92e69283f73c17cef8514e5e5857d68e0473e31c84e3689d30d182c62b251b2"
-		},
-		{
-			"path": "elixir/types/_process_flag/process_flag_impl_.ex",
-			"sha256": "f9e3359ba4b2b253669bc6fce97f7f9dd6585d4c9b9488edd244c631f7766cc2"
+			"sha256": "6d6af94458b57a1a271645ba6335a229d2398fa609be736a8a11af470af63633"
 		},
 		{
 			"path": "elixir/types/_reference/reference_impl_.ex",
-			"sha256": "70044b49cccebf9f5a4802324643b60051f0edb80bb5ce707b533cdb05f432b5"
+			"sha256": "776d6de95eb91b6c59e5f7ba9329f2029fb01da49a0fb4495f3b095133ae7ef0"
 		},
 		{
 			"path": "elixir/types/_registry_key/registry_key_impl_.ex",
@@ -170,7 +155,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "f82a73693578c4e319ac1fa21f29e95e1f09e755a7b8f9007d8193b93bd4888e"
+			"sha256": "e894156ac82c337564153d476bbeb52a3efb9b170bae73b492b3c2bbd01b0e14"
 		},
 		{
 			"path": "reflaxe/elixir/haxe_float.ex",
@@ -182,11 +167,11 @@
 		},
 		{
 			"path": "reflaxe/elixir/haxe_throw.ex",
-			"sha256": "642bbf29d073acc9eb2ffcea4a8e6016396a43f1a4180a79331b537bfefc6094"
+			"sha256": "4118c571eee08edcfc6d1e167f0bcb2174d66c903266acd8fa8bb116b60f25b0"
 		},
 		{
 			"path": "reflaxe/exception.ex",
-			"sha256": "02fc779b3a5c750db17ab47e624c22bbb8887786a22a767969ab23d1946be755"
+			"sha256": "0a933096bd71c3832467fc32117c622f2f3bea788bb303dd07873603cf2257ee"
 		},
 		{
 			"path": "std.ex",
@@ -197,5 +182,5 @@
 			"sha256": "7050c5def57907bbb793022fe8e1bf8d07865bcab165fff31af4e14b05bbab2b"
 		}
 	],
-	"generation": "0ccb9d38147ed8ec597765253f0b171e50c7ac89014c4cfd3d2eb2270fdbe484"
+	"generation": "305e53cb58bd0a71ae97e3f21db0248925d4d7a82fb5433f2868cb5c9d608797"
 }

@@ -35,6 +35,7 @@ TEST_DIRS=(
   "test/snapshot/regression/assigned_switch_return"
   "test/snapshot/core/nested_early_return"
   "test/runtime/switch_case_body"
+  "test/runtime/process_extern"
   "test/runtime/array_pattern_bindings"
   "test/runtime/nested_enum_bindings"
   "test/snapshot/phoenix/controller_value_preservation"

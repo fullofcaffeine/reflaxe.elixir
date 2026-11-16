@@ -12,7 +12,7 @@ defmodule Main do
   end
   defp test_process_externs() do
     pid = Kernel.self()
-    Process.send(pid, "hello")
+    Kernel.send(pid, "hello")
     Process.exit(pid, "normal")
     new_pid = Kernel.spawn(fn -> IO.puts("Hello from spawned process") end)
     Process.monitor(new_pid)
