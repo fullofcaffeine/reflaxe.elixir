@@ -443,8 +443,6 @@ defmodule Main do
           "Senior user"
         else
           _ = g
-          _ = g_value
-          _ = g
           perms = 2
           _ = g_value
           if (perms == 0), do: "User without permissions", else: "Other user type"

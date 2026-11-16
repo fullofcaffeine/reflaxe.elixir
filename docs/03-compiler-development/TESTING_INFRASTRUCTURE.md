@@ -723,8 +723,9 @@ fails the gate. The list can only shrink:
 - A line that names a missing fixture, has no Beads id, or repeats a fixture
   is a usage error. So is a file in `known/` without a `DIFF` entry.
 - A listed fixture that crashes stops at the crash. The shapes after it are
-  not checked until that bug is fixed. In the first set this applies to six
-  fixtures: o06, o11, p03, p05, q07 and q09.
+  not checked until that bug is fixed. In the first set this applied to six
+  fixtures: o06, o11, p03, p05, q07 and q09. The fix for user locals named
+  like compiler temps (haxe.elixir.codex-44jd) made q07 and q09 match.
 
 Exit status: `0` when every fixture matches or fails exactly as listed, `1`
 otherwise, `2` for a usage or setup error. Outputs go to

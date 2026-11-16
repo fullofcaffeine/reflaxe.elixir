@@ -350,7 +350,7 @@ class TypedExprPreprocessor {
 				containsInfrastructurePattern(e);
 			case TVar(v, init): // This preprocessor is triggered by infra-temp declarations, but we still
 				// need to recurse into non-infra TVar initializers (they may contain blocks).
-				(init != null && isInfrastructureVar(v.name)) || (init != null && containsInfrastructurePattern(init));
+				(init != null && isInfrastructureLocal(v)) || (init != null && containsInfrastructurePattern(init));
 			case TBlock(exprs):
 				Lambda.exists(exprs, e -> containsInfrastructurePattern(e));
 			case TReturn(e) if (e != null):
@@ -421,7 +421,7 @@ class TypedExprPreprocessor {
 				// CRITICAL FIX: Check if block contains infrastructure variables
 				// If yes, we need to register them BEFORE applying substitutions
 				var hasInfraVars = Lambda.exists(exprs, e -> switch (e.expr) {
-					case TVar(v, init): init != null && isInfrastructureVar(v.name);
+					case TVar(v, init): init != null && isInfrastructureLocal(v);
 					case _: false;
 				});
 
@@ -572,9 +572,9 @@ class TypedExprPreprocessor {
 						if (e == null)
 							return;
 						switch (e.expr) {
-							case TLocal(v) if (isInfrastructureVar(v.name)):
+							case TLocal(v) if (isInfrastructureLocal(v)):
 								protectedLoopInfraVarIds.set(v.id, true);
-							case TVar(v2, _) if (isInfrastructureVar(v2.name)):
+							case TVar(v2, _) if (isInfrastructureLocal(v2)):
 								protectedLoopInfraVarIds.set(v2.id, true);
 							default:
 								TypedExprTools.iter(e, scanLoop);
@@ -627,7 +627,7 @@ class TypedExprPreprocessor {
 						switch (target.expr) {
 							case TField(obj, fieldAccess):
 								var localVar = unwrapLocal(obj);
-								if (localVar != null && isInfrastructureVar(localVar.name)) {
+								if (localVar != null && isInfrastructureLocal(localVar)) {
 									var methodName:Null<String> = switch (fieldAccess) {
 										case FInstance(_, _, cf): cf.get().name;
 										case FStatic(_, cf): cf.get().name;
@@ -733,7 +733,7 @@ class TypedExprPreprocessor {
 					#end
 
 					if (init != null
-						&& isInfrastructureVar(v.name)
+						&& isInfrastructureLocal(v)
 						&& isStableSubstitutionValue(init)
 						&& !protectedLoopInfraVarIds.exists(v.id)
 						&& !protectedMutationInfraVarIds.exists(v.id)) {
@@ -904,7 +904,7 @@ class TypedExprPreprocessor {
 										#end
 										// Skip this assignment - pattern already extracted the value
 										continue;
-									case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
+									case TLocal(tempVar) if (isInfrastructureLocal(tempVar)):
 										#if debug_preprocessor
 										#end
 										// Skip temp-to-binder alias inside case bodies
@@ -913,7 +913,7 @@ class TypedExprPreprocessor {
 										// Keep other assignments
 										filteredExprs.push(processExpr(expr, substitutions));
 								}
-							case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}) if (isInfrastructureVar(rhs.name)):
+							case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}) if (isInfrastructureLocal(rhs)):
 								#if debug_preprocessor
 								#end
 								continue;
@@ -956,6 +956,17 @@ class TypedExprPreprocessor {
 	 */
 	public static function isInfrastructureVar(name:String):Bool {
 		return INFRASTRUCTURE_VAR_PATTERN.match(name);
+	}
+
+	/**
+	 * Returns true when `v` is a Haxe infrastructure temp (`_g`, `_g1`, ...).
+	 *
+	 * Prefer this to `isInfrastructureVar(v.name)`: a program local with the same name,
+	 * such as `var g = [];`, is not a temp. Substituting its initializer or skipping its
+	 * declaration loses its later value. See `HaxeTempLocals`.
+	 */
+	public static function isInfrastructureLocal(v:Null<TVar>):Bool {
+		return reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(v);
 	}
 
 	/**

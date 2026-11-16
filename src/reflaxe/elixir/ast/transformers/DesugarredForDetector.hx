@@ -66,11 +66,6 @@ private typedef SubstitutionData = {
  */
 class DesugarredForDetector {
 	/**
-	 * Infrastructure variable pattern matching g, g1, g2, _g, _g1, _g2, etc.
-	 */
-	static final INFRASTRUCTURE_VAR_PATTERN = ~/^_?g[0-9]*$/;
-
-	/**
 	 * Detect if a TBlock contains a desugared for loop pattern
 	 * 
 	 * WHY: TBlock is where we can see the complete pattern with initialization and loop
@@ -106,7 +101,7 @@ class DesugarredForDetector {
 
 		for (i in 0...exprs.length) {
 			switch (exprs[i].expr) {
-				case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+				case TVar(v, init) if (init != null && isInfrastructureLocal(v)):
 					// Found infrastructure variable initialization
 					if (!foundCounter) {
 						// First infrastructure var is the counter
@@ -155,14 +150,12 @@ class DesugarredForDetector {
 	}
 
 	/**
-	 * Check if a variable name matches the infrastructure pattern
-	 * 
-	 * WHY: Infrastructure variables follow a specific naming pattern
-	 * WHAT: Returns true if the name matches g, g1, _g, _g1, etc.
-	 * HOW: Uses regex pattern matching
+	 * Returns true for a Haxe temp (`_g`, `_g1`, ...), but not for a program local with
+	 * the same name: in `var g = []; for (i in 0...n) g.push(i);` the counter is `_g`,
+	 * not the program's `g`. See `HaxeTempLocals`.
 	 */
-	static function isInfrastructureVar(name:String):Bool {
-		return INFRASTRUCTURE_VAR_PATTERN.match(name);
+	static function isInfrastructureLocal(v:TVar):Bool {
+		return reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(v);
 	}
 
 	/**
@@ -373,7 +366,7 @@ class DesugarredForDetector {
 				case TArray(arr, index):
 					// Check if index is infrastructure variable
 					switch (index.expr) {
-						case TLocal(v) if (isInfrastructureVar(v.name)):
+						case TLocal(v) if (isInfrastructureLocal(v)):
 							found = true;
 						default:
 					}

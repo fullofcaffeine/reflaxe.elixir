@@ -1,7 +1,6 @@
 defmodule Main do
   def probe() do
     values = [1]
-    _alias_ = values
     alias_ = []
     _ = values ++ [length(alias_)]
     length(alias_)

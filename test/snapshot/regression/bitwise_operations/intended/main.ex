@@ -91,8 +91,9 @@ defmodule Main do
       end
     end)
     r = 255
+    g = 128
     b = 64
-    rgb = Bitwise.bor(Bitwise.bor(Bitwise.bsl(r, 16), Bitwise.bsl(128, 8)), b)
+    rgb = Bitwise.bor(Bitwise.bor(Bitwise.bsl(r, 16), Bitwise.bsl(g, 8)), b)
     _extracted_r = Bitwise.band(Bitwise.bsr(rgb, 16), 255)
     _extracted_g = Bitwise.band(Bitwise.bsr(rgb, 8), 255)
     _extracted_b = Bitwise.band(rgb, 255)

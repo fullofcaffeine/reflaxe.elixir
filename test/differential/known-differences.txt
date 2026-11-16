@@ -8,7 +8,7 @@
 # (stdout plus the exit-status line). Record it with --update-known only after
 # you review the diff. A known/ file without a DIFF entry is an error.
 #
-# A listed fixture that crashes (p03, p05, q07, q09) stops at the
+# A listed fixture that crashes (p03, p05) stops at the
 # crash: the shapes after it are not checked until that bug is fixed.
 #
 # This list may only shrink. When a listed fixture matches, the command fails
@@ -24,11 +24,6 @@ p11_scopes2 DIFF haxe.elixir.codex-lw0k comp_in_comp: nested comprehension used 
 p13_closures DIFF haxe.elixir.codex-rrsr item 5: iter_capture, mutation of a captured local inside Lambda.iter is lost
 p16_valueblocks DIFF haxe.elixir.codex-rrsr item 3: try_in_loop, a throw inside a nested loop loses earlier pushes
 p19_iife DIFF haxe.elixir.codex-rrsr item 4: iife_side_out and iife_side, a side effect inside a nested value expression is lost
-p26_greassign DIFF haxe.elixir.codex-44jd reassigned and pushedBefore: a user local named g seeds the while loop from its declared value
 q02_exits DIFF haxe.elixir.codex-rrsr item 3: thr_boom, a throw inside a nested while inside try loses earlier pushes (also wrong with the local renamed from g)
 q03_scopes DIFF haxe.elixir.codex-rrsr item 5: closure and closureInFor, pushes made inside a closure are lost (also wrong with the local renamed from g)
-q04_siblings DIFF haxe.elixir.codex-44jd comment (a): forThenWhile, the while seeds g from [] after an Enum.map for loop
-q07_iters DIFF haxe.elixir.codex-44jd comment (c): kvTwice and kvInWhile, user g and the _g iterator temp share a name; KeyError
-q09_carriers DIFF haxe.elixir.codex-44jd rangeFor, rangeFor0, rangeInWhile: user g with a range for and a while crashes (:erlang.++); the same code with the local renamed matches
-q11_range_g9 DIFF haxe.elixir.codex-44jd comment (b): local g9 with range loops reads a stale seed
 q14_comp_in_iter DIFF haxe.elixir.codex-lw0k comment: comprehension used as the iterable of an inner clause overwrites the outer state

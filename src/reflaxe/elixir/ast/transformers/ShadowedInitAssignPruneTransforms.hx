@@ -88,6 +88,16 @@ class ShadowedInitAssignPruneTransforms {
 					pendingInit.remove(assignedName);
 				}
 			}
+			// A destructuring match such as `{g, _h} = if ... end` or the loop result
+			// `{g, _i} = Enum.reduce_while(...)` also overwrites each name it binds.
+			for (name in destructuredNames(stmt)) {
+				if (pendingInit.exists(name) && !statementReadsName(stmt, name)) {
+					var idx = pendingInit.get(name);
+					if (idx != null && idx >= 0 && idx < out.length)
+						out[idx] = null;
+				}
+				pendingInit.remove(name);
+			}
 
 			var outIndex = out.length;
 			out.push(stmt);
@@ -104,9 +114,11 @@ class ShadowedInitAssignPruneTransforms {
 		}
 
 		// Any remaining pending initializer was never read nor overwritten; drop it to avoid WAE warnings.
+		// Only literals: a nested block can share its parent's scope, so a read of a computed
+		// value may follow in the parent, which this block does not see.
 		for (name in pendingInit.keys()) {
 			var idx = pendingInit.get(name);
-			if (idx != null && idx >= 0 && idx < out.length)
+			if (idx != null && idx >= 0 && idx < out.length && isLiteralInitializer(out[idx]))
 				out[idx] = null;
 		}
 
@@ -139,6 +151,40 @@ class ShadowedInitAssignPruneTransforms {
 		};
 	}
 
+	/**
+	 * Returns the names that a destructuring match binds at its top level: `g` and `h`
+	 * in `{g, h} = ...` or `[g, h] = ...`. A plain `name = ...` returns no names here;
+	 * `assignedVarName` handles it.
+	 */
+	static function destructuredNames(stmt:ElixirAST):Array<String> {
+		if (stmt == null || stmt.def == null)
+			return [];
+		return switch (stmt.def) {
+			case EMatch(PTuple(items) | PList(items), _):
+				[
+					for (item in items)
+						switch (item) {
+							case PVar(name):
+								name;
+							default:
+								continue;
+						}
+				];
+			case EBinary(Match, {def: ETuple(items) | EList(items)}, _):
+				[
+					for (item in items)
+						switch (item.def) {
+							case EVar(name):
+								name;
+							default:
+								continue;
+						}
+				];
+			default:
+				[];
+		};
+	}
+
 	static function isPrunableInitializer(stmt:ElixirAST, name:String):Bool {
 		if (name == null || name == "_" || StringTools.startsWith(name, "_"))
 			return false;
@@ -147,7 +193,32 @@ class ShadowedInitAssignPruneTransforms {
 			case EBinary(Match, _, value): value;
 			default: null;
 		};
-		return rhs != null && isLiteral(rhs);
+		return rhs != null && (isLiteral(rhs) || isPureArithmetic(rhs));
+	}
+
+	static function isLiteralInitializer(stmt:Null<ElixirAST>):Bool {
+		if (stmt == null || stmt.def == null)
+			return false;
+		return switch (stmt.def) {
+			case EMatch(_, value) | EBinary(Match, _, value): isLiteral(value);
+			default: false;
+		};
+	}
+
+	/**
+	 * Returns true for a variable read or `+`, `-`, `*` over such values and literals,
+	 * such as `x * 2`. Dropping it removes no effect: the operands are typed numbers.
+	 */
+	static function isPureArithmetic(expr:ElixirAST):Bool {
+		if (expr == null || expr.def == null)
+			return false;
+		return switch (expr.def) {
+			case EVar(_): true;
+			case EInteger(_) | EFloat(_): true;
+			case EBinary(Add | Subtract | Multiply, left, right): isPureArithmetic(left) && isPureArithmetic(right);
+			case EUnary(Negate, inner) | EParen(inner): isPureArithmetic(inner);
+			default: false;
+		};
 	}
 
 	static function isLiteral(expr:ElixirAST):Bool {

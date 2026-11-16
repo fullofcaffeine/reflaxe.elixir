@@ -426,17 +426,17 @@ defmodule Main do
     )
   end
   def while_after_nested(xs) do
-    g = []
-    g = Enum.reduce(xs, g, fn x, g_acc ->
+    local_g = []
+    local_g = Enum.reduce(xs, local_g, fn x, local_g_acc ->
       j = 0
-      {g_acc, _j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g_acc, j}, fn _, {acc_g_acc, acc_j} ->
+      {local_g_acc, _j} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {local_g_acc, j}, fn _, {acc_local_g_acc, acc_j} ->
         try do
           if (acc_j < 2) do
-            acc_g_acc = acc_g_acc ++ [x * 10 + acc_j]
+            acc_local_g_acc = acc_local_g_acc ++ [x * 10 + acc_j]
             acc_j = acc_j + 1
-            {:cont, {acc_g_acc, acc_j}}
+            {:cont, {acc_local_g_acc, acc_j}}
           else
-            {:halt, {acc_g_acc, acc_j}}
+            {:halt, {acc_local_g_acc, acc_j}}
           end
         catch
           :throw, {:break, break_state} ->
@@ -444,22 +444,22 @@ defmodule Main do
           :throw, {:continue, continue_state} ->
             {:cont, continue_state}
           :throw, :break ->
-            {:halt, {acc_g_acc, acc_j}}
+            {:halt, {acc_local_g_acc, acc_j}}
           :throw, :continue ->
-            {:cont, {acc_g_acc, acc_j}}
+            {:cont, {acc_local_g_acc, acc_j}}
         end
       end)
-      g_acc
+      local_g_acc
     end)
     i = 0
-    {g, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {g, i}, fn _, {acc_g, acc_i} ->
+    {local_g, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {local_g, i}, fn _, {acc_local_g, acc_i} ->
       try do
         if (acc_i < 2) do
-          acc_g = acc_g ++ [acc_i]
+          acc_local_g = acc_local_g ++ [acc_i]
           acc_i = acc_i + 1
-          {:cont, {acc_g, acc_i}}
+          {:cont, {acc_local_g, acc_i}}
         else
-          {:halt, {acc_g, acc_i}}
+          {:halt, {acc_local_g, acc_i}}
         end
       catch
         :throw, {:break, break_state} ->
@@ -467,12 +467,12 @@ defmodule Main do
         :throw, {:continue, continue_state} ->
           {:cont, continue_state}
         :throw, :break ->
-          {:halt, {acc_g, acc_i}}
+          {:halt, {acc_local_g, acc_i}}
         :throw, :continue ->
-          {:cont, {acc_g, acc_i}}
+          {:cont, {acc_local_g, acc_i}}
       end
     end)
-    Enum.join(g, ",")
+    Enum.join(local_g, ",")
   end
   defp sorted(items) do
     items = Enum.sort(items, fn a, b ->
