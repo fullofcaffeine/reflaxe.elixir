@@ -27,6 +27,7 @@ import reflaxe.elixir.CompilationContext.LoopControlStateSpec;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.naming.ElixirNaming;
+import reflaxe.elixir.ast.naming.HaxeTempLocals;
 
 using StringTools;
 
@@ -857,11 +858,8 @@ class LoopBuilder {
 	static function extractInfrastructureVarName(expr:TypedExpr):Null<String> {
 		return switch (expr.expr) {
 			case TLocal(v):
-				var name = v.name;
-				// Match infrastructure variables: g, g1, g2, _g, _g1, _g2, etc.
-				if (name == "g" || name == "_g" || ~/^_?g[0-9]*$/.match(name)) { // Matches g, g1, g2, _g, _g1, _g2, etc.
-					name;
-				} else null;
+				// Haxe temps only (g, g1, _g, _g1, ...), not program locals with those names.
+				HaxeTempLocals.isTemp(v) ? v.name : null;
 			default: null;
 		};
 	}
@@ -4549,8 +4547,9 @@ class LoopBuilder {
 				if (init != null) {
 					// Comprehension temps can reuse names such as `g` in one block.
 					// Seed them from the ID-keyed initializer, not an unrelated
-					// same-named outer binding. Source locals use their emitted binding.
-					if (originalName != null && ~/^_?g[0-9]*$/.match(originalName))
+					// same-named outer binding. Source locals use their emitted binding,
+					// even when named like a temp: `var g = 0; g = 5;` must start from 5.
+					if (HaxeTempLocals.isTemp(tvar))
 						return init;
 					return makeAST(EVar(elixirName));
 				}
@@ -4565,10 +4564,10 @@ class LoopBuilder {
 			}
 
 			// Default seed for compiler counters (g, g1, _g, _g1, ...): 0
-			if (originalName != null && (originalName == "g" || originalName == "_g" || ~/^_?g[0-9]*$/.match(originalName))) {
+			if (HaxeTempLocals.isTemp(tvar)) {
 				return makeAST(EInteger(0));
 			}
-			if (elixirName == "g" || ~/^g[0-9]*$/.match(elixirName)) {
+			if (!HaxeTempLocals.isSourceLocal(tvar) && ~/^g[0-9]*$/.match(elixirName)) {
 				return makeAST(EInteger(0));
 			}
 

@@ -1001,7 +1001,8 @@ class BlockBuilder {
 
 		for (expr in el) {
 			switch (expr.expr) {
-				case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+				// Haxe temps only: a program local such as `var g = [];` is not a loop bound.
+				case TVar(v, init) if (init != null && reflaxe.elixir.ast.naming.HaxeTempLocals.isTemp(v)):
 					if (!captured.exists(v.name)) {
 						var had = context.infrastructureVarInitValues.exists(v.name);
 						var value = had ? context.infrastructureVarInitValues.get(v.name) : null;

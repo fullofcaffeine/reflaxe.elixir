@@ -792,7 +792,7 @@ class ElixirASTBuilder {
 
 				// COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source
 				// Use centralized detection from TypedExprPreprocessor
-				var isInfrastructureVar = reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureVar(v.name);
+				var isInfrastructureVar = reflaxe.elixir.preprocessor.TypedExprPreprocessor.isInfrastructureLocal(v);
 
 				// Debug: trace all infrastructure variable assignments to understand their structure
 				#if debug_infrastructure_vars

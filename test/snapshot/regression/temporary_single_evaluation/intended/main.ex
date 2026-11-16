@@ -103,12 +103,13 @@ defmodule Main do
     end
   end
   defp check_literal_switch() do
-    result = (case 2 do
+    g = 2
+    result = (case g do
       1 -> "one"
       2 -> "two"
       _ -> "other"
     end)
-    if (result != "two" or false) do
+    if (result != "two" or g != 2) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Stable literal substitution changed a switch."]
     end
   end
