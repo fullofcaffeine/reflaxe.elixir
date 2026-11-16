@@ -20,8 +20,9 @@ import haxe.macro.TypedExprTools;
  * - `renamesForShadowingLocals` finds each inner `var` whose Elixir name equals the
  *   name of a local declared in an enclosing scope, where that outer local is read
  *   again after the inner declaration. It gives the inner local a fresh name with a
- *   `_shadow` suffix (`q` -> `q_shadow`, then `q_shadow_shadow`). Apply the result with
- *   `HaxeTempLocals.applyRenames`.
+ *   `_shadow` suffix (`q` -> `q_shadow`). Shadows of one name that are never live at
+ *   the same time share that name; only shadows that are live together get
+ *   `q_shadow_b`, `q_shadow_c`, ... Apply the result with `HaxeTempLocals.applyRenames`.
  * - The new name never ends in a digit. Several passes treat `name` and `nameN` as
  *   one variable that drifted (`LocalVarReferenceFixTransforms` rules 2 and 3, the
  *   undefined-variable repair in `ElixirASTTransformer`, `GuardConditionFlattener`),
@@ -63,9 +64,9 @@ import haxe.macro.TypedExprTools;
  * - A variable that the loop or switch lowering binds as an Elixir `fn` argument or a
  *   clause pattern is never renamed, because Elixir already scopes it: the element of
  *   a `for` loop or comprehension (`var x = _g1[_g]`), the index of a range loop
- *   (`var i = _g++`), an iterator element (`var x = it.next()`), a key or value of a
- *   key-value loop (`var k = _g1.key`), and a match binder (`var value = _g1`). See
- *   `isLoweredBinderInit`.
+ *   (`var i = _g++`), an iterator element (`var x = it.next()` directly in the body of
+ *   `while (it.hasNext())`), a key or value of a key-value loop (`var k = _g1.key`),
+ *   and a match binder (`var value = _g1`). See `isLoweredBinderInit`.
  * - A loop variable `var k = k.next()` always has the Elixir name of its iterator `k`,
  *   which Haxe names after the loop variable: when the iterator is renamed, the loop
  *   variable gets the same new name, because the loop lowering matches the
@@ -105,6 +106,10 @@ import haxe.macro.TypedExprTools;
  * - Haxe's own renames (`q1` for a shadow whose outer local is read inside the inner
  *   block) keep their digit names, so the name-drift passes above can still merge
  *   them with `q`.
+ * - Sharing one shadow name relies on Haxe block scope (no read of an inner local
+ *   after its block) and on Elixir closures capturing values, not variables. A later
+ *   shadow inside a loop may still be threaded through the loop by name; the earlier
+ *   holder is dead then, so the value is not read.
  * - Covered by test/differential/r14_inline_locals and r15_shadow_binders.
  */
 class ShadowedLocals {
@@ -129,15 +134,47 @@ class ShadowedLocals {
 		scan.walk(body);
 		scan.closeScope();
 
+		// 1. Which inner locals need a new name.
+		final shadows:Array<TVar> = [];
+		final chosen = new Map<Int, Bool>();
 		for (pair in scan.pairs) {
-			if (renamed.exists(pair.inner.id) || !scan.isReadAfter(pair))
+			if (chosen.exists(pair.inner.id) || !scan.isReadAfter(pair))
 				continue;
-			var name = pair.inner.name + SHADOW_SUFFIX;
-			while (scan.usedNames.exists(ElixirNaming.toVarName(name)))
-				name += SHADOW_SUFFIX;
-			scan.usedNames.set(ElixirNaming.toVarName(name), true);
-			renamed.set(pair.inner.id, renamedCopy(pair.inner, name));
+			chosen.set(pair.inner.id, true);
+			shadows.push(pair.inner);
 		}
+
+		// 2. Which name each one gets. Shadows of one name that are never live at the same
+		// time share a name; see `assignShadowNames`.
+		final followers = new Map<Int, Array<TVar>>();
+		for (pair in scan.loopVariables) {
+			final list = followers.get(pair.iterator.id);
+			if (list == null)
+				followers.set(pair.iterator.id, [pair.loopVariable]);
+			else
+				list.push(pair.loopVariable);
+		}
+		final groups = new Map<String, Array<ShadowInterval>>();
+		final groupOrder:Array<String> = [];
+		for (v in shadows) {
+			var end = scan.liveEnd(v.id);
+			final loopVariables = followers.get(v.id);
+			if (loopVariables != null)
+				for (loopVariable in loopVariables)
+					end = end > scan.liveEnd(loopVariable.id) ? end : scan.liveEnd(loopVariable.id);
+			final key = ElixirNaming.toVarName(v.name);
+			var group = groups.get(key);
+			if (group == null) {
+				group = [];
+				groups.set(key, group);
+				groupOrder.push(key);
+			}
+			group.push({v: v, start: scan.declaredAtOf(v.id), end: end});
+		}
+		for (key in groupOrder)
+			for (named in assignShadowNames(groups.get(key), scan.usedNames))
+				renamed.set(named.v.id, renamedCopy(named.v, named.name));
+
 		// `for (k in m.keys())`: the loop variable `var k = k.next()` follows its iterator.
 		for (pair in scan.loopVariables)
 			if (renamed.exists(pair.iterator.id))
@@ -146,13 +183,83 @@ class ShadowedLocals {
 	}
 
 	/**
+	 * Returns a new name for each shadow of one original name, so that two shadows that
+	 * can be live at the same time never share a name, and the names stay short.
+	 *
+	 * Each shadow is live from its declaration to its last read (`ShadowScan.liveEnd`).
+	 * Haxe block scope means that no read of an inner local comes after its block ends,
+	 * so a later shadow that reuses the name rebinds it only after the earlier one is
+	 * dead: `sum += bump(1); sum += bump(2);` gives both inlined `t` locals `t_shadow`.
+	 * The interval scheduling is greedy in declaration order: a shadow takes the first
+	 * name whose previous holder is dead, otherwise the next name. The number of names
+	 * is the largest number of shadows that are live together, so it depends on the
+	 * nesting depth, not on the number of calls.
+	 *
+	 * Names: `t_shadow`, then `t_shadow_b`, `t_shadow_c`, ... (see `shadowName`). Names
+	 * that the function already uses are skipped.
+	 */
+	static function assignShadowNames(group:Array<ShadowInterval>, usedNames:Map<String, Bool>):Array<{v:TVar, name:String}> {
+		final result:Array<{v:TVar, name:String}> = [];
+		group.sort((a, b) -> a.start - b.start);
+		final slots:Array<{name:String, end:Int}> = [];
+		var nextIndex = 0;
+		for (shadow in group) {
+			var slot = null;
+			for (candidate in slots)
+				if (candidate.end < shadow.start) {
+					slot = candidate;
+					break;
+				}
+			if (slot == null) {
+				var name = shadowName(shadow.v.name, nextIndex++);
+				while (usedNames.exists(ElixirNaming.toVarName(name)))
+					name = shadowName(shadow.v.name, nextIndex++);
+				usedNames.set(ElixirNaming.toVarName(name), true);
+				slot = {name: name, end: shadow.end};
+				slots.push(slot);
+			}
+			slot.end = slot.end > shadow.end ? slot.end : shadow.end;
+			result.push({v: shadow.v, name: slot.name});
+		}
+		return result;
+	}
+
+	/**
+	 * Returns the shadow name number `index` for `name`: `name_shadow` for 0, then
+	 * `name_shadow_b`, `name_shadow_c`, ..., `name_shadow_z`, `name_shadow_bb`, ...
+	 *
+	 * The letters leave out `a` and those that some name passes match at the end of a
+	 * name: `s` (plurals), `x`, `y`, `h` (`ch`) and `d` (`_id`). No digit appears, so
+	 * the `name`/`nameN` drift rules never match. The length grows with the logarithm
+	 * of `index`, which is at most the nesting depth of the shadows.
+	 */
+	static function shadowName(name:String, index:Int):String {
+		if (index == 0)
+			return name + SHADOW_SUFFIX;
+		var letters = "";
+		var rest = index - 1;
+		while (true) {
+			letters = SHADOW_LETTERS.charAt(rest % SHADOW_LETTERS.length) + letters;
+			rest = Std.int(rest / SHADOW_LETTERS.length) - 1;
+			if (rest < 0)
+				break;
+		}
+		return name + SHADOW_SUFFIX + "_" + letters;
+	}
+
+	static final SHADOW_LETTERS = "bcefgijklmnopqrtuvwz";
+
+	/**
 	 * Returns true when `init` is the value that a loop or switch lowering binds as an
 	 * Elixir `fn` argument or clause pattern, not as a `=` statement: `_g1[_g]` (the
-	 * element of a `for` loop or comprehension), `_g++` (a range index), `it.next()`
-	 * (an iterator element), `_g1.key` and `_g1.value` (a key-value loop), and a match
-	 * binder's value (`_g1`, an enum parameter). Elixir already scopes such a binding,
-	 * so renaming it is unnecessary, and the lowering may not carry the new name to
-	 * every read.
+	 * element of a `for` loop or comprehension), `_g++` (a range index), `_g1.key` and
+	 * `_g1.value` (a key-value loop), and a match binder's value (`_g1`, an enum
+	 * parameter). Elixir already scopes such a binding, so renaming it is unnecessary,
+	 * and the lowering may not carry the new name to every read.
+	 *
+	 * An iterator element `var x = it.next()` counts only in the loop shape, which
+	 * `ShadowScan` checks: directly in the body of `while (it.hasNext())`. Elsewhere,
+	 * such as `var tok = lx.next()` in an inlined function, it is an ordinary local.
 	 */
 	public static function isLoweredBinderInit(init:Null<TypedExpr>):Bool {
 		if (init == null)
@@ -170,7 +277,7 @@ class ShadowedLocals {
 			case TField({expr: TLocal(entry)}, FInstance(_, _, cf)) if (HaxeTempLocals.isTemp(entry)
 				&& (cf.get().name == "key" || cf.get().name == "value")):
 				true;
-			default: HaxeTempLocals.iteratorOfNextCall(init) != null || HaxeTempLocals.isMatchBinderInit(init);
+			default: HaxeTempLocals.isMatchBinderInit(init);
 		};
 	}
 
@@ -196,6 +303,13 @@ class ShadowedLocals {
 private typedef PositionRange = {
 	var start:Int;
 	var end:Int;
+}
+
+/** A shadow that gets a new name, live from walk position `start` to `end`. */
+private typedef ShadowInterval = {
+	final v:TVar;
+	final start:Int;
+	final end:Int;
 }
 
 /**
@@ -227,6 +341,16 @@ private class ShadowScan {
 	final references = new Map<Int, Array<Int>>();
 	final loops:Array<PositionRange> = [];
 	final functions:Array<PositionRange> = [];
+
+	/** Every open loop, also across local functions: a closure made in a loop is made again. */
+	final allLoops:Array<PositionRange> = [];
+
+	/** For each read, its position and the outermost open loop that starts after the declaration. */
+	final liveReads = new Map<Int, Array<{at:Int, loop:Null<PositionRange>}>>();
+
+	/** IDs of `var x = it.next()` declared directly in the body of `while (it.hasNext())`. */
+	final iteratorElements = new Map<Int, Bool>();
+
 	var position = 0;
 
 	public function new() {
@@ -284,6 +408,28 @@ private class ShadowScan {
 			list.push(v);
 	}
 
+	/** Returns the walk position of the declaration of the local `id` (0 when unknown). */
+	public function declaredAtOf(id:Int):Int {
+		return declaredAt.exists(id) ? declaredAt.get(id) : 0;
+	}
+
+	/**
+	 * Returns the last walk position where the local `id` can still be read: its last
+	 * read, or the end of a loop that reads it but started after its declaration (the
+	 * next iteration reads it again). Never less than its declaration.
+	 */
+	public function liveEnd(id:Int):Int {
+		var end = declaredAtOf(id);
+		final reads = liveReads.get(id);
+		if (reads != null)
+			for (read in reads) {
+				final at = read.loop != null && read.loop.end > read.at ? read.loop.end : read.at;
+				if (at > end)
+					end = at;
+			}
+		return end;
+	}
+
 	/**
 	 * Returns true when the outer local of `pair` is referenced after the inner
 	 * declaration in the same Elixir function, or inside a loop around the inner
@@ -303,6 +449,38 @@ private class ShadowScan {
 		return false;
 	}
 
+	/**
+	 * Records each `var x = it.next()` directly in `body` when `cond` is `it.hasNext()`
+	 * on the same iterator: the element of an iterator loop, which the loop lowering
+	 * binds as an fn argument.
+	 */
+	function markIteratorElements(cond:TypedExpr, body:TypedExpr):Void {
+		final iterator = hasNextReceiver(cond);
+		if (iterator == null)
+			return;
+		switch (body.expr) {
+			case TBlock(exprs):
+				for (statement in exprs)
+					switch (statement.expr) {
+						case TVar(v, init) if (v != null):
+							final source = HaxeTempLocals.iteratorOfNextCall(init);
+							if (source != null && source.id == iterator.id) iteratorElements.set(v.id, true);
+						default:
+					}
+			default:
+		}
+	}
+
+	/** Returns `it` when `cond` is the call `it.hasNext()`; null otherwise. */
+	static function hasNextReceiver(cond:TypedExpr):Null<TVar> {
+		return switch (cond.expr) {
+			case TParenthesis(inner) | TMeta(_, inner): hasNextReceiver(inner);
+			case TCall({expr: TField({expr: TLocal(it)}, FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf))}, []) if (cf.get().name == "hasNext"): it;
+			case TCall({expr: TField({expr: TLocal(it)}, FDynamic("hasNext"))}, []): it;
+			default: null;
+		};
+	}
+
 	public function walk(e:TypedExpr):Void {
 		position++;
 		switch (e.expr) {
@@ -313,15 +491,28 @@ private class ShadowScan {
 					references.set(v.id, list);
 				}
 				list.push(position);
+				final declared = declaredAtOf(v.id);
+				var outermost:Null<PositionRange> = null;
+				for (loop in allLoops)
+					if (loop.start > declared) {
+						outermost = loop;
+						break;
+					}
+				var reads = liveReads.get(v.id);
+				if (reads == null) {
+					reads = [];
+					liveReads.set(v.id, reads);
+				}
+				reads.push({at: position, loop: outermost});
 			case TVar(v, init):
 				if (init != null)
 					walk(init);
 				// A loop element, range index, iterator element or match binder binds as an
 				// Elixir fn argument or clause pattern and keeps its name.
-				final iterator = HaxeTempLocals.iteratorOfNextCall(init);
-				if (iterator != null && v != null && iterator.name == v.name)
+				final iterator = v != null && iteratorElements.exists(v.id) ? HaxeTempLocals.iteratorOfNextCall(init) : null;
+				if (iterator != null && iterator.name == v.name)
 					loopVariables.push({loopVariable: v, iterator: iterator});
-				declare(v, !ShadowedLocals.isLoweredBinderInit(init), iterator);
+				declare(v, iterator == null && !ShadowedLocals.isLoweredBinderInit(init), iterator);
 			case TBlock(exprs):
 				openScope();
 				for (child in exprs)
@@ -344,20 +535,25 @@ private class ShadowScan {
 				functions.pop();
 				range.end = position;
 			case TWhile(cond, body, _):
+				markIteratorElements(cond, body);
 				final range = {start: position, end: position};
 				loops.push(range);
+				allLoops.push(range);
 				walk(cond);
 				walk(body);
+				allLoops.pop();
 				loops.pop();
 				range.end = position;
 			case TFor(v, iterator, body):
 				walk(iterator);
 				final range = {start: position + 1, end: position};
 				loops.push(range);
+				allLoops.push(range);
 				openScope();
 				declare(v, false);
 				walk(body);
 				closeScope();
+				allLoops.pop();
 				loops.pop();
 				range.end = position;
 			case TTry(tryExpr, catches):

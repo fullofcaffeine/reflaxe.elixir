@@ -255,10 +255,10 @@ defmodule Shadowing do
     {r, _total, v} = if (c) do
       v_shadow = id(0) * 2
       total = total + v_shadow
-      v_shadow_shadow = id(1) * 2
-      total = total + v_shadow_shadow
-      v_shadow_shadow_shadow = id(2) * 2
-      total = total + v_shadow_shadow_shadow
+      v_shadow = id(1) * 2
+      total = total + v_shadow
+      v_shadow = id(2) * 2
+      total = total + v_shadow
       {total, total, v}
     else
       v = v + 1
@@ -274,11 +274,11 @@ defmodule Shadowing do
       v_shadow = id(x) * 2
       total = total + v_shadow
       x = 2
-      v_shadow_shadow = id(x) * 2
-      total = total + v_shadow_shadow
+      v_shadow = id(x) * 2
+      total = total + v_shadow
       x = 3
-      v_shadow_shadow_shadow = id(x) * 2
-      total = total + v_shadow_shadow_shadow
+      v_shadow = id(x) * 2
+      total = total + v_shadow
       {total, total, v}
     else
       v = v + 1
