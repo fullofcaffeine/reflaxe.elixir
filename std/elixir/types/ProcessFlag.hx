@@ -28,14 +28,17 @@ package elixir.types;
  * 
  * @see Process for flag usage
  * @see Priority for priority values
+ *
+ * The value is an atom on the BEAM: `Process.flag/2` rejects strings.
+ * `extern` keeps the abstract from emitting a runtime `_Impl_` module.
  */
-abstract ProcessFlag(String) from String to String {
+extern abstract ProcessFlag(Atom) to Atom {
 	/**
 	 * When set to true, exit signals arriving to this process
 	 * are converted to messages {'EXIT', FromPid, Reason}.
 	 */
 	public static inline function trapExit():ProcessFlag {
-		return new ProcessFlag("trap_exit");
+		return cast("trap_exit" : Atom);
 	}
 
 	/**
@@ -43,7 +46,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be a Priority abstract.
 	 */
 	public static inline function priority():ProcessFlag {
-		return new ProcessFlag("priority");
+		return cast("priority" : Atom);
 	}
 
 	/**
@@ -51,7 +54,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be an atom (module name).
 	 */
 	public static inline function errorHandler():ProcessFlag {
-		return new ProcessFlag("error_handler");
+		return cast("error_handler" : Atom);
 	}
 
 	/**
@@ -59,7 +62,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be a positive integer.
 	 */
 	public static inline function minHeapSize():ProcessFlag {
-		return new ProcessFlag("min_heap_size");
+		return cast("min_heap_size" : Atom);
 	}
 
 	/**
@@ -67,7 +70,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be a positive integer.
 	 */
 	public static inline function minBinVHeapSize():ProcessFlag {
-		return new ProcessFlag("min_bin_vheap_size");
+		return cast("min_bin_vheap_size" : Atom);
 	}
 
 	/**
@@ -75,7 +78,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value can be an integer or a map with size, kill, and error_logger keys.
 	 */
 	public static inline function maxHeapSize():ProcessFlag {
-		return new ProcessFlag("max_heap_size");
+		return cast("max_heap_size" : Atom);
 	}
 
 	/**
@@ -83,7 +86,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be "on_heap" or "off_heap".
 	 */
 	public static inline function messageQueueData():ProcessFlag {
-		return new ProcessFlag("message_queue_data");
+		return cast("message_queue_data" : Atom);
 	}
 
 	/**
@@ -91,7 +94,7 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be a non-negative integer.
 	 */
 	public static inline function saveCalls():ProcessFlag {
-		return new ProcessFlag("save_calls");
+		return cast("save_calls" : Atom);
 	}
 
 	/**
@@ -100,20 +103,6 @@ abstract ProcessFlag(String) from String to String {
 	 * Value should be a boolean.
 	 */
 	public static inline function sensitive():ProcessFlag {
-		return new ProcessFlag("sensitive");
-	}
-
-	@:from
-	private static inline function fromString(s:String):ProcessFlag {
-		return new ProcessFlag(s);
-	}
-
-	@:to
-	private inline function toString():String {
-		return this;
-	}
-
-	private inline function new(flag:String) {
-		this = flag;
+		return cast("sensitive" : Atom);
 	}
 }

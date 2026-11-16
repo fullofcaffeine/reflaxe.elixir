@@ -30,15 +30,19 @@ import elixir.types.Atom;
  * 
  * @see Process.flag for setting process priority
  * @see ProcessFlag for other process flags
+ *
+ * The factories cast an atom literal instead of calling an inline constructor:
+ * the inline constructor emitted a string, which `Process.flag/2` rejects.
+ * `extern` keeps the abstract from emitting a runtime `_Impl_` module.
  */
-abstract Priority(Atom) from Atom to Atom {
+extern abstract Priority(Atom) from Atom to Atom {
 	/**
 	 * Low priority - process runs less frequently than normal.
 	 * Use for background tasks that shouldn't interfere with
 	 * interactive or time-sensitive operations.
 	 */
 	public static inline function low():Priority {
-		return new Priority("low");
+		return cast("low" : Atom);
 	}
 
 	/**
@@ -46,7 +50,7 @@ abstract Priority(Atom) from Atom to Atom {
 	 * Provides balanced CPU allocation.
 	 */
 	public static inline function normal():Priority {
-		return new Priority("normal");
+		return cast("normal" : Atom);
 	}
 
 	/**
@@ -54,7 +58,7 @@ abstract Priority(Atom) from Atom to Atom {
 	 * Use for time-sensitive operations that need quick response.
 	 */
 	public static inline function high():Priority {
-		return new Priority("high");
+		return cast("high" : Atom);
 	}
 
 	/**
@@ -63,7 +67,7 @@ abstract Priority(Atom) from Atom to Atom {
 	 * Use with extreme caution as it can starve other processes.
 	 */
 	public static inline function max():Priority {
-		return new Priority("max");
+		return cast("max" : Atom);
 	}
 
 	/**
@@ -72,9 +76,5 @@ abstract Priority(Atom) from Atom to Atom {
 	 */
 	public inline function toAtom():Atom {
 		return this;
-	}
-
-	private inline function new(priority:Atom) {
-		this = priority;
 	}
 }

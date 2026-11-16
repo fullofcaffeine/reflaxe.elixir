@@ -32,15 +32,18 @@ package elixir.types;
  * 
  * @see Process.flag for setting message queue configuration
  * @see ProcessFlag for other process flags
+ *
+ * The value is an atom on the BEAM: `Process.flag/2` rejects strings.
+ * `extern` keeps the abstract from emitting a runtime `_Impl_` module.
  */
-abstract MessageQueueData(String) from String to String {
+extern abstract MessageQueueData(Atom) to Atom {
 	/**
 	 * Store messages on the process heap (default behavior).
 	 * Messages are garbage collected with the rest of the heap.
 	 * Best for processes with short-lived or few messages.
 	 */
 	public static inline function onHeap():MessageQueueData {
-		return new MessageQueueData("on_heap");
+		return cast("on_heap" : Atom);
 	}
 
 	/**
@@ -49,20 +52,6 @@ abstract MessageQueueData(String) from String to String {
 	 * Best for processes that accumulate many messages.
 	 */
 	public static inline function offHeap():MessageQueueData {
-		return new MessageQueueData("off_heap");
-	}
-
-	@:from
-	private static inline function fromString(s:String):MessageQueueData {
-		return new MessageQueueData(s);
-	}
-
-	@:to
-	private inline function toString():String {
-		return this;
-	}
-
-	private inline function new(location:String) {
-		this = location;
+		return cast("off_heap" : Atom);
 	}
 }

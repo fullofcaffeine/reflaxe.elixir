@@ -8,6 +8,9 @@ import elixir.types.Priority;
 import elixir.types.MessageQueueData;
 import elixir.types.Term;
 import elixir.types.Atom;
+import elixir.types.Tuple2;
+import elixir.types.SendOption;
+import elixir.types.DemonitorOption;
 import elixir.Kernel;
 
 #if (macro || reflaxe_runtime || elixir)
@@ -37,8 +40,19 @@ extern class Process {
 	@:native("Process.whereis")
 	public static function whereis(name:Atom):Null<Pid>;
 
-	@:native("Process.pid_from_string")
-	public static function pidFromString(string:String):Pid;
+	/**
+	 * Parse a local pid from its printed form.
+	 *
+	 * WHAT: Accepts `"#PID<0.123.0>"` (what `inspect/1` prints) or `"<0.123.0>"`.
+	 * WHY: Elixir has no `Process.pid_from_string/1`; the real parser is
+	 * `:erlang.list_to_pid/1`, which takes a charlist without the `#PID` prefix.
+	 * HOW: Drops an optional `#PID` prefix, converts to a charlist, and calls
+	 * `:erlang.list_to_pid/1`. Malformed input raises `ArgumentError` at run time.
+	 * EXAMPLE: `Process.pidFromString(Process.self().toString())` returns the same pid.
+	 */
+	public static inline function pidFromString(string:String):Pid {
+		return cast untyped __elixir__(':erlang.list_to_pid(String.to_charlist(String.replace_prefix({0}, "#PID", "")))', string);
+	}
 
 	// Process spawning
 
@@ -54,27 +68,61 @@ extern class Process {
 		return cast Kernel.spawn(func);
 	}
 
-	@:native("Process.spawn")
-	public static function spawnModule(module:String, func:String, args:Array<Term>):Pid;
+	/**
+	 * Start an unlinked process that runs `apply(module, func, args)`.
+	 *
+	 * WHY: `Process.spawn/3` does not exist; the three-argument form is `Kernel.spawn/3`.
+	 * Module and function names are atoms on the BEAM, so they are typed `Atom`.
+	 * EXAMPLE: `Process.spawnModule("timer", "sleep", [200])` -> `spawn(:timer, :sleep, [200])`.
+	 * For an Elixir module, pass its full atom name, such as `"Elixir.String"`.
+	 */
+	@:native("Kernel.spawn")
+	public static function spawnModule(module:Atom, func:Atom, args:Array<Term>):Pid;
 
-	@:native("Process.spawn_link")
-	public static function spawnLink(func:Void->Void):Pid;
+	/**
+	 * Start a process linked to the caller.
+	 *
+	 * WHY: `spawn_link/1` belongs to Kernel; `Process.spawn_link/1` does not exist.
+	 * EXAMPLE: `Process.spawnLink(() -> work())` -> `Kernel.spawn_link(fn -> work() end)`.
+	 */
+	public static inline function spawnLink(func:Void->Void):Pid {
+		return cast Kernel.spawnLink(func);
+	}
 
-	@:native("Process.spawn_link")
-	public static function spawnLinkModule(module:String, func:String, args:Array<Term>):Pid;
+	/** Linked form of `spawnModule`: maps to `Kernel.spawn_link/3`. */
+	@:native("Kernel.spawn_link")
+	public static function spawnLinkModule(module:Atom, func:Atom, args:Array<Term>):Pid;
 
-	@:native("Process.spawn_monitor")
-	public static function spawnMonitor(func:Void->Void):{pid:Pid, ref:Reference};
+	/**
+	 * Start a process and monitor it.
+	 *
+	 * WHY: `spawn_monitor/1` belongs to Kernel. It returns the native tuple
+	 * `{pid, ref}`, so the result is a `Tuple2` (`_0` is the pid, `_1` the monitor
+	 * reference), not a record with named fields.
+	 * EXAMPLE: `Process.spawnMonitor(() -> work())._0` is the new pid.
+	 */
+	@:native("Kernel.spawn_monitor")
+	public static function spawnMonitor(func:Void->Void):Tuple2<Pid, Reference>;
 
-	@:native("Process.spawn_monitor")
-	public static function spawnMonitorModule(module:String, func:String, args:Array<Term>):{pid:Pid, ref:Reference};
+	/** Monitored form of `spawnModule`: maps to `Kernel.spawn_monitor/3`. */
+	@:native("Kernel.spawn_monitor")
+	public static function spawnMonitorModule(module:Atom, func:Atom, args:Array<Term>):Tuple2<Pid, Reference>;
 
 	// Process lifecycle
 	@:native("Process.exit")
 	public static function exit(pid:Pid, reason:Term):Bool;
 
-	@:native("Process.kill")
-	public static function kill(pid:Pid, reason:Term):Bool;
+	/**
+	 * Kill a process unconditionally.
+	 *
+	 * WHY: Elixir has no `Process.kill/2`. Killing is `Process.exit(pid, :kill)`,
+	 * the one exit reason that a process trapping exits cannot catch. Any other
+	 * reason belongs to `exit(pid, reason)`.
+	 * EXAMPLE: `Process.kill(pid)` -> `Process.exit(pid, :kill)`.
+	 */
+	public static inline function kill(pid:Pid):Bool {
+		return exit(pid, cast("kill" : Atom));
+	}
 
 	@:native("Process.alive?")
 	public static function alive(pid:Pid):Bool;
@@ -92,19 +140,35 @@ extern class Process {
 	@:native("Process.demonitor")
 	public static function demonitor(ref:Reference):Bool;
 
+	/** `Process.demonitor/2` with `DemonitorOption` atoms such as `Flush`. */
 	@:native("Process.demonitor")
-	public static function demonitorWithOptions(ref:Reference, options:Array<String>):Bool;
+	public static function demonitorWithOptions(ref:Reference, options:Array<DemonitorOption>):Bool;
 
 	// Process communication
-	@:native("Process.send")
-	public static function send(dest:Pid, message:Term):Term;
 
-	@:native("Process.send")
-	@:overload(function(dest:Atom, message:Term):Term {})
-	public static function sendToName(dest:String, message:Term):Term;
+	/**
+	 * Send a message to a pid and return the message.
+	 *
+	 * WHY: `send/2` belongs to Kernel; Elixir only has `Process.send/3`.
+	 * EXAMPLE: `Process.send(pid, "hello")` -> `Kernel.send(pid, "hello")`.
+	 */
+	public static inline function send(dest:Pid, message:Term):Term {
+		return Kernel.send(dest, message);
+	}
 
+	/**
+	 * Send a message to a locally registered name and return the message.
+	 *
+	 * WHY: The name must be an atom; a string destination raises `ArgumentError`.
+	 * Maps to `Kernel.send/2`. Sending to a name that is not registered raises.
+	 */
+	public static inline function sendToName(dest:Atom, message:Term):Term {
+		return Kernel.send(dest, message);
+	}
+
+	/** `Process.send/3` with `SendOption` atoms. Returns `:ok` unless an option prevents sending. */
 	@:native("Process.send")
-	public static function sendWithOptions(dest:Pid, message:Term, options:Array<String>):Term;
+	public static function sendWithOptions(dest:Pid, message:Term, options:Array<SendOption>):Term;
 
 	@:native("Process.send_after")
 	public static function sendAfter(dest:Pid, message:Term, time:Int):Reference;
@@ -123,11 +187,24 @@ extern class Process {
 	@:native("Process.info")
 	public static function info(pid:Pid):Null<ProcessInfo>; // Process info map
 
+	/**
+	 * Read one info item: `Process.info(pid, key)`.
+	 *
+	 * The key is an atom such as `status`; a string key raises `ArgumentError`.
+	 * The native result is the tuple `{key, value}`, or `nil` for a dead process.
+	 * EXAMPLE: `Process.infoKey(pid, "status")._1` is the status atom.
+	 */
 	@:native("Process.info")
-	public static function infoKey(pid:Pid, key:String):Null<Term>; // Specific info key
+	public static function infoKey(pid:Pid, key:Atom):Null<Tuple2<Atom, Term>>;
 
+	/**
+	 * Read several info items: `Process.info(pid, keys)`.
+	 *
+	 * Keys are atoms. The native result is a keyword list of `{key, value}`
+	 * tuples, or `nil` for a dead process.
+	 */
 	@:native("Process.info")
-	public static function infoKeys(pid:Pid, keys:Array<String>):Null<ProcessInfo>;
+	public static function infoKeys(pid:Pid, keys:Array<Atom>):Null<Array<Tuple2<Atom, Term>>>;
 
 	// Process list operations
 	@:native("Process.list")
@@ -138,8 +215,10 @@ extern class Process {
 	public static function flag<T>(flag:ProcessFlag, value:T):T;
 
 	// Process dictionary with generic key/value types
+
+	/** The whole process dictionary: `Process.get/0` returns a list of `{key, value}` tuples, not a map. */
 	@:native("Process.get")
-	public static function get<K, V>():Map<K, V>;
+	public static function get<K, V>():Array<Tuple2<K, V>>;
 
 	@:native("Process.get")
 	public static function getKey<K, V>(key:K):Null<V>;
@@ -164,21 +243,43 @@ extern class Process {
 	public static function sleep(timeout:Int):Term; // Returns :ok
 
 	// Process hibernation
+
+	/**
+	 * Hibernate the caller until a message arrives, then run `apply(module, func, args)`.
+	 *
+	 * Module and function names are atoms. This call never returns: the call
+	 * stack is discarded and the process continues in the given function.
+	 */
 	@:native("Process.hibernate")
-	public static function hibernate(module:String, func:String, args:Array<Term>):Void;
+	public static function hibernate(module:Atom, func:Atom, args:Array<Term>):Void;
 
 	// Process cancellation
-	@:native("Process.cancel_timer")
-	public static function cancelTimer(ref:Reference):Null<Int>; // Returns remaining time or nil
 
+	/**
+	 * Cancel a timer from `sendAfter`. Returns the remaining milliseconds.
+	 *
+	 * LIMIT: when the timer already fired or does not exist, the native result
+	 * is `false`, not `nil`, so a `null` check does not detect that case.
+	 */
+	@:native("Process.cancel_timer")
+	public static function cancelTimer(ref:Reference):Null<Int>;
+
+	/** Read a timer's remaining milliseconds. Same `false` limit as `cancelTimer`. */
 	@:native("Process.read_timer")
-	public static function readTimer(ref:Reference):Null<Int>; // Returns remaining time or nil
+	public static function readTimer(ref:Reference):Null<Int>;
 
 	// Group leader operations
 	@:native("Process.group_leader")
 	public static function groupLeader():Pid; // Get group leader pid
 
-	@:native("Process.group_leader")
-	public static function setGroupLeader(leader:Pid, pid:Pid):Bool;
+	/**
+	 * Set the group leader of `pid` to `leader`.
+	 *
+	 * WHY: Elixir's argument order is `Process.group_leader(pid, leader)`, the
+	 * reverse of this Haxe signature, so the wrapper swaps them.
+	 */
+	public static inline function setGroupLeader(leader:Pid, pid:Pid):Bool {
+		return cast untyped __elixir__('Process.group_leader({0}, {1})', pid, leader);
+	}
 }
 #end
