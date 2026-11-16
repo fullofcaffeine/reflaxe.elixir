@@ -103,6 +103,7 @@
     "test:mix-parallel": "mix local.hex --force && mix local.rebar --force && MIX_ENV=test mix deps.get && MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 4 --timeout 120000",
     "test:runtime-smoke": "bash scripts/test-runtime-smoke.sh",
     "test:differential": "bash scripts/test-differential.sh",
+    "test:differential-runner": "python3 scripts/ci/test-differential-runner.py",
     "test:runtime-smoke-runner": "python3 scripts/ci/test-runtime-smoke-runner.py",
     "test:otp-runtime": "bash scripts/ci/runtime-smoke-otp-core.sh",
     "test:result-invariant": "bash scripts/ci/result-contract-invariant-smoke.sh",
