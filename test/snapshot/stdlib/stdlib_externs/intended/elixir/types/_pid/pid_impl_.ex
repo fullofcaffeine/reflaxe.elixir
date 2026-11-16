@@ -4,19 +4,19 @@ defmodule Pid_Impl_ do
     pid
   end
   def from_string(str) do
-    pid = elixir__.("Process.pid_from_string(#{str})")
+    pid = :erlang.list_to_pid(String.to_charlist(String.replace_prefix(str, "#PID", "")))
     pid
   end
   def to_string(this1) do
-    elixir__.("inspect(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
+    inspect(this1)
   end
   def is_self(this1) do
-    elixir__.("#{Reflaxe.Elixir.HaxeFloat.to_string(this1)} == self()")
+    this1 == self()
   end
   def is_alive(this1) do
-    elixir__.("Process.alive?(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
+    Process.alive?(this1)
   end
   def node(this1) do
-    elixir__.("node(#{Reflaxe.Elixir.HaxeFloat.to_string(this1)})")
+    node(this1)
   end
 end

@@ -39,13 +39,13 @@ abstract Reference(Term) from Term to Term {
 	 */
 	@:to
 	public inline function toString():String {
-		return untyped __elixir__('inspect($this)');
+		return untyped __elixir__('inspect({0})', this);
 	}
 
 	/**
 	 * Check if this is a valid reference
 	 */
 	public inline function isValid():Bool {
-		return untyped __elixir__('is_reference($this)');
+		return untyped __elixir__('is_reference({0})', this);
 	}
 }
