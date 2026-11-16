@@ -44,6 +44,22 @@ private typedef CanonicalArrayPush = {
  * alias analysis. Managed reference support remains the complete future solution.
  */
 class ReferenceSemanticsDiagnostics {
+	/** Wall time of this request's check, read by the compiler's opt-in phase report. */
+	public static var lastDurationMs(default, null):Float = 0.0;
+
+	/** Classes whose bodies this request scanned, and the time spent on them. */
+	public static var lastScannedClassCount(default, null):Int = 0;
+
+	public static var lastScanDurationMs(default, null):Float = 0.0;
+
+	/**
+	 * Project classes that a published request scanned without a diagnostic.
+	 * A class that Haxe does not type again keeps the same typed body, so the
+	 * scan would give the same result; it is skipped (see `ClassResultCache`).
+	 * A class with a diagnostic stops the request, so it is never kept.
+	 */
+	@:persistent static var cleanClasses:Null<reflaxe.elixir.ClassResultCache<Bool>> = null;
+
 	public static function init():Void {
 		if (!isElixirBuild()) {
 			return;
@@ -55,6 +71,28 @@ class ReferenceSemanticsDiagnostics {
 	}
 
 	static function diagnose(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {
+		var started = Sys.time();
+		scanTypes(types, projectRoot, compilerOwnedRoots);
+		lastDurationMs = (Sys.time() - started) * 1000.0;
+	}
+
+	/**
+	 * Makes the classes that this request scanned without a diagnostic the kept
+	 * clean classes for the next request. The compiler calls this after it has
+	 * published the output of the request.
+	 */
+	public static function commitRequest():Void {
+		if (cleanClasses != null)
+			cleanClasses.commit();
+	}
+
+	static function scanTypes(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {
+		var clean = cleanClasses;
+		if (clean == null) {
+			clean = new reflaxe.elixir.ClassResultCache();
+			cleanClasses = clean;
+		}
+		clean.begin();
 		for (moduleType in types) {
 			switch (moduleType) {
 				case TClassDecl(classRef):
@@ -62,23 +100,31 @@ class ReferenceSemanticsDiagnostics {
 					if (!isProjectSource(classType.pos, projectRoot, compilerOwnedRoots)) {
 						continue;
 					}
-
-					var scannedFields = new Map<String, Bool>();
-					for (field in classType.fields.get().concat(classType.statics.get())) {
-						scanFieldExpression(field, scannedFields);
-					}
-
-					if (classType.constructor != null) {
-						scanFieldExpression(classType.constructor.get(), scannedFields);
-					}
-
-					if (classType.init != null) {
-						scanExpression(classType.init);
-					}
+					clean.resultFor(classType, scanClass);
 
 				case _:
 			}
 		}
+	}
+
+	/** Scans one class and returns true; a diagnostic stops compilation instead. */
+	static function scanClass(classType:ClassType):Bool {
+		var started = Sys.time();
+		var scannedFields = new Map<String, Bool>();
+		for (field in classType.fields.get().concat(classType.statics.get())) {
+			scanFieldExpression(field, scannedFields);
+		}
+
+		if (classType.constructor != null) {
+			scanFieldExpression(classType.constructor.get(), scannedFields);
+		}
+
+		if (classType.init != null) {
+			scanExpression(classType.init);
+		}
+		lastScannedClassCount++;
+		lastScanDurationMs += (Sys.time() - started) * 1000.0;
+		return true;
 	}
 
 	/** Scans each class expression once, including constructors that Haxe stores separately. */

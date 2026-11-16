@@ -1194,10 +1194,37 @@ run_discovery_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "discovery-removed"
 }
 
+# Reads the phase report of one request and prints how many classes it
+# scanned for one per-class phase, or 0 when the phase did not run.
+scanned_class_count() {
+	python3 - "$1" "$2" <<'PY'
+import json
+import sys
+
+count = None
+for line in open(sys.argv[1], encoding="utf-8"):
+    if line.startswith("REFLAXE_ELIXIR_TIMINGS "):
+        phases = json.loads(line.split(" ", 1)[1])["phases"]
+        count = sum(phase["count"] for phase in phases if phase["name"] == sys.argv[2])
+if count is None:
+    raise SystemExit("no phase report in " + sys.argv[1])
+print(count)
+PY
+}
+
 run_private_exports_variant() {
 	local variants="$FIXTURE_DIR/variants/private-exports"
 	cp "$variants/PrivateCacheScope.hx" "$PROJECT_DIR/src/PrivateCacheScope.hx"
 	local phase source expected_visibility expected_stdout
+
+	# How many classes a request scans when it keeps no per-class result. The
+	# define starts a new macro context; the next request starts another one.
+	cp "$variants/MainLocal.hx" "$PROJECT_DIR/src/Main.hx"
+	compile_server "$TMP_ROOT/private-full-scan-output" -D reflaxe_elixir_no_kept_class_results >"$TMP_ROOT/private-full-scan.log"
+	local full_exports full_references
+	full_exports="$(scanned_class_count "$TMP_ROOT/private-full-scan.log" private_method_exports_class_scan)"
+	full_references="$(scanned_class_count "$TMP_ROOT/private-full-scan.log" reference_semantics_class_scan)"
+
 	for phase in local-before remote local-after; do
 		if [[ "$phase" == remote ]]; then
 			source=MainRemote.hx
@@ -1211,10 +1238,23 @@ run_private_exports_variant() {
 		# Only the caller changes. anchor() keeps secret() and its owning module
 		# alive in every phase, so ordinary DCE cannot hide missing invalidation.
 		cp "$variants/$source" "$PROJECT_DIR/src/Main.hx"
-		compile_server "$SERVER_OUTPUT"
+		compile_server "$SERVER_OUTPUT" >"$TMP_ROOT/private-$phase.log"
 		compile_direct "$TMP_ROOT/direct-private-$phase"
 		compare_generated_output "$TMP_ROOT/direct-private-$phase" "$SERVER_OUTPUT" "private-exports-$phase"
 		grep -Fxq "$expected_visibility" "$SERVER_OUTPUT/private_cache_scope.ex"
+		if [[ "$phase" == remote ]]; then
+			# Only Main changed, so Haxe typed Main again and nothing else. The
+			# request must scan Main again (its new remote use made `secret` a
+			# `def`, checked above), and keep the results of the other classes.
+			local warm_exports warm_references
+			warm_exports="$(scanned_class_count "$TMP_ROOT/private-$phase.log" private_method_exports_class_scan)"
+			warm_references="$(scanned_class_count "$TMP_ROOT/private-$phase.log" reference_semantics_class_scan)"
+			if ((warm_exports < 1 || warm_exports >= full_exports || warm_references < 1 || warm_references >= full_references)); then
+				echo "SERVER_CACHE_REUSE:private-exports-remote scanned exports=$warm_exports/$full_exports references=$warm_references/$full_references classes" >&2
+				return 1
+			fi
+			echo "SERVER_CACHE_REUSE:kept-class-results exports=$warm_exports/$full_exports references=$warm_references/$full_references:PASS"
+		fi
 		"$TIMEOUT" --secs 60 --cwd "$PROJECT_DIR" -- elixir -e '
           [root, expected] = System.argv()
           {:ok, _, []} = Kernel.ParallelCompiler.compile(Path.wildcard(Path.join(root, "**/*.ex")))

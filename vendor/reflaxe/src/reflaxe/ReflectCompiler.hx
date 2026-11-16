@@ -155,6 +155,45 @@ class ReflectCompiler {
 	}
 
 	#if !reflaxe.disallow_build_cache_check
+	static var rebuiltClassKeys: Null<Map<String, Bool>> = null;
+	static var rebuiltClassKeyCount = 0;
+	#end
+
+	/**
+		Returns true when Haxe typed `cls` in this compilation request, or when
+		this request cannot tell: the first request of a compilation server, a
+		build without a server, or a build with
+		`-D reflaxe.disallow_build_cache_check`.
+
+		A target can keep a result that it computed from one class's typed body
+		between server requests and compute it again only when this returns true.
+		Haxe types a module again when its source file or a module that it
+		depends on changed, and the global build macro records each class that
+		Haxe types. Call it after typing, for example from `Context.onAfterTyping`
+		or from `BaseCompiler.filterTypes`.
+
+		Classes are matched with `sourceTypeKey`, so a class with `@:native` is
+		found under its Haxe path as well.
+	**/
+	public static function wasTypedThisRequest(cls: ClassType): Bool {
+		#if !reflaxe.disallow_build_cache_check
+		final rebuilt = rebuiltClasses;
+		if(rebuilt == null) {
+			return true;
+		}
+		var keys = rebuiltClassKeys;
+		if(keys == null || rebuiltClassKeyCount != rebuilt.length) {
+			keys = [for(c in rebuilt) sourceTypeKey(c) => true];
+			rebuiltClassKeys = keys;
+			rebuiltClassKeyCount = rebuilt.length;
+		}
+		return keys.exists(sourceTypeKey(cls));
+		#else
+		return true;
+		#end
+	}
+
+	#if !reflaxe.disallow_build_cache_check
 	static function addToBuildCache(): Null<Array<Field>> {
 		final cls = #if eval Context.getLocalClass() #else null #end;
 		if(cls != null && rebuiltClasses != null) {

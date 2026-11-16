@@ -46,6 +46,7 @@ import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.debug.CompilerPhaseTimings;
 import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 import reflaxe.elixir.macros.MixTaskMetadata;
+import reflaxe.elixir.macros.ReferenceSemanticsDiagnostics;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -320,6 +321,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/** Warm-server dependency state advances only after successful publication. */
 	@:persistent static var previousPrivateMethodExports:Null<Map<String, Bool>> = null;
 
+	/** Each caller class's private-method uses, kept for classes that Haxe does not type again. */
+	@:persistent static var keptPrivateMethodExports:Null<ClassResultCache<Array<String>>> = null;
+
 	/**
 	 * Constructor - Initialize the compiler with type mapping and pattern matching systems
 	 */
@@ -359,8 +363,18 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		// The diagnostic ran in Haxe's after-typing callback, before this reset.
+		phaseTimings.record("reference_semantics_diagnostics", ReferenceSemanticsDiagnostics.lastDurationMs);
+		if (ReferenceSemanticsDiagnostics.lastScannedClassCount > 0)
+			phaseTimings.record("reference_semantics_class_scan", ReferenceSemanticsDiagnostics.lastScanDurationMs,
+				ReferenceSemanticsDiagnostics.lastScannedClassCount);
 		var result = filterTypesBody(moduleTypes);
-		privateMethodExports = PrivateMethodExports.collect(result);
+		var exportsStarted = phaseTimings.start();
+		if (keptPrivateMethodExports == null)
+			keptPrivateMethodExports = new ClassResultCache();
+		privateMethodExports = PrivateMethodExports.collect(result, keptPrivateMethodExports,
+			durationMs -> phaseTimings.record("private_method_exports_class_scan", durationMs));
+		phaseTimings.finish("private_method_exports", exportsStarted);
 		// ReflectCompiler applies its define/server-cache filters and initialization
 		// callbacks after this method returns and before onCompileStart().
 		reflaxeFiltersStarted = phaseTimings.start();
@@ -6543,6 +6557,11 @@ left_name == right_name and left_params == right_params';
 	public override function onOutputComplete() {
 		pruneEmptyOutputDirectories();
 		previousPrivateMethodExports = privateMethodExports;
+		// Results computed in this request become the kept results only now,
+		// after the output that used them was published.
+		if (keptPrivateMethodExports != null)
+			keptPrivateMethodExports.commit();
+		ReferenceSemanticsDiagnostics.commitRequest();
 	}
 
 	function pruneEmptyOutputDirectories():Void {
