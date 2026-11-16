@@ -20,7 +20,8 @@
 #                                resolve against the scope directory, so keep it
 #                                to flags such as -D defines
 #   known-differences.txt        known bugs, one line each:
-#                                <id> <DIFF|COMPILE-FAIL|TIMEOUT> <beads-id> <reason>
+#                                <id> <DIFF|COMPILE-FAIL:STAGE|TIMEOUT:STAGE> <beads-id> <reason>
+#                                where STAGE is haxe, elixir, interp or beam
 #   known/<id>.out               for a DIFF entry: the exact BEAM observation
 #                                (stdout plus exit-status line) that is known
 #                                to be wrong today
@@ -92,12 +93,32 @@ make_observation() {
 
 is_timeout_rc() { [[ "$1" == 124 || "$1" == 137 ]]; }
 
+sha256() { if command -v sha256sum >/dev/null 2>&1; then sha256sum; else shasum -a 256; fi; }
+
+# Digest of a fixture's sources (Main.hx and the optional compile.hxml).
+fixture_digest() {
+  { cat "$1/Main.hx"; echo; [[ -f "$1/compile.hxml" ]] && cat "$1/compile.hxml"; true; } \
+    | sha256 | awk '{print $1}'
+}
+
+# The compiler state results depend on: the scope's git HEAD plus a digest of
+# its uncommitted tracked changes. "none" outside a git checkout.
+scope_state() {
+  local head dirty
+  head="$(git -C "$1" rev-parse HEAD 2>/dev/null || echo none)"
+  dirty="$(git -C "$1" diff HEAD 2>/dev/null | sha256 | awk '{print substr($1, 1, 12)}')"
+  echo "$head+$dirty"
+}
+
 run_fixture() (
   local id="$1"
   local src="$DIFF_FIXTURE_DIR/$id"
   local w="$DIFF_WORK/$id"
   rm -rf -- "$w"
   mkdir -p "$w"
+  # Record what this result was computed from, so --reclassify can refuse
+  # results from another compiler revision or an edited fixture.
+  echo "$DIFF_SCOPE_STATE $(fixture_digest "$src")" >"$w/stamp"
   local result="$w/result"
   local extra=()
   if [[ -f "$src/compile.hxml" ]]; then extra=("$src/compile.hxml"); fi
@@ -180,15 +201,23 @@ reclassify=0
 verbose=0
 selected=()
 
+# Options that take a value: a missing or empty value is a usage error (2).
+value_of() { [[ $# -ge 2 && -n "$2" ]] || die "$1 needs a value"; echo "$2"; }
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -j|--jobs) jobs="${2:?$1 needs a value}"; shift 2 ;;
-    --fixture) selected+=("${2:?--fixture needs an id}"); shift 2 ;;
-    --known) known_file="${2:?--known needs a file}"; shift 2 ;;
-    --scope) scope="${2:?--scope needs a directory}"; shift 2 ;;
-    --work) work="${2:?--work needs a directory}"; shift 2 ;;
-    --timeout) run_timeout="${2:?--timeout needs seconds}"; shift 2 ;;
-    --compile-timeout) compile_timeout="${2:?--compile-timeout needs seconds}"; shift 2 ;;
+    -j|--jobs|--fixture|--known|--scope|--work|--timeout|--compile-timeout)
+      v="$(value_of "$@")" || exit 2
+      case "$1" in
+        -j|--jobs) jobs="$v" ;;
+        --fixture) selected+=("$v") ;;
+        --known) known_file="$v" ;;
+        --scope) scope="$v" ;;
+        --work) work="$v" ;;
+        --timeout) run_timeout="$v" ;;
+        --compile-timeout) compile_timeout="$v" ;;
+      esac
+      shift 2 ;;
     --update-known) update_known=1; shift ;;
     --reclassify) reclassify=1; shift ;;
     -v|--verbose) verbose=1; shift ;;
@@ -253,8 +282,9 @@ seen_known=" "
 while IFS= read -r line; do
   [[ -n "$line" ]] || continue
   read -r k_id k_status k_bead k_reason <<<"$line"
-  case "$k_status" in DIFF|COMPILE-FAIL|TIMEOUT) ;; *)
-    die "known-differences: '$k_id' has status '$k_status'; use DIFF, COMPILE-FAIL or TIMEOUT" ;;
+  case "$k_status" in
+    DIFF|COMPILE-FAIL:haxe|COMPILE-FAIL:elixir|TIMEOUT:interp|TIMEOUT:haxe|TIMEOUT:elixir|TIMEOUT:beam) ;;
+    *) die "known-differences: '$k_id' has status '$k_status'; use DIFF, COMPILE-FAIL:<haxe|elixir> or TIMEOUT:<interp|haxe|elixir|beam>" ;;
   esac
   [[ "$k_bead" =~ ^[a-z][a-z0-9.]*-[a-z0-9.]+$ ]] \
     || die "known-differences: '$k_id' needs a Beads id, got '$k_bead'"
@@ -269,6 +299,19 @@ while IFS= read -r line; do
     die "known-differences: '$k_id' is a DIFF entry without $known_dir/$k_id.out; run with --update-known after review"
   fi
 done <<<"$known_lines"
+
+# Every recorded output must belong to a DIFF entry, so a removed entry
+# cannot leave a stale file behind.
+if [[ -d "$known_dir" ]]; then
+  while IFS= read -r f; do
+    name="$(basename "$f")"
+    k_id="${name%.out}"
+    [[ "$name" == *.out ]] || die "known/: unexpected file $name; only <fixture-id>.out files belong there"
+    entry_status="$(echo "$known_lines" | awk -v id="$k_id" '$1 == id {print $2}')"
+    [[ "$entry_status" == DIFF ]] \
+      || die "known/: $name has no DIFF entry in $(basename "$known_file"); delete the file or add the entry"
+  done < <(find "$known_dir" -mindepth 1 -maxdepth 1 -print | LC_ALL=C sort)
+fi
 
 known_entry() { # prints "STATUS BEAD" for a listed fixture, nothing otherwise
   local line k_id rest
@@ -286,27 +329,65 @@ export DIFF_FIXTURE_DIR="$fixture_dir" DIFF_WORK="$work" DIFF_SCOPE="$scope"
 export DIFF_RUN_TIMEOUT="$run_timeout" DIFF_COMPILE_TIMEOUT="$compile_timeout"
 export DIFF_HAXE="${HAXE_BIN:-haxe}" DIFF_ELIXIR="${ELIXIR_BIN:-elixir}"
 export HAXE_NO_SERVER="${HAXE_NO_SERVER:-1}"
+DIFF_SCOPE_STATE="$(scope_state "$scope")"
+export DIFF_SCOPE_STATE
 
 rel() { # shorten a path under the checkout for display
   case "$1" in "$ROOT_DIR") echo . ;; "$ROOT_DIR"/*) echo "${1#"$ROOT_DIR"/}" ;; *) echo "$1" ;; esac
 }
 
 start_secs=$SECONDS
-echo "[differential] ${#ids[@]} fixture(s) from $(rel "$fixture_dir"); scope $(rel "$scope"); jobs $jobs; run timeout ${run_timeout}s"
+if [[ "$reclassify" == 1 ]]; then
+  echo "[differential] RECLASSIFY: nothing is run; classifying the stored results of ${#ids[@]} fixture(s) in $(rel "$work")"
+else
+  echo "[differential] ${#ids[@]} fixture(s) from $(rel "$fixture_dir"); scope $(rel "$scope"); jobs $jobs; run timeout ${run_timeout}s"
+fi
 
 n_match=0; n_known=0; n_bad=0
 report_details=()
 
+# Read $work/<id>/result into status, stage and warnings. A missing, empty
+# or malformed file becomes RUNNER-ERROR with a reason in `problem`.
+read_result() {
+  local f="$work/$1/result" line=""
+  status=RUNNER-ERROR; stage=-; warnings=0; problem=""
+  if [[ ! -f "$f" ]]; then problem="the worker left no result"; return 0; fi
+  IFS= read -r line <"$f" || true
+  local s g n extra
+  read -r s g n extra <<<"$line" || true
+  case "$s" in MATCH|DIFF|COMPILE-FAIL|INTERP-FAIL|TIMEOUT) ;; *) s="" ;; esac
+  if [[ -z "$s" || -z "$g" || ! "$n" =~ ^[0-9]+$ || -n "$extra" ]]; then
+    problem="the result file is empty or corrupt: '$line'"
+    return 0
+  fi
+  status="$s"; stage="$g"; warnings="$n"
+}
+
 # Classify one finished fixture, print its line, and record what to detail.
 classify() {
   local id="$1" w="$work/$1"
-  local status=RUNNER-ERROR stage=- warnings=0
-  if [[ -f "$w/result" ]]; then read -r status stage warnings <"$w/result"; fi
+  local status stage warnings problem=""
+  read_result "$id"
   local entry k_status="" k_bead="" note=""
   entry="$(known_entry "$id")"
   if [[ -n "$entry" ]]; then read -r k_status k_bead <<<"$entry"; fi
+  # A listed COMPILE-FAIL or TIMEOUT also names its stage.
+  local actual="$status"
+  case "$status" in COMPILE-FAIL|TIMEOUT) actual="$status:$stage" ;; esac
+  if [[ "$reclassify" == 1 && "$status" != RUNNER-ERROR ]]; then
+    local now
+    now="$DIFF_SCOPE_STATE $(fixture_digest "$DIFF_FIXTURE_DIR/$id")"
+    if [[ ! -f "$w/stamp" || "$(cat "$w/stamp")" != "$now" ]]; then
+      status=RUNNER-ERROR
+      problem="stale result: the scope commit, its uncommitted changes or the fixture changed since the run; run it again"
+    fi
+  fi
 
-  if [[ -z "$k_status" ]]; then
+  if [[ "$status" == RUNNER-ERROR ]]; then
+    # A stale result is explained on its line; its old details would mislead.
+    n_bad=$((n_bad + 1)); note="${problem:-the worker left no result}"
+    [[ "$problem" == stale* ]] || report_details+=("$id")
+  elif [[ -z "$k_status" ]]; then
     if [[ "$status" == MATCH ]]; then
       n_match=$((n_match + 1))
     else
@@ -315,7 +396,7 @@ classify() {
   elif [[ "$status" == MATCH ]]; then
     n_bad=$((n_bad + 1))
     note="FIXED: remove it from $(basename "$known_file") and known/ ($k_bead)"
-  elif [[ "$status" != "$k_status" ]]; then
+  elif [[ "$actual" != "$k_status" ]]; then
     n_bad=$((n_bad + 1)); note="unexpected; listed as $k_status ($k_bead)"; report_details+=("$id")
   elif [[ "$status" == DIFF ]] && ! cmp -s "$w/beam.out" "$known_dir/$id.out" 2>/dev/null; then
     if [[ "$update_known" == 1 ]]; then
@@ -337,6 +418,11 @@ classify() {
   fi
 }
 
+if [[ "$reclassify" != 1 ]]; then
+  # Never classify a result from an earlier run: if a worker cannot start
+  # or dies, its fixture must show RUNNER-ERROR, not the old status.
+  for id in "${ids[@]}"; do rm -f -- "$work/$id/result" "$work/$id/stamp"; done
+fi
 if [[ "$reclassify" == 1 ]]; then
   for id in "${ids[@]}"; do classify "$id"; done
 elif [[ "$jobs" == 1 ]]; then
@@ -351,8 +437,7 @@ fi
 
 for id in ${report_details[@]+"${report_details[@]}"}; do
   w="$work/$id"
-  status=RUNNER-ERROR; stage=-
-  if [[ -f "$w/result" ]]; then read -r status stage _ <"$w/result"; fi
+  read_result "$id"
   echo
   echo "=== $status $id (stage: $stage; files: $(rel "$w"))"
   case "$status" in
@@ -371,16 +456,18 @@ for id in ${report_details[@]+"${report_details[@]}"}; do
     COMPILE-FAIL)
       if [[ "$stage" == haxe ]]; then tail -n 20 "$w/haxe.log"; else tail -n 20 "$w/elixir.log"; fi ;;
     TIMEOUT) echo "a step ran longer than its limit (stage: $stage)" ;;
-    *) echo "the worker left no result; run with --fixture $id to see its error" ;;
+    *) echo "${problem:-stale or missing result}; run with --fixture $id to see the worker's error" ;;
   esac
 done
 
 echo
 echo "[differential] ${#ids[@]} fixture(s): $n_match match, $n_known known difference(s), $n_bad need attention"
 echo "[differential] elapsed $((SECONDS - start_secs))s" >&2
+suffix=""
+[[ "$reclassify" == 1 ]] && suffix=" (reclassified, nothing was run)"
 if [[ "$n_bad" == 0 ]]; then
-  echo "[differential] PASS"
+  echo "[differential] PASS$suffix"
   exit 0
 fi
-echo "[differential] FAIL"
+echo "[differential] FAIL$suffix"
 exit 1

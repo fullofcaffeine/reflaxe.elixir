@@ -706,8 +706,10 @@ strict-warning gates own them, but the line reports `warnings=N`. An unused
 variable warning often marks a dropped value.
 
 `test/differential/known-differences.txt` lets the gate pass while known bugs
-are open. Each line is `<id> <DIFF|COMPILE-FAIL|TIMEOUT> <beads-id> <reason>`.
-For a `DIFF` entry, `test/differential/known/<id>.out` records the exact wrong
+are open. Each line is `<id> <STATUS> <beads-id> <reason>`, where `STATUS` is
+`DIFF`, `COMPILE-FAIL:<haxe|elixir>` or `TIMEOUT:<interp|haxe|elixir|beam>`.
+The stage must match too: an entry for an Elixir syntax error does not cover a
+Haxe compile that starts to fail. For a `DIFF` entry, `test/differential/known/<id>.out` records the exact wrong
 BEAM output. A listed fixture passes only if it fails in exactly the recorded
 way. So a new wrong line in a program that already has one known bug still
 fails the gate. The list can only shrink:
@@ -719,13 +721,27 @@ fails the gate. The list can only shrink:
   `--update-known` records the new output. It never adds or removes list
   entries.
 - A line that names a missing fixture, has no Beads id, or repeats a fixture
-  is a usage error.
+  is a usage error. So is a file in `known/` without a `DIFF` entry.
+- A listed fixture that crashes stops at the crash. The shapes after it are
+  not checked until that bug is fixed. In the first set this applies to six
+  fixtures: o06, o11, p03, p05, q07 and q09.
 
 Exit status: `0` when every fixture matches or fails exactly as listed, `1`
 otherwise, `2` for a usage or setup error. Outputs go to
 `_tmp/differential/<set>/<id>/` (`interp.out`, `beam.out`, `diff`, the
-generated Elixir, and every log). `--reclassify` runs nothing and classifies
-the last run again, for example after you edit the list.
+generated Elixir, and every log). Before it starts the workers, the command
+deletes the old result of each selected fixture, so a worker that cannot start
+or dies shows `RUNNER-ERROR` and fails the gate; it never reuses an old status.
+
+`--reclassify` runs nothing and classifies the stored results again, for
+example after you edit the list. Its header and its last line say
+`reclassified, nothing was run`. Each result records the scope's git commit,
+a digest of its uncommitted tracked changes, and a digest of the fixture
+sources. If any of them changed since the run, `--reclassify` reports that
+fixture as a stale result and fails.
+
+`npm run test:differential-runner` checks these runner rules with stand-in
+`haxe` and `elixir` commands, in a few seconds and without a real compile.
 
 The command runs Haxe in the scope directory, by default this checkout, so
 `-lib reflaxe.elixir` resolves to the source tree. To test a release package,
