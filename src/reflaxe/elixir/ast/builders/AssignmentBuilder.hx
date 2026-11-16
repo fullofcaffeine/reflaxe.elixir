@@ -71,6 +71,22 @@ class AssignmentBuilder {
 		}
 	}
 
+	/**
+	 * Returns true when `e` reads a local that Haxe recorded as declared by the program
+	 * (see `HaxeTempLocals.isSourceLocal`), such as a match binder `g` in
+	 * `case RGB(r, g, b)`. Such a local is never a Haxe temp, whatever its name, so an
+	 * assignment that copies it must not be dropped as temp plumbing.
+	 */
+	static function isProgramLocal(e:Null<TypedExpr>):Bool {
+		if (e == null)
+			return false;
+		return switch (e.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null): isProgramLocal(inner);
+			case TLocal(v): reflaxe.elixir.ast.naming.HaxeTempLocals.isSourceLocal(v);
+			default: false;
+		};
+	}
+
 	static function buildAssign(e1:TypedExpr, e2:TypedExpr, context:CompilationContext):Null<ElixirASTDef> {
 		// Abstract constructors assign to `this` to define the underlying value:
 		//   this = expr;
@@ -113,6 +129,8 @@ class AssignmentBuilder {
 		}
 
 		// Skip redundant self-assign patterns (e.g. temp = temp) introduced by Haxe lowering.
+		// A side counts as a temp by its name only when Haxe did not record it as a program
+		// local: `case RGB(r, g, b): h = g;` copies the program's binder `g` and must stay.
 		var shouldSkipAssign = false;
 		switch (pattern) {
 			case PVar(name):
@@ -120,18 +138,15 @@ class AssignmentBuilder {
 					case EVar(varName): varName;
 					default: null;
 				};
+				var lhsIsTemp = PatternDetector.isTempPatternVarName(name) && !isProgramLocal(e1);
+				var rhsIsTemp = valueName != null && PatternDetector.isTempPatternVarName(valueName) && !isProgramLocal(rhsExpr);
 
-				if (PatternDetector.isTempPatternVarName(name)) {
-					shouldSkipAssign = switch (rightAST != null ? rightAST.def : null) {
-						case EVar(varName) if (varName == name || PatternDetector.isTempPatternVarName(varName)):
-							true;
-						default:
-							false;
-					};
+				if (lhsIsTemp) {
+					shouldSkipAssign = valueName != null && (valueName == name || rhsIsTemp);
 				} else if (valueName != null) {
 					if (valueName == name) {
 						shouldSkipAssign = true;
-					} else if (PatternDetector.isTempPatternVarName(valueName)) {
+					} else if (rhsIsTemp) {
 						shouldSkipAssign = true;
 					}
 				}

@@ -2254,6 +2254,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 				var initAst = if (initExpr != null) {
 					initExpr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(initExpr);
+					// The same rename as for a function body: `{ var g = 10; ... }` gets `local_g`.
+					var initRenames = reflaxe.elixir.ast.naming.HaxeTempLocals.renamesForSourceLocalsWithTempNames(initExpr);
+					initExpr = reflaxe.elixir.ast.naming.HaxeTempLocals.applyRenames(initExpr, initRenames);
 					reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(initExpr, context);
 				} else {
 					ast(ENil);

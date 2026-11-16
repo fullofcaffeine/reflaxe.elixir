@@ -31,14 +31,18 @@ import haxe.macro.TypedExprTools;
  *   entry, and neither its name nor any of those entries starts with a backtick.
  * - A local without `@:realPath`, such as a `TVar` that this compiler builds, keeps the
  *   old name rule. Only locals that Haxe proves are program locals change behaviour.
- * - Before the builders run, `renamesForSourceLocalsWithTempNames` moves every program
- *   local out of the temp names (`g` -> `local_g`). After that, a name check such as
- *   "`g` is a temp" downstream is true for the locals that reach it.
+ * - Before the builders run, `renamesForSourceLocalsWithTempNames` moves most program
+ *   locals out of the temp names (`g` -> `local_g`). Kept match binders
+ *   (`case RGB(r, g, b)`) and locals that this compiler builds can still have a temp
+ *   name, so a builder that must not drop a program value checks `isSourceLocal`, not the name.
  *
  * EXAMPLES (Haxe 4.3.7, as the compiler sees them after Haxe's filters)
  * - `var g = [];`                  -> name `g`,  `@:realPath("g")`           -> source local
  * - `for (k => v in m)` iterator   -> name `_g`, `@:realPath("_g")`, `@:realPath("\`")` -> temp
  * - `var _g = 1;` written by hand  -> name `_g`, `@:realPath("_g")`          -> source local
+ * - `for (g in m.keys())`          -> the iterator `var g = m.keys()` and the loop variable
+ *   `var g = g.next()` both have name `g` and `@:realPath("g")`. Haxe names the iterator
+ *   after the loop variable, so both count as source locals; the rename keeps them paired.
  */
 class HaxeTempLocals {
 	static final TEMP_NAME = ~/^_?g[0-9]*$/;
@@ -102,41 +106,50 @@ class HaxeTempLocals {
 	 * WHAT
 	 * - A program local is a local that the program declared and that Haxe recorded
 	 *   with its source name (`isSourceLocal`). When its name has the temp shape
-	 *   (`g`, `g1`, `_g`, `_g2`, ...), it gets the name `local_g` (`local_g1`, ...).
-	 *   The leading underscores go: `var _g` also becomes `local_g`.
+	 *   (`g`, `g1`, `_g`, `_g2`, ...), it gets a new name such as `local_g`.
+	 * - Each renamed declaration gets a fresh name that nothing else in the function
+	 *   uses: `local_g`, then `local_g_2`, ... Leading underscores go, so `_g` becomes
+	 *   `local_g` too, unless that name is taken. Two declarations with the same Haxe
+	 *   name get different new names: Elixir has no block scope, so an inlined
+	 *   function's own `var g` must not take over the caller's `g`.
+	 * - One pair keeps one name: Haxe names the iterator of `for (g in m.keys())` after
+	 *   the loop variable (`var g = m.keys(); while (g.hasNext()) { var g = g.next(); }`).
+	 *   The loop variable, whose value is `g.next()` on its same-named iterator, reuses
+	 *   the iterator's new name (paired by ID), because later passes match the
+	 *   `iter = iter.next.()` shape by name.
 	 * - This applies to every kind of declaration: `var`, the function's own
 	 *   arguments (`arguments`), the arguments of a local function, and `catch`
-	 *   variables. Loop variables are `var` declarations by this stage.
-	 * - It applies whether or not the function also has a Haxe temp. The rename does
-	 *   not depend on what else is in the function.
+	 *   variables. Loop variables, and the iterator that Haxe names after a loop
+	 *   variable, are `var` declarations by this stage.
+	 * - It applies whether or not the function also has a Haxe temp.
 	 * - One exception keeps a common pattern readable. A match binder
 	 *   (`case RGB(r, g, b)` types as `var g = _g1`, see `isMatchBinderInit`) keeps its
 	 *   name, unless a loop condition in the same function reads a temp with the same
 	 *   base name. Its case pattern binds it, and `{:rgb, r, g, b}` reads better than
 	 *   `{:rgb, r, local_g, b}`.
-	 * - A name that the function already uses is skipped (`local_g_2` is next). The
-	 *   names in `argumentNames` (Elixir form) always count as used. The copy keeps
+	 * - The names in `argumentNames` (Elixir form) always count as used. The copy keeps
 	 *   the ID, so ID-keyed tracking is unchanged.
 	 * - Call it on the body that the builders compile, after
 	 *   `TypedExprPreprocessor.preprocess`.
 	 *
 	 * WHY
 	 * - Many builder paths and ElixirAST passes decide by name alone that a local is
-	 *   a Haxe temp: `g`, `_g` and `g1` are temps there. After this rename, only Haxe
-	 *   temps have those names, so those checks are correct by construction. Before
-	 *   it, a program local with such a name could be silently miscompiled:
-	 *   - `var g = x * 2; var h = 0; if (c) { g = 1; h = 2; } else { h = g; }` lost
-	 *     `h = g`, with no temp in the function at all;
+	 *   a Haxe temp: `g`, `_g` and `g1` are temps there. This rename keeps most
+	 *   program locals away from those checks. Before it, a program local with such
+	 *   a name could be silently miscompiled:
 	 *   - an argument `g` next to `for (i in 0...n)` was overwritten by the loop
 	 *     counter `_g = 0`, which a hygiene pass promotes to `g` when it sees `g` read;
 	 *   - a program local `_g` read after a loop was rewritten to `g`, an undefined
 	 *     variable in Elixir.
+	 * - It does not cover kept match binders or locals that this compiler builds; a
+	 *   check that must not lose a program value asks `isSourceLocal`.
 	 * - The temps keep their names because many passes recognise temps by them.
 	 */
 	public static function renamesForSourceLocalsWithTempNames(body:Null<TypedExpr>, ?argumentNames:Array<String>, ?arguments:Array<TVar>):Map<Int, TVar> {
 		final renamed = new Map<Int, TVar>();
 		final loopTempBases = new Map<String, Bool>();
 		final binders = new Map<Int, Bool>();
+		final nextOf = new Map<Int, TVar>();
 		final usedNames = new Map<String, Bool>();
 		final candidates:Array<TVar> = [];
 		final seen = new Map<Int, Bool>();
@@ -156,6 +169,9 @@ class HaxeTempLocals {
 			candidates.push(v);
 			if (isMatchBinderInit(init))
 				binders.set(v.id, true);
+			final iterator = iteratorOfNextCall(init);
+			if (iterator != null)
+				nextOf.set(v.id, iterator);
 		}
 		function noteLoopTemps(cond:TypedExpr):Void {
 			switch (cond.expr) {
@@ -193,11 +209,17 @@ class HaxeTempLocals {
 			final base = stripLeadingUnderscores(v.name);
 			if (binders.exists(v.id) && !loopTempBases.exists(base))
 				continue;
-			var name = 'local_$base';
-			var suffix = 2;
-			while (usedNames.exists(name))
-				name = 'local_${base}_${suffix++}';
-			usedNames.set(name, true);
+			// `for (g in m.keys())`: the loop variable `var g = g.next()` keeps the name of
+			// its iterator `var g = m.keys()`, as in the Haxe output.
+			final iterator = nextOf.get(v.id);
+			var name = iterator != null && iterator.name == v.name && renamed.exists(iterator.id) ? renamed.get(iterator.id).name : null;
+			if (name == null) {
+				name = 'local_$base';
+				var suffix = 2;
+				while (usedNames.exists(name))
+					name = 'local_${base}_${suffix++}';
+				usedNames.set(name, true);
+			}
 			renamed.set(v.id, {
 				id: v.id,
 				name: name,
@@ -223,6 +245,28 @@ class HaxeTempLocals {
 			case TLocal(local): isTemp(local);
 			case TEnumParameter(_, _, _): true;
 			default: false;
+		};
+	}
+
+	/**
+	 * Returns the local `it` when `init` is the call `it.next()`, as in the loop variable
+	 * `var g = g.next()` that Haxe declares for `for (g in m.keys())`; null otherwise.
+	 */
+	static function iteratorOfNextCall(init:Null<TypedExpr>):Null<TVar> {
+		if (init == null)
+			return null;
+		return switch (init.expr) {
+			case TParenthesis(inner) | TMeta(_, inner) | TCast(inner, null): iteratorOfNextCall(inner);
+			case TCall({expr: TField({expr: TLocal(it)}, field)}, []) if (fieldName(field) == "next"): it;
+			default: null;
+		};
+	}
+
+	static function fieldName(field:haxe.macro.Type.FieldAccess):Null<String> {
+		return switch (field) {
+			case FInstance(_, _, cf) | FStatic(_, cf) | FAnon(cf) | FClosure(_, cf): cf.get().name;
+			case FDynamic(name): name;
+			case FEnum(_, ef): ef.name;
 		};
 	}
 
