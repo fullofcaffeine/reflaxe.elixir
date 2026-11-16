@@ -1,0 +1,5 @@
+  note x
+armLocal ox
+armLoop 1o2o
+armClosure 1o,2o
+[exit status 1]

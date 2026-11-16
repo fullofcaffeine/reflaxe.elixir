@@ -1,0 +1,8 @@
+if_value_push=[2,3]
+if_value_vals=[0,4,6]
+try_in_loop=[11,21,-2,13,23]
+switch_in_loop=[1,10,20,300]
+switch_value_loop=[0,12,22,3,0]
+while_for=[10,20,110,120,210,220]
+do_while_for=[10,20,10,20]
+[exit status 0]

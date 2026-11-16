@@ -1,0 +1,8 @@
+rangeFor=[200,201]
+rangeFor0=[200,201]
+rangeInWhile=[]
+rangeBreak=[200,201]
+rangeRet_early=[0,1,10]
+rangeRet_full=[0,1,10,11,200,201]
+kvRangeWhile=[0,1,1001,1002]
+[exit status 0]
