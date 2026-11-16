@@ -81,7 +81,7 @@ defmodule Main do
   defp collect_key_codes(text) do
     g_offset = 0
     g_s = text
-    {key_codes, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[], g_offset}, fn _, {acc__g, acc__g_offset} ->
+    {g, _g_offset} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[], g_offset}, fn _, {acc__g, acc__g_offset} ->
       try do
         if (StringTools.haxe_char_at(g_s, acc__g_offset) != "") do
           g_key = acc__g_offset
@@ -107,6 +107,7 @@ defmodule Main do
           {:cont, {acc__g, acc__g_offset}}
       end
     end)
+    key_codes = g
     expect("helper comprehension count", length(key_codes) == 3)
     key_codes
   end

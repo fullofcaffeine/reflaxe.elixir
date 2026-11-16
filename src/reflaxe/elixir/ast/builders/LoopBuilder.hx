@@ -2894,6 +2894,7 @@ class LoopBuilder {
 				compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
 			}
 
+			var bodySeeds = setTrackedSeeds([for (m in mutatedList) {id: m.id, name: m.accName}], compilationContext);
 			var compiledBody = buildExpression(forInArrayPattern.userBody);
 
 			if (compilationContext != null) {
@@ -2909,6 +2910,9 @@ class LoopBuilder {
 						compilationContext.tempVarRenameMap.remove(s.key);
 				}
 			}
+			restoreTrackedSeeds(bodySeeds, compilationContext);
+			// The result rebinds each local under its outer name; a later loop starts from it.
+			setTrackedSeeds([for (m in mutatedList) {id: m.id, name: m.outerName}], compilationContext);
 
 			function ensureReturnsState(bodyAst:ElixirAST, ret:ElixirAST):ElixirAST {
 				if (bodyAst == null)
@@ -3640,6 +3644,7 @@ class LoopBuilder {
 			compilationContext.loopControlStateStack.push(stateNames.length == 1 ? LoopStateVar(stateNames[0]) : LoopStateTuple(stateNames));
 		}
 
+		var bodySeeds = setTrackedSeeds([for (m in mutatedList) {id: m.id, name: m.accName}], compilationContext);
 		var compiledBody = buildExpression(bodyInfo.userCode);
 
 		if (compilationContext != null) {
@@ -3655,6 +3660,9 @@ class LoopBuilder {
 					compilationContext.tempVarRenameMap.remove(s.key);
 			}
 		}
+		restoreTrackedSeeds(bodySeeds, compilationContext);
+		// The result rebinds each local under its outer name; a later loop starts from it.
+		setTrackedSeeds([for (m in mutatedList) {id: m.id, name: m.outerName}], compilationContext);
 
 		function ensureReturnsState(bodyAst:ElixirAST, ret:ElixirAST):ElixirAST {
 			if (bodyAst == null)
@@ -4095,6 +4103,7 @@ class LoopBuilder {
 			}
 		}
 
+		var bodySeeds = setTrackedSeeds([for (entry in mutatedEntries) {id: entry.id, name: entry.accName}], compilationContext);
 		var compiledUserBody = buildExpression(pattern.userBody);
 
 		if (compilationContext != null) {
@@ -4107,6 +4116,8 @@ class LoopBuilder {
 					compilationContext.tempVarRenameMap.remove(saved.key);
 			}
 		}
+		restoreTrackedSeeds(bodySeeds, compilationContext);
+		setTrackedSeeds([for (entry in mutatedEntries) {id: entry.id, name: entry.outerName}], compilationContext);
 
 		var itemName = toElixirVarName(pattern.itemVar.name);
 		var resultVarName = "reflaxe_receiver_value_" + (compilationContext != null ? compilationContext.generateNodeId() : "iterator");
@@ -4307,6 +4318,77 @@ class LoopBuilder {
 		return unwrapReturnCarrier(reducer, state.outerPattern).def;
 	}
 
+	/**
+	 * Point the tracked initializer of each threaded local at a name that holds its value.
+	 *
+	 * WHAT
+	 * - For each entry whose TVar ID has a tracked initializer (`localVarInitValuesById`),
+	 *   replace that initializer with a read of `name`. Returns the replaced values, so
+	 *   the caller can put them back with `restoreTrackedSeeds`.
+	 *
+	 * WHY
+	 * - `inferAccumulatorSeed` starts a comprehension temp such as `_g`, and any local
+	 *   whose name looks like one (`g`, `g1`, ...), from its tracked initializer (`[]`).
+	 *   That is right only while the local still has that value:
+	 *   - inside the body of a loop that threads `_g`, a nested `reduce_while` must
+	 *     start from the loop state (`[for (k in m.keys()) for (j in n.keys()) k + j]`);
+	 *   - after a loop rebinds `_g`, a later loop must start from the result, as when
+	 *     Haxe unrolls `[for (i in 0...2) for (k in m.keys()) ...]` into two copies.
+	 * - The name must be bound where the seed is read. An `Enum.reduce` callback names
+	 *   the state `g_acc`, which does not exist after the callback. So each loop sets
+	 *   the name again when it ends.
+	 *
+	 * HOW
+	 * - Every loop lowering that threads locals calls this twice:
+	 *   1. before it builds its body, with the name of the state inside the body
+	 *      (`g_acc` for `Enum.reduce`; for `reduce_while`, the local's own name, which
+	 *      the loop renames to `acc__g` after the body is built);
+	 *   2. when the body is built, after `restoreTrackedSeeds`, with the name that the
+	 *      loop result binds after the loop (`g`).
+	 * - A loop nested in another body sets names that are visible in that body. The
+	 *   enclosing loop threads the same local, so it replaces them with its own
+	 *   after-loop name when it ends.
+	 * - `reduce_while` restores the initializer before it builds its own seed, so a
+	 *   first loop still starts from `[]`. Entries are matched by TVar ID only.
+	 *
+	 * EXAMPLES
+	 * - Inner loop seed: `Enum.reduce_while(Map.keys(n), {acc__g}, ...)`, not `{[]}`.
+	 * - Second unrolled copy: `{g} = Enum.reduce_while(Map.keys(m), {g}, ...)`.
+	 * - `for (x in xs) { while (...) g.push(..) }` then `while (...) g.push(..)`: the
+	 *   second loop starts from `g`, the `Enum.reduce` result, not from the callback's
+	 *   `g_acc`.
+	 */
+	static function setTrackedSeeds(states:Array<{id:Int, name:String}>, compilationContext:Null<CompilationContext>):Array<{id:Int, value:ElixirAST}> {
+		final replaced:Array<{id:Int, value:ElixirAST}> = [];
+		if (compilationContext == null || compilationContext.localVarInitValuesById == null)
+			return replaced;
+		for (state in states) {
+			if (!compilationContext.localVarInitValuesById.exists(state.id))
+				continue;
+			replaced.push({id: state.id, value: compilationContext.localVarInitValuesById.get(state.id)});
+			compilationContext.localVarInitValuesById.set(state.id, makeAST(EVar(state.name)));
+		}
+		return replaced;
+	}
+
+	/** Puts back the tracked initializers that `setTrackedSeeds` replaced. */
+	static function restoreTrackedSeeds(replaced:Array<{id:Int, value:ElixirAST}>, compilationContext:Null<CompilationContext>):Void {
+		if (compilationContext == null || compilationContext.localVarInitValuesById == null)
+			return;
+		for (entry in replaced)
+			compilationContext.localVarInitValuesById.set(entry.id, entry.value);
+	}
+
+	/** Pairs each threaded local of a `reduce_while` with its resolved name at this point. */
+	static function resolvedStateNames(mutatedVars:Map<Int, TVar>, compilationContext:Null<CompilationContext>):Array<{id:Int, name:String}> {
+		if (compilationContext == null)
+			return [];
+		return [
+			for (id => tvar in mutatedVars)
+				{id: id, name: VariableBuilder.resolveVariableName(tvar, compilationContext)}
+		];
+	}
+
 	static function buildWhileLoop(econd:TypedExpr, e:TypedExpr, normalWhile:Bool, context:BuildContext, toElixirVarName:String->String):ElixirASTDef {
 		#if debug_loop_builder
 		#end
@@ -4335,8 +4417,11 @@ class LoopBuilder {
 			}
 		}
 
+		// Inside the body, a threaded local holds the loop state, not its declared value.
+		var replacedSeeds = setTrackedSeeds(resolvedStateNames(mutatedVars, compilationContext), compilationContext);
 		var condition = buildExpression(econd);
 		var body = buildExpression(e);
+		restoreTrackedSeeds(replacedSeeds, compilationContext);
 
 		if (compilationContext != null
 			&& compilationContext.loopControlStateStack != null
@@ -4352,7 +4437,10 @@ class LoopBuilder {
 
 		// If there are variables to thread, use reduce_while with state
 		if (Lambda.count(mutatedVars) > 0) {
-			return buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName, containsNonLocalReturn(e));
+			var loop = buildReduceWhileWithState(mutatedVars, condition, body, context, toElixirVarName, containsNonLocalReturn(e));
+			// The loop result rebinds each threaded local, so a later loop must start from it.
+			setTrackedSeeds(resolvedStateNames(mutatedVars, compilationContext), compilationContext);
+			return loop;
 		} else {
 			if (containsNonLocalReturn(e))
 				return buildReturningWhile(condition, body, {

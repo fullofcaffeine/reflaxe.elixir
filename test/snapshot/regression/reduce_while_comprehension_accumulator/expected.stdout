@@ -1,0 +1,16 @@
+keysOnly a,b
+keysNamed a,b
+keysOuter a1,a2,b1,b2
+keysInner a1,a2,b1,b2
+keysInKeys a1,a2,b1,b2
+valuesOuter 11,12,21,22
+iteratorOuter 11,21,12,22
+rangeOuter 1,11,12,2
+keysFilter b1,b3
+emptyOuter 
+emptyInner 
+emptyRange 
+keysArrayKeys a11,a12,a21,a22,b11,b12,b21,b22
+rangeIfElse 101,102,11,12,21,22
+whileAfterNested 10,11,20,21,0,1
+whileAfterEmptyNested 0,1

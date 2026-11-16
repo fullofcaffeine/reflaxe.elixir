@@ -165,7 +165,7 @@ defmodule Main do
     prices = %{}
     prices = prices |> Map.put("apple", 1.5) |> Map.put("orange", 2) |> Map.put("banana", 0.75)
     g_value = Reflaxe.Elixir.IMap.key_value_iterator(prices)
-    {discounted} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
+    {g} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
       try do
         if ((case g_value do
         reflaxe_structural_receiver_node_6 ->
@@ -203,6 +203,7 @@ defmodule Main do
           {:cont, {acc__g}}
       end
     end)
+    discounted = g
     if ((length(discounted) != 3 or (case Enum.find_index(discounted, fn item -> item == "apple: $1.35" end) do
       nil -> -1
       index -> index

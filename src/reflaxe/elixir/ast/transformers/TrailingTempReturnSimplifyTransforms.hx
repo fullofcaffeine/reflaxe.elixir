@@ -11,6 +11,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 	* WHAT
 	* - Replace trailing `var` expression at end of a block when preceded by a last assignment
 	*   `var = expr` with just `expr`, dropping the temp variable.
+	* - Keep the block when the nearest binding of `var` is another match, such as the
+	*   tuple result `{var} = Enum.reduce_while(...)` of a loop.
 	*
 	* WHY
 	* - Removes temp names like `this1` returned via `var` at end of anonymous functions or blocks.
@@ -84,6 +86,9 @@ class TrailingTempReturnSimplifyTransforms {
 											out.push(rhs);
 											return out;
 										}
+									case _ if (BinderTransforms.statementBindsName(stmts[idx], name)):
+										// A destructuring match such as `{g, h} = ...` rebinds it: keep the block.
+										return stmts;
 									default:
 								}
 							case EMatch(pat, rhs2):
@@ -98,8 +103,16 @@ class TrailingTempReturnSimplifyTransforms {
 											out2.push(rhs2);
 											return out2;
 										}
+									case _ if (BinderTransforms.patternBindsName(pat, name)):
+										// The nearest binding of `name` is another pattern, for
+										// example the tuple result `{g} = Enum.reduce_while(...)`
+										// of a loop. An earlier `g = []` is stale: keep the block.
+										return stmts;
 									default:
 								}
+							case _ if (BinderTransforms.statementBindsName(stmts[idx], name)):
+								// The same, inside a nested statement block.
+								return stmts;
 							default:
 						}
 					}
