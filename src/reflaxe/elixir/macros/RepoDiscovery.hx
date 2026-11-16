@@ -26,6 +26,9 @@ using StringTools;
  * - At CompilerInit.Start(), call RepoDiscovery.run().
  * - RepoDiscovery scans *project* classpaths for `.hx` files containing the relevant metadata,
  *   parses the Haxe type path (package + class), and calls `Context.getType(typePath)` to force typing.
+ * - Library roots are not scanned: dependency caches, this compiler's own `src/`, `std/` and
+ *   `std/elixir/_std/`, the Reflaxe framework, and the Haxe standard library. They hold no
+ *   application modules. A class path that appears twice is scanned once.
  * - DCE preservation happens elsewhere:
  *   - RepoEnumerator marks `@:repo` modules as `@:keep`.
  *   - LiveViewPreserver adds `@:keep` to common Phoenix modules (endpoint/router/presence/components).
@@ -96,9 +99,17 @@ class RepoDiscovery {
 			return;
 
 		var scanRoots:Array<String> = [];
+		// Bootstrap and `-lib` can add the same class path twice. Scanning it
+		// again finds the same files and type paths, so only the first copy is
+		// kept, and the order of the discovered types stays the same.
+		var seenRoots = new Map<String, Bool>();
 		for (classPath in classPaths) {
 			if (!shouldScanClassPath(classPath))
 				continue;
+			var rootKey = normalizePath(try sys.FileSystem.fullPath(classPath) catch (_) classPath);
+			if (seenRoots.exists(rootKey))
+				continue;
+			seenRoots.set(rootKey, true);
 			scanRoots.push(classPath);
 		}
 
@@ -161,6 +172,15 @@ class RepoDiscovery {
 			return false;
 		if (looksLikeCompilerStdRoot(classPath))
 			return false;
+		if (looksLikeCompilerStdOverrideRoot(classPath))
+			return false;
+		if (looksLikeReflaxeFrameworkRoot(classPath))
+			return false;
+		// The Haxe standard library has no application modules, but it has
+		// about 2,600 files. Scanning them was most of the time of every
+		// request on a warm server, and of the start of every direct build.
+		if (looksLikeHaxeStdRoot(classPath))
+			return false;
 
 		return true;
 	}
@@ -177,6 +197,27 @@ class RepoDiscovery {
 
 	static function looksLikeCompilerStdRoot(classPath:String):Bool {
 		return sys.FileSystem.exists(Path.join([classPath, "elixir", "otp", "TypeSafeChildSpec.hx"]));
+	}
+
+	/**
+	 * True for this compiler's source-layout standard-library overrides
+	 * (`std/elixir/_std`), which `CompilerBootstrap` adds to the class path.
+	 * They replace Haxe standard-library modules and hold no application modules.
+	 */
+	static function looksLikeCompilerStdOverrideRoot(classPath:String):Bool {
+		return Path.withoutDirectory(Path.removeTrailingSlashes(classPath)) == "_std"
+			&& looksLikeCompilerStdRoot(Path.join([classPath, "..", ".."]));
+	}
+
+	/** True for a source root of the Reflaxe framework, vendored or installed. */
+	static function looksLikeReflaxeFrameworkRoot(classPath:String):Bool {
+		return sys.FileSystem.exists(Path.join([classPath, "reflaxe", "ReflectCompiler.hx"]));
+	}
+
+	/** True for the Haxe standard library root that the Haxe installation adds. */
+	static function looksLikeHaxeStdRoot(classPath:String):Bool {
+		return sys.FileSystem.exists(Path.join([classPath, "StdTypes.hx"]))
+			&& sys.FileSystem.exists(Path.join([classPath, "haxe", "macro", "Context.hx"]));
 	}
 
 	static function shouldSkipDirName(name:String):Bool {
