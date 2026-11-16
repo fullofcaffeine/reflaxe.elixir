@@ -147,8 +147,8 @@ defmodule Main do
   end
   def rethrow_in_ok_arm(r, code) do
     (case r do
-      {:ok, haxe_exception} ->
-        v = haxe_exception
+      {:ok, value} ->
+        v = value
         try do
           raise Reflaxe.Elixir.HaxeThrow, [value: code]
         rescue
