@@ -1,43 +1,66 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-/**
- * LocalVarReferenceFixTransforms
- *
- * WHAT
- * - Aligns EVar references to declared local names when builder/optimizer phases
- *   introduced underscore/numeric variants.
- *
- * WHY
- * - Prevents undefined local errors and reduces naming noise, especially after
- *   hygiene passes and temp alias rewrites.
- *
- * HOW
- * - Build a map of declared locals per scope and normalize references accordingly.
- *
- * EXAMPLES
- * Before: len = 0; ...; l3 -> align to len
- */
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.NodeBinders;
 
 /**
- * LocalVarReferenceFixTransforms
+ * LocalVarReferenceFixTransforms: points a reference to an unbound name at the one
+ * bound local it drifted from.
  *
- * WHY: Certain builder/extraction steps may introduce minor name drift between
- * declarations and references (e.g., declare `_changeset` but later reference
- * `changeset`; or declare `query2` but reference `query`). This pass normalizes
- * references to the closest declared local in the same function scope.
+ * WHAT
+ * - Inside each `def`/`defp`, a reference `EVar(name)` whose name no pattern in the
+ *   function binds is rewritten to a bound local with a closely related name:
+ *   - rule 1: `name` -> `_name` when `_name` is bound;
+ *   - rule 2: `name` -> `nameN` when exactly one `nameN` (`name` plus digits) is bound;
+ *   - rule 3: `nameN` -> `name` when `name` is bound.
+ * - "Bound" means bound by any pattern anywhere in the function: the `def` arguments,
+ *   `fn` arguments, `case`/`receive`/`with` clause patterns, comprehension generators,
+ *   `rescue`/`catch` patterns, and the left side of `=` (see `NodeBinders`).
+ * - Declarations are never changed; only references are.
  *
- * WHAT: Within each EDef/EDefp, collect all declared local variable names from
- * patterns and assignment LHS. Then rewrite EVar references if an obvious
- * corresponding declared name exists following simple heuristics:
- * - If `_name` is declared and `name` is referenced (and not declared), map to `_name`.
- * - If `nameN` (e.g., query2) is declared and `name` is referenced (and not declared), map to `nameN`.
- * Only remap when the target name is unique to avoid ambiguity.
+ * WHY
+ * - Older builder and hygiene steps could declare one spelling and read another
+ *   (`_changeset` declared, `changeset` read; `query2` declared, `query` read). Elixir
+ *   rejects the unbound read, so pointing it at the only candidate repaired the build.
+ * - The rules match names by their shape, so they are safe only for a name that is
+ *   really unbound. Earlier versions counted only `def` arguments and `=` patterns as
+ *   bound. A `fn q -> ... end` argument, a case binder or a catch binder then looked
+ *   unbound, and its reads were moved to another variable with a similar name
+ *   (`haxe.elixir.codex-hhp5`):
  *
- * NOTE: This is a local, scoped normalization to avoid cross-scope renames.
+ *       Haxe:   function(q:Int) { { var q = 999; } return q * 2; }
+ *       Elixir: fn q -> q1 = 999; q * 2 end
+ *       Before: fn q -> q1 = 999; q1 * 2 end   (returns 1998, not 8)
+ *       After:  unchanged, because `q` is bound by the `fn`.
+ *
+ *   Haxe already proved these names are different variables (`q1` is its own rename
+ *   of an inner shadow); the shape rule must not merge them again.
+ *
+ * HOW
+ * - One walk collects every bound name of the function (`NodeBinders.forEach` for each
+ *   node, plus the variables on the left of `a = b = rhs` chains).
+ * - The rules build a rename map whose keys are never bound names, then one transform
+ *   rewrites matching `EVar` references. A reference to a bound name is never changed,
+ *   so a read that Elixir already resolves keeps its meaning. Only a read that would
+ *   fail to compile can change.
+ * - Haxe `TVar` ids would decide drift exactly, but references no longer carry
+ *   `sourceVarId` metadata when this late pass runs, so the bound-name check is the
+ *   structural guard here.
+ *
+ * EXAMPLES
+ * - `_changeset = cast(...); changeset` -> `_changeset = cast(...); _changeset` (rule 1)
+ * - `query2 = from(...); Repo.all(query)` -> `...; Repo.all(query2)` (rule 2)
+ * - a read of `count2` where only `count` is bound -> a read of `count` (rule 3)
+ *
+ * LIMITS
+ * - Names inside raw code (`ERaw`, such as an interpolated string) are neither counted
+ *   as reads nor rewritten.
+ * - The bound-name check covers the whole function, not one scope: a name that is
+ *   bound anywhere in the function is left alone everywhere in it.
+ * - Regression coverage: `test/differential/r18_name_drift_binders`.
  */
 class LocalVarReferenceFixTransforms {
 	public static function localVarReferenceFixPass(ast:ElixirAST):ElixirAST {
@@ -55,70 +78,8 @@ class LocalVarReferenceFixTransforms {
 		});
 	}
 
-	static function normalizeBody(body:ElixirAST, ?fnArgs:Array<EPattern>):ElixirAST {
-		// Collect declared names in this function body
-		var declared = new Map<String, Bool>();
-		// Include function parameters as declared locals
-		if (fnArgs != null) {
-			for (a in fnArgs)
-				switch (a) {
-					case PVar(n):
-						declared.set(n, true);
-					case PTuple(es) | PList(es):
-						for (e in es)
-							switch (e) {
-								case PVar(n2): declared.set(n2, true);
-								default:
-							}
-					default:
-				}
-		}
-
-		function collectPattern(p:EPattern):Void {
-			switch (p) {
-				case PVar(n):
-					declared.set(n, true);
-				case PTuple(es) | PList(es):
-					for (e in es)
-						collectPattern(e);
-				case PCons(h, t):
-					collectPattern(h);
-					collectPattern(t);
-				case PMap(kvs):
-					for (kv in kvs)
-						collectPattern(kv.value);
-				case PStruct(_, fs):
-					for (f in fs)
-						collectPattern(f.value);
-				case PPin(inner):
-					collectPattern(inner);
-				default:
-			}
-		}
-
-		// Single traversal to collect declarations
-		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
-			if (n == null || n.def == null)
-				return;
-			switch (n.def) {
-				case EMatch(pattern, _):
-					collectPattern(pattern);
-				case EBinary(Match, left, _):
-					// Collect declarations from nested match chains: a = b = c = rhs
-					function collectLhsVars(lhs:ElixirAST):Void {
-						switch (lhs.def) {
-							case EVar(lhsName):
-								declared.set(lhsName, true);
-							case EBinary(Match, l2, r2):
-								collectLhsVars(l2);
-								collectLhsVars(r2);
-							default:
-						}
-					}
-					collectLhsVars(left);
-				default:
-			}
-		});
+	static function normalizeBody(body:ElixirAST, fnArgs:Array<EPattern>):ElixirAST {
+		var declared = collectBoundNames(body, fnArgs);
 
 		// Build a simple, unambiguous rename map
 		var rename = new Map<String, String>();
@@ -204,6 +165,44 @@ class LocalVarReferenceFixTransforms {
 		}
 
 		return ElixirASTTransformer.transformNode(body, transform);
+	}
+
+	/**
+	 * Returns every name that a pattern binds anywhere in one function: its arguments,
+	 * the binders of every nested node (`NodeBinders.forEach`), and each variable on the
+	 * left of an expression-form match chain (`a = b = rhs`).
+	 *
+	 * The rename rules use it to decide that a reference is unbound. A binder missing here
+	 * makes a valid read look unbound, and a rule then moves it to another variable.
+	 */
+	static function collectBoundNames(body:ElixirAST, fnArgs:Array<EPattern>):Map<String, Bool> {
+		var declared = new Map<String, Bool>();
+		function add(name:String):Void
+			declared.set(name, true);
+		if (fnArgs != null)
+			for (arg in fnArgs)
+				NodeBinders.forEachInPattern(arg, add);
+
+		function collectMatchChainLhs(lhs:ElixirAST):Void {
+			switch (lhs.def) {
+				case EVar(lhsName):
+					add(lhsName);
+				case EBinary(Match, left, right):
+					collectMatchChainLhs(left);
+					collectMatchChainLhs(right);
+				default:
+			}
+		}
+
+		reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
+			NodeBinders.forEach(n, add);
+			switch (n.def) {
+				case EBinary(Match, left, _):
+					collectMatchChainLhs(left);
+				default:
+			}
+		});
+		return declared;
 	}
 }
 #end
