@@ -258,6 +258,129 @@ class Main {
 		return a + "";
 	}
 
+	// Raw Elixir after the loop reads the iterator in a form that a tokenizer can miss
+	// (a charlist, a sigil, a character literal, a comment, a newline, `it.current`,
+	// `1..it`). The raw code is the shape under test: no typed Haxe surface emits it.
+	// The compiler cannot parse raw code, so any mention of the iterator's name keeps the
+	// loop unchanged, and these throw as on main. On the interpreter the read is
+	// `it.hasNext()`.
+	static function charlistInterp(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("'#{is_map(it)}' == 'true'") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function sigilSquote(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("~s'#{is_map(it)}' == \"true\"") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function apostropheSigil(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("~s(don't) != \"\" and is_map(it)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function charQuote(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("?' == 39 and is_map(it)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function charDquote(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("?\" == 34 and is_map(it)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function apostropheComment(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("(\n# don't drop this\nis_map(it)\n)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function newlineParen(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("(\ny = it\n(1 + 2)\nis_map(y)\n)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function itCurrent(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("it.current == 0") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function rangeIt(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var a = 0;
+		it = n.keys();
+		while (it.hasNext()) {
+			var x = it.next();
+			a += x;
+		}
+		var h:Bool = #if elixir untyped __elixir__("is_function(fn -> 1..it end)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function heldCharlistInterp(n:Map<Int, Int>):String {
+		var it = n.keys();
+		var a = 0;
+		for (x in it)
+			a += x;
+		var h:Bool = #if elixir untyped __elixir__("'#{is_list(it)}' == 'true'") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
+	static function heldCharQuote(n:Map<Int, Int>):String {
+		var it = n.keys();
+		var a = 0;
+		for (x in it)
+			a += x;
+		var h:Bool = #if elixir untyped __elixir__("?' == 39 and is_list(it)") #else it.hasNext() #end;
+		return a + ":" + h;
+	}
+
 	static function main() {
 		run("staleParam", () -> staleParam([7, 8, 9, 10].iterator(), [1 => 10, 2 => 20, 3 => 30]));
 		run("staleParamFor", () -> staleParamFor([7, 8, 9, 10].iterator(), [1 => 10, 2 => 20, 3 => 30]));
@@ -276,5 +399,16 @@ class Main {
 		run("closureAssignsFor", () -> closureAssignsFor([100, 200, 300, 400].iterator(), [4 => 1, 5 => 2]));
 		run("captureAccHeldKeys", () -> captureAccHeldKeys([1 => 10, 2 => 20, 3 => 30]));
 		run("captureAccShadowKeys", () -> captureAccShadowKeys([1 => 10, 2 => 20, 3 => 30]));
+		run("charlistInterp", () -> charlistInterp([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("sigilSquote", () -> sigilSquote([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("apostropheSigil", () -> apostropheSigil([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("charQuote", () -> charQuote([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("charDquote", () -> charDquote([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("apostropheComment", () -> apostropheComment([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("newlineParen", () -> newlineParen([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("itCurrent", () -> itCurrent([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("rangeIt", () -> rangeIt([7, 8, 9].iterator(), [4 => 1, 5 => 2]));
+		run("heldCharlistInterp", () -> heldCharlistInterp([4 => 1, 5 => 2]));
+		run("heldCharQuote", () -> heldCharQuote([4 => 1, 5 => 2]));
 	}
 }

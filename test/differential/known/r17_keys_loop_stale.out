@@ -15,4 +15,15 @@ closureAssigns THREW
 closureAssignsFor THREW
 captureAccHeldKeys THREW
 captureAccShadowKeys THREW
+charlistInterp THREW
+sigilSquote THREW
+apostropheSigil THREW
+charQuote THREW
+charDquote THREW
+apostropheComment THREW
+newlineParen THREW
+itCurrent THREW
+rangeIt THREW
+heldCharlistInterp THREW
+heldCharQuote THREW
 [exit status 0]

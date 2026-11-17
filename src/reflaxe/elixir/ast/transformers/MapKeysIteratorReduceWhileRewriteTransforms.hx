@@ -5,7 +5,6 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 #if debug_map_keys_reduce_while
 import reflaxe.elixir.ast.ElixirASTPrinter;
@@ -392,7 +391,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			keysVar = copied;
 			copyIndex = bindIndex;
 		}
-		if (keysVar != loop.loopVar && VarUseAnalyzer.stmtUsesVarExact(loop.thenBody, keysVar))
+		if (keysVar != loop.loopVar && refersTo(loop.thenBody, keysVar))
 			return null;
 		if (!deadFrom(stmts, after, keysVar, true))
 			return null;
@@ -413,7 +412,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	/** True when a statement in `stmts[start...end]` reads or binds `name`. */
 	static function touchedIn(stmts:Array<ElixirAST>, start:Int, end:Int, name:String):Bool {
 		for (k in start...end)
-			if (VarUseAnalyzer.stmtUsesVarExact(stmts[k], name) || BinderTransforms.statementBindsName(stmts[k], name))
+			if (refersTo(stmts[k], name) || BinderTransforms.statementBindsName(stmts[k], name))
 				return true;
 		return false;
 	}
@@ -426,7 +425,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	 * `show((fn -> k = Map.keys(m); ... k ... end).())` the function binds its own `k`
 	 * before it reads it, so that statement does not read the outer `k`.
 	 *
-	 * `scanRaw` also counts a variable reference inside opaque raw Elixir code. Callers pass
+	 * `scanRaw` also counts any mention of the name in opaque raw Elixir code. Callers pass
 	 * false for a loop variable named like its iterator: the program cannot name such an
 	 * iterator (Haxe named it after the loop variable), and main rewrote that shape without
 	 * any check.
@@ -447,25 +446,48 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	/**
 	 * True when `node` reads `name` from the enclosing scope: a free reference that no
 	 * binder inside `node` shadows (`VarUseAnalyzer.usesFreeVarExact`), or, with `scanRaw`,
-	 * a variable reference in opaque raw Elixir code, which the lexical analysis cannot
-	 * see into. Raw code is read with `ElixirCodeVarRefTokenizer`, which skips quoted
-	 * strings, atoms and keyword keys: `Map.get(o, "key")` or `%d` in a format string does
-	 * not read a variable `key` or `d`.
+	 * any mention of `name` in opaque raw Elixir code (`mentionsInRaw`).
 	 */
 	static function readsOuter(node:ElixirAST, name:String, scanRaw:Bool):Bool {
 		if (VarUseAnalyzer.usesFreeVarExact(node, name))
 			return true;
-		if (!scanRaw)
+		return scanRaw && mentionsInRaw(node, name);
+	}
+
+	/**
+	 * True when `node` reads `name` anywhere (`VarUseAnalyzer.stmtUsesVarExact`) or
+	 * mentions it in raw Elixir code (`mentionsInRaw`). The checks of the new rewrite
+	 * variants use it, so they fail closed: a doubtful mention leaves the loop unchanged.
+	 */
+	static function refersTo(node:ElixirAST, name:String):Bool {
+		return VarUseAnalyzer.stmtUsesVarExact(node, name) || mentionsInRaw(node, name);
+	}
+
+	/**
+	 * True when raw Elixir code under `node` contains `name` as a whole word: its
+	 * neighbours are not letters, digits or `_`.
+	 *
+	 * WHY
+	 * - The compiler cannot parse raw code, so this check fails closed. It also counts the
+	 *   name inside strings, charlists, sigils and comments, after `.` (`1..it`) and before
+	 *   `.` (`it.current`). A tokenizer that skips quoted text misses real reads such as
+	 *   `'#{is_map(it)}'` or `?' == 39 and is_map(it)`, and then a loop that main left alone
+	 *   gave a wrong value instead of an error.
+	 * - The cost is that a word such as `it` in a string keeps a loop unchanged. Only the
+	 *   rewrite variants that main did not have use this check; the same-name loop that
+	 *   main rewrote does not.
+	 */
+	static function mentionsInRaw(node:ElixirAST, name:String):Bool {
+		if (name == null || name.length == 0)
 			return false;
+		final word = new EReg("(^|[^A-Za-z0-9_])" + EReg.escape(name) + "($|[^A-Za-z0-9_])", "");
 		var mentioned = false;
 		function scan(n:ElixirAST):ElixirAST {
 			if (mentioned || n == null || n.def == null)
 				return n;
 			switch (n.def) {
 				case ERaw(code):
-					var refs = new Map<String, Bool>();
-					ElixirCodeVarRefTokenizer.collectFromElixirCode(code, refs);
-					if (refs.exists(name))
+					if (code != null && word.match(code))
 						mentioned = true;
 				default:
 					ElixirASTTransformer.transformAST(n, scan);
@@ -911,7 +933,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		if (bound == null)
 			return null;
 		var rest = stmts.slice(1);
-		if (bound != iterVar && Lambda.exists(rest, s -> VarUseAnalyzer.stmtUsesVarExact(s, iterVar)))
+		if (bound != iterVar && Lambda.exists(rest, s -> refersTo(s, iterVar)))
 			return null;
 		return {loopVar: bound, body: makeAST(EBlock(rest))};
 	}
