@@ -111,7 +111,8 @@ class HaxeTempLocals {
 	 *   uses: `local_g`, then `local_g_2`, ... Leading underscores go, so `_g` becomes
 	 *   `local_g` too, unless that name is taken. Two declarations with the same Haxe
 	 *   name get different new names: Elixir has no block scope, so an inlined
-	 *   function's own `var g` must not take over the caller's `g`.
+	 *   function's own `var g` must not take over the caller's `g`. Locals with other
+	 *   names get the same protection from `ShadowedLocals`.
 	 * - One pair keeps one name: Haxe names the iterator of `for (g in m.keys())` after
 	 *   the loop variable (`var g = m.keys(); while (g.hasNext()) { var g = g.next(); }`).
 	 *   The loop variable, whose value is `g.next()` on its same-named iterator, reuses
@@ -252,7 +253,7 @@ class HaxeTempLocals {
 	 * Returns the local `it` when `init` is the call `it.next()`, as in the loop variable
 	 * `var g = g.next()` that Haxe declares for `for (g in m.keys())`; null otherwise.
 	 */
-	static function iteratorOfNextCall(init:Null<TypedExpr>):Null<TVar> {
+	public static function iteratorOfNextCall(init:Null<TypedExpr>):Null<TVar> {
 		if (init == null)
 			return null;
 		return switch (init.expr) {
