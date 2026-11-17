@@ -5,6 +5,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 #if debug_map_keys_reduce_while
 import reflaxe.elixir.ast.ElixirASTPrinter;
 #end
@@ -24,11 +25,47 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * HOW
  * - Inside EBlock/EDo statement lists, detect the pair:
  *   1) `iter = Map.keys(map)` (or `iter = _ = Map.keys(map)`)
- *   2) `Enum.reduce_while(Stream.iterate(...), acc, fn _, acc -> try do if iter.has_next.() do iter = iter.next.(); ... {:cont, acc} else {:halt, acc} end catch ... end end)`
+ *   2) `Enum.reduce_while(Stream.iterate(...), acc, fn _, acc -> try do if iter.has_next.() do x = iter.next.(); ... {:cont, acc} else {:halt, acc} end catch ... end end)`
  * - Replace it with:
- *   `Enum.reduce_while(Map.keys(map), acc, fn iter, acc -> <then-branch-without-next> end)`
+ *   `Enum.reduce_while(Map.keys(map), acc, fn x, acc -> <then-branch-without-next> end)`
  * - When the reduce_while result is used only via an outer accumulator variable, rebind
  *   `{outer} = Enum.reduce_while(...)` so the mutation survives.
+ *
+ * HOW THE ITERATOR AND THE LOOP VARIABLE ARE PAIRED (by shape, not by name)
+ * - Haxe lowers `for (x in it)` to `while (it.hasNext()) { var x = it.next(); ... }`.
+ *   The iterator is the receiver of `has_next` in the loop condition. The loop variable is
+ *   whatever the first statement of the loop body binds to `iterator.next.()`. Its name
+ *   can differ from the iterator's name: Haxe names the iterator `g1` and the loop
+ *   variable `g` when an outer `g` is still read, and a hand-written loop uses any names.
+ *   The loop variable becomes the argument of the new `fn`.
+ * - When the names differ and the rest of the body still reads the iterator, the rewrite
+ *   would leave that read unbound, so the loop is left unchanged.
+ * - The iterator can also be held by the program (`var it = m.keys(); ... for (x in it)`).
+ *   Haxe then copies it into a loop iterator first (`g = it`). The pass follows that copy
+ *   back to an earlier `it = Map.keys(m)` in the same statement list and iterates `it`,
+ *   which holds the keys list. It rewrites only when nothing else reads or rebinds the
+ *   iterator between its binding and the loop, and nothing reads it after the loop: the
+ *   list is not consumed as the Haxe iterator is, so a later read would see other values.
+ * - The rewrite drops the iterator's init statement (`it = Map.keys(m)`), so it runs only
+ *   when no later statement in the same list reads the iterator before rebinding it.
+ *   Otherwise that read would see an older binding with the same name (an argument `it`)
+ *   and compute a wrong value without an error.
+ * - The loop body must start with an advance statement (`x = it.next.()`, `_ = it.next.()`
+ *   or a bare `it.next.()`). A loop that does not take one key per step is left unchanged.
+ * - Inside a closure (a Haxe function expression, or any `fn` that is not a loop lowering's
+ *   `Enum` callback), only the shape that main rewrote is rewritten: a loop variable named
+ *   like its iterator. A write from a closure to a captured local can be lost
+ *   (haxe.elixir.codex-rrsr item 5); a loop that the pass leaves alone throws instead.
+ * - The same name in two places counts as the same variable only inside one statement
+ *   list with no rebinding in between, so it identifies an Elixir binding.
+ *
+ * EXAMPLES (pairing)
+ * Haxe: `for (g in m.keys()) { for (g in n.keys()) acc += g; acc += g * 100; }`
+ * Elixir (inner loop, before): `g1 = Map.keys(n)`, then `if g1.has_next.() do g_2 = g1.next.(); acc = acc + g_2 ...`
+ * Elixir (after): `Enum.reduce_while(Map.keys(n), {acc}, fn g_2, {acc} -> acc = acc + g_2 ... end)`
+ * Haxe: `var it = m.keys(); var acc = 0; for (x in it) acc += x;`
+ * Elixir (after): `it = Map.keys(m)`, `acc = 0`, `{acc} = Enum.reduce_while(it, {acc}, fn x, {acc} -> ... end)`
+ * Covered by test/differential/r16_keys_loop_pairs.
  *
  * ORDERING
  * - This pass must run after late match-chain normalization (notably `MatchBlockRhsExtractLast_Final`)
@@ -53,20 +90,80 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *     {:cont, acc}
  *   end)
  */
+/**
+ * One iterator-driven loop statement, split into the parts that the keys rewrite needs.
+ * `iterVar` is the `has_next` receiver; `loopVar` is the name that the loop body binds to
+ * `iterVar.next.()` (the same name when Haxe names them alike); `thenBody` is the loop body
+ * without that advance statement.
+ */
+private typedef IteratorLoop = {
+	iterVar:String,
+	loopVar:String,
+	initialAcc:ElixirAST,
+	accPattern:EPattern,
+	thenBody:ElixirAST,
+	maybeOuterTupleBind:Null<EPattern>
+};
+
 class MapKeysIteratorReduceWhileRewriteTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
-			return switch (n.def) {
-				case EBlock(stmts):
-					var rewritten = rewriteStatementList(stmts);
-					rewritten == stmts ? n : makeASTWithMeta(EBlock(rewritten), n.metadata, n.pos);
-				case EDo(stmts):
-					var rewrittenDo = rewriteStatementList(stmts);
-					rewrittenDo == stmts ? n : makeASTWithMeta(EDo(rewrittenDo), n.metadata, n.pos);
-				default:
-					n;
-			}
-		});
+		return visit(ast, false);
+	}
+
+	/**
+	 * Rewrites every statement list under `node`, children first (as `transformNode` does),
+	 * and tracks whether the list is inside a closure.
+	 *
+	 * A closure here is any `fn` except the callback that a loop lowering passes to an
+	 * `Enum` function (`Enum.reduce_while(..., fn _, acc -> ... end)`), which threads its
+	 * state through the accumulator. A Haxe function expression (`function() {...}`,
+	 * `x -> ...`) is a closure even when it is passed to `Enum`; the builder records it as
+	 * the `fn`'s source expression. A write from a closure to a captured local can be lost
+	 * (haxe.elixir.codex-rrsr item 5), so inside a closure the pass keeps to the rewrites
+	 * that main made (`rewriteStatementList`): a loop that it leaves alone throws instead of
+	 * computing a wrong value.
+	 */
+	static function visit(node:ElixirAST, inClosure:Bool):ElixirAST {
+		if (node == null || node.def == null)
+			return node;
+		var rebuilt = switch (node.def) {
+			case ERemoteCall(mod, _, args) if (args != null && isEnum(mod)):
+				ElixirASTTransformer.transformAST(node,
+					child -> isLoopCallback(child) ? ElixirASTTransformer.transformAST(child,
+						grandchild -> visit(grandchild, inClosure)) : visit(child, inClosure));
+			case EFn(_):
+				ElixirASTTransformer.transformAST(node, child -> visit(child, true));
+			default:
+				ElixirASTTransformer.transformAST(node, child -> visit(child, inClosure));
+		};
+		return switch (rebuilt.def) {
+			case EBlock(stmts):
+				makeASTWithMeta(EBlock(rewriteStatementList(stmts, inClosure)), rebuilt.metadata, rebuilt.pos);
+			case EDo(stmts):
+				makeASTWithMeta(EDo(rewriteStatementList(stmts, inClosure)), rebuilt.metadata, rebuilt.pos);
+			default:
+				rebuilt;
+		};
+	}
+
+	/** True for an `fn` argument of an `Enum` call that did not come from a Haxe function expression. */
+	static function isLoopCallback(arg:ElixirAST):Bool {
+		if (arg == null || arg.def == null)
+			return false;
+		return switch (arg.def) {
+			case EFn(_): !isHaxeFunctionExpression(arg);
+			default: false;
+		};
+	}
+
+	/** True when the builder recorded a Haxe function expression (`TFunction`) as this node's source. */
+	static function isHaxeFunctionExpression(node:ElixirAST):Bool {
+		if (node.metadata == null || node.metadata.sourceExpr == null)
+			return false;
+		return switch (node.metadata.sourceExpr.expr) {
+			case TFunction(_): true;
+			default: false;
+		};
 	}
 
 	static inline function isModuleName(mod:ElixirAST, name:String):Bool {
@@ -82,7 +179,15 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	static function rewriteStatementList(stmts:Array<ElixirAST>):Array<ElixirAST> {
+	/**
+	 * Rewrites the iterator loops over map keys in one statement list.
+	 *
+	 * Inside a closure (`inClosure`, see `visit`) it makes only the rewrites that main made:
+	 * the loop variable must have the iterator's name, and the program-held iterator variant
+	 * is off. Outside a closure, the loop variable can have another name, and a program-held
+	 * iterator is followed back to its keys list.
+	 */
+	static function rewriteStatementList(stmts:Array<ElixirAST>, inClosure:Bool):Array<ElixirAST> {
 		if (stmts == null || stmts.length < 2)
 			return stmts;
 
@@ -120,23 +225,13 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			// reduce_while, we can still do the rewrite by hoisting the Map.keys expression out of the block.
 			var nestedTail = extractTrailingMapKeysDiscardFromStmtBlock(stmts[i]);
 			if (nestedTail != null && i + 1 < stmts.length) {
-				var reduceAny0 = extractIteratorReduceWhileAnyIter(stmts[i + 1]);
-				if (reduceAny0 != null) {
-					var newFnNested = makeAST(EFn([
-						{
-							args: [PVar(reduceAny0.iterVar), reduceAny0.accPattern],
-							guard: null,
-							body: reduceAny0.thenBody
-						}
-					]));
-					var newReduceNested = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while",
-						[nestedTail.keysExpr, reduceAny0.initialAcc, newFnNested]));
-
+				var reduceAny0 = extractIteratorLoop(stmts[i + 1]);
+				if (reduceAny0 != null && allowedIn(reduceAny0, inClosure)) {
 					var trimmedBlockStmt = nestedTail.rebuildWithoutKeysDiscard();
 					if (trimmedBlockStmt != null)
 						out.push(trimmedBlockStmt);
 
-					out.push(rebuildWrapper(stmts[i + 1], newReduceNested, reduceAny0.maybeOuterTupleBind));
+					out.push(rebuildWrapper(stmts[i + 1], keysReduceWhile(nestedTail.keysExpr, reduceAny0), reduceAny0.maybeOuterTupleBind));
 					i += 2;
 					continue;
 				}
@@ -148,24 +243,24 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			//   Enum.reduce_while(Stream.iterate(...), ...)
 			//
 			// In that shape the init isn't a top-level statement, so hoist it here.
+			// The init binds `iter` and the very next statement reads `iter.has_next`, so the
+			// same name is the same Elixir variable (no rebinding can come in between).
+			// The rewrite drops the init, so it runs only when no later statement reads `iter`
+			// before rebinding it (`deadFrom`). Otherwise that read would see an older binding
+			// with the same name, such as an argument `it`, instead of the iterator: a silent
+			// wrong value. Then the loop stays as it is.
 			var nestedInit = extractTrailingMapKeysInitFromStmtBlock(stmts[i]);
 			if (nestedInit != null && i + 1 < stmts.length) {
-				var reduce0 = extractIteratorReduceWhile(stmts[i + 1], nestedInit.iterVar);
-				if (reduce0 != null) {
-					var newFn0 = makeAST(EFn([
-						{
-							args: [PVar(nestedInit.iterVar), reduce0.accPattern],
-							guard: null,
-							body: reduce0.thenBody
-						}
-					]));
-					var newReduce0 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [nestedInit.keysExpr, reduce0.initialAcc, newFn0]));
-
+				var reduce0 = extractIteratorLoop(stmts[i + 1]);
+				if (reduce0 != null
+					&& reduce0.iterVar == nestedInit.iterVar
+					&& allowedIn(reduce0, inClosure)
+					&& deadFrom(stmts, i + 2, nestedInit.iterVar, reduce0.loopVar != reduce0.iterVar)) {
 					var trimmedBlockStmt0 = nestedInit.rebuildWithoutKeysInit();
 					if (trimmedBlockStmt0 != null)
 						out.push(trimmedBlockStmt0);
 
-					out.push(rebuildWrapper(stmts[i + 1], newReduce0, reduce0.maybeOuterTupleBind));
+					out.push(rebuildWrapper(stmts[i + 1], keysReduceWhile(nestedInit.keysExpr, reduce0), reduce0.maybeOuterTupleBind));
 					i += 2;
 					continue;
 				}
@@ -173,8 +268,11 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 
 			var init = extractMapKeysInit(stmts[i]);
 			if (init != null && i + 1 < stmts.length) {
-				var reduce = extractIteratorReduceWhile(stmts[i + 1], init.iterVar);
-				if (reduce != null) {
+				var reduce = extractIteratorLoop(stmts[i + 1]);
+				if (reduce != null
+					&& reduce.iterVar == init.iterVar
+					&& allowedIn(reduce, inClosure)
+					&& deadFrom(stmts, i + 2, init.iterVar, reduce.loopVar != reduce.iterVar)) {
 					#if debug_map_keys_reduce_while
 					#if sys
 					Sys.println('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
@@ -182,18 +280,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 					trace('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
 					#end
 					#end
-					// Build new reduce_while over Map.keys(mapExpr)
-					var newFn = makeAST(EFn([
-						{
-							args: [PVar(init.iterVar), reduce.accPattern],
-							guard: null,
-							body: reduce.thenBody
-						}
-					]));
-					var newReduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [init.keysExpr, reduce.initialAcc, newFn]));
-
-					var wrappedStmt = rebuildWrapper(stmts[i + 1], newReduceCall, reduce.maybeOuterTupleBind);
-					out.push(wrappedStmt);
+					out.push(rebuildWrapper(stmts[i + 1], keysReduceWhile(init.keysExpr, reduce), reduce.maybeOuterTupleBind));
 					i += 2;
 					continue;
 				}
@@ -205,8 +292,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			// directly over the keys list and drop the now-redundant discard.
 			var keysDiscard = extractMapKeysDiscard(stmts[i]);
 			if (keysDiscard != null && i + 1 < stmts.length) {
-				var reduceAny = extractIteratorReduceWhileAnyIter(stmts[i + 1]);
-				if (reduceAny != null) {
+				var reduceAny = extractIteratorLoop(stmts[i + 1]);
+				if (reduceAny != null && allowedIn(reduceAny, inClosure)) {
 					#if debug_map_keys_reduce_while
 					#if sys
 					Sys.println('[MapKeysReduceWhile] rewrite via discard iterVar=' + reduceAny.iterVar);
@@ -214,18 +301,22 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 					trace('[MapKeysReduceWhile] rewrite via discard iterVar=' + reduceAny.iterVar);
 					#end
 					#end
-					var newFn2 = makeAST(EFn([
-						{
-							args: [PVar(reduceAny.iterVar), reduceAny.accPattern],
-							guard: null,
-							body: reduceAny.thenBody
-						}
-					]));
-					var newReduceCall2 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [keysDiscard, reduceAny.initialAcc, newFn2]));
-
-					var wrappedStmt2 = rebuildWrapper(stmts[i + 1], newReduceCall2, reduceAny.maybeOuterTupleBind);
-					out.push(wrappedStmt2);
+					out.push(rebuildWrapper(stmts[i + 1], keysReduceWhile(keysDiscard, reduceAny), reduceAny.maybeOuterTupleBind));
 					i += 2;
+					continue;
+				}
+			}
+
+			// Variant: the program holds the iterator. `it = Map.keys(m)` comes earlier, and
+			// the loop drives `it` itself or a copy of it (`g = it`) bound before the loop.
+			var held = inClosure ? null : extractIteratorLoop(stmts[i]);
+			if (held != null) {
+				var source = resolveHeldKeysSource(out, held, stmts, i + 1);
+				if (source != null) {
+					if (source.copyIndex >= 0)
+						out.splice(source.copyIndex, 1);
+					out.push(rebuildWrapper(stmts[i], keysReduceWhile(makeAST(EVar(source.keysVar)), held), held.maybeOuterTupleBind));
+					i++;
 					continue;
 				}
 			}
@@ -235,6 +326,187 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		}
 
 		return out;
+	}
+
+	/** Inside a closure, only a loop variable named like its iterator (the shape main rewrote). */
+	static function allowedIn(loop:IteratorLoop, inClosure:Bool):Bool {
+		return !inClosure || loop.loopVar == loop.iterVar;
+	}
+
+	/** Builds `Enum.reduce_while(keys, acc, fn loopVar, accPattern -> body end)` for a matched loop. */
+	static function keysReduceWhile(keysExpr:ElixirAST, loop:IteratorLoop):ElixirAST {
+		var fn = makeAST(EFn([
+			{
+				args: [PVar(loop.loopVar), loop.accPattern],
+				guard: null,
+				body: loop.thenBody
+			}
+		]));
+		return makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [keysExpr, loop.initialAcc, fn]));
+	}
+
+	/**
+	 * Finds the keys list that a loop over a program-held iterator can iterate instead.
+	 *
+	 * Returns the name of the variable bound to `Map.keys(m)`, and the index in `out` of the
+	 * copy `loopIter = it` to drop (-1 when the loop drives `it` itself). Returns null unless:
+	 * - the last binding of the loop's iterator in `out` is `loopIter = Map.keys(m)`, or the
+	 *   copy `loopIter = it` of an earlier `it = Map.keys(m)`;
+	 * - no statement between that binding and the loop reads or rebinds those names;
+	 * - the loop body does not read the keys variable, unless the loop variable shadows it;
+	 * - no later statement reads the iterator or the keys variable before it is bound again.
+	 *
+	 * Example: `it = Map.keys(m)`, `acc = 0`, `g = it`, loop on `g` -> keys variable `it`,
+	 * copy index 2.
+	 */
+	static function resolveHeldKeysSource(out:Array<ElixirAST>, loop:IteratorLoop, stmts:Array<ElixirAST>, after:Int):Null<{keysVar:String, copyIndex:Int}> {
+		var iterVar = loop.iterVar;
+		var bindIndex = lastBindingIndex(out, iterVar, out.length);
+		if (bindIndex < 0 || touchedIn(out, bindIndex + 1, out.length, iterVar))
+			return null;
+		var value = simpleAssignedValue(out[bindIndex], iterVar);
+		if (value == null)
+			return null;
+		value = unwrapNestedDiscard(unwrapParen(value));
+
+		var keysVar = iterVar;
+		var copyIndex = -1;
+		if (!isMapKeysCall(value)) {
+			var copied = switch (value.def) {
+				case EVar(name) if (name != iterVar && name != "_"): name;
+				default: null;
+			};
+			if (copied == null)
+				return null;
+			var keysIndex = lastBindingIndex(out, copied, bindIndex);
+			if (keysIndex < 0)
+				return null;
+			var keysValue = simpleAssignedValue(out[keysIndex], copied);
+			if (keysValue == null || !isMapKeysCall(unwrapNestedDiscard(unwrapParen(keysValue))))
+				return null;
+			if (touchedIn(out, keysIndex + 1, bindIndex, copied) || touchedIn(out, bindIndex + 1, out.length, copied))
+				return null;
+			if (!deadFrom(stmts, after, iterVar, true))
+				return null;
+			keysVar = copied;
+			copyIndex = bindIndex;
+		}
+		if (keysVar != loop.loopVar && refersTo(loop.thenBody, keysVar))
+			return null;
+		if (!deadFrom(stmts, after, keysVar, true))
+			return null;
+		return {keysVar: keysVar, copyIndex: copyIndex};
+	}
+
+	/** Index of the last statement before `end` that binds `name`, or -1. */
+	static function lastBindingIndex(stmts:Array<ElixirAST>, name:String, end:Int):Int {
+		var k = end - 1;
+		while (k >= 0) {
+			if (BinderTransforms.statementBindsName(stmts[k], name))
+				return k;
+			k--;
+		}
+		return -1;
+	}
+
+	/** True when a statement in `stmts[start...end]` reads or binds `name`. */
+	static function touchedIn(stmts:Array<ElixirAST>, start:Int, end:Int, name:String):Bool {
+		for (k in start...end)
+			if (refersTo(stmts[k], name) || BinderTransforms.statementBindsName(stmts[k], name))
+				return true;
+		return false;
+	}
+
+	/**
+	 * True when no statement from `start` on reads `name` before a plain `name = value`
+	 * (whose value does not read it) or another binding replaces it.
+	 *
+	 * A read counts only when it can see the outer binding (`readsOuter`). Example: in
+	 * `show((fn -> k = Map.keys(m); ... k ... end).())` the function binds its own `k`
+	 * before it reads it, so that statement does not read the outer `k`.
+	 *
+	 * `scanRaw` also counts any mention of the name in opaque raw Elixir code. Callers pass
+	 * false for a loop variable named like its iterator: the program cannot name such an
+	 * iterator (Haxe named it after the loop variable), and main rewrote that shape without
+	 * any check.
+	 */
+	static function deadFrom(stmts:Array<ElixirAST>, start:Int, name:String, scanRaw:Bool):Bool {
+		for (k in start...stmts.length) {
+			var rebound = simpleAssignedValue(stmts[k], name);
+			if (rebound != null)
+				return !readsOuter(rebound, name, scanRaw);
+			if (readsOuter(stmts[k], name, scanRaw))
+				return false;
+			if (BinderTransforms.statementBindsName(stmts[k], name))
+				return true;
+		}
+		return true;
+	}
+
+	/**
+	 * True when `node` reads `name` from the enclosing scope: a free reference that no
+	 * binder inside `node` shadows (`VarUseAnalyzer.usesFreeVarExact`), or, with `scanRaw`,
+	 * any mention of `name` in opaque raw Elixir code (`mentionsInRaw`).
+	 */
+	static function readsOuter(node:ElixirAST, name:String, scanRaw:Bool):Bool {
+		if (VarUseAnalyzer.usesFreeVarExact(node, name))
+			return true;
+		return scanRaw && mentionsInRaw(node, name);
+	}
+
+	/**
+	 * True when `node` reads `name` anywhere (`VarUseAnalyzer.stmtUsesVarExact`) or
+	 * mentions it in raw Elixir code (`mentionsInRaw`). The checks of the new rewrite
+	 * variants use it, so they fail closed: a doubtful mention leaves the loop unchanged.
+	 */
+	static function refersTo(node:ElixirAST, name:String):Bool {
+		return VarUseAnalyzer.stmtUsesVarExact(node, name) || mentionsInRaw(node, name);
+	}
+
+	/**
+	 * True when raw Elixir code under `node` contains `name` as a whole word: its
+	 * neighbours are not letters, digits or `_`.
+	 *
+	 * WHY
+	 * - The compiler cannot parse raw code, so this check fails closed. It also counts the
+	 *   name inside strings, charlists, sigils and comments, after `.` (`1..it`) and before
+	 *   `.` (`it.current`). A tokenizer that skips quoted text misses real reads such as
+	 *   `'#{is_map(it)}'` or `?' == 39 and is_map(it)`, and then a loop that main left alone
+	 *   gave a wrong value instead of an error.
+	 * - The cost is that a word such as `it` in a string keeps a loop unchanged. Only the
+	 *   rewrite variants that main did not have use this check; the same-name loop that
+	 *   main rewrote does not.
+	 */
+	static function mentionsInRaw(node:ElixirAST, name:String):Bool {
+		if (name == null || name.length == 0)
+			return false;
+		final word = new EReg("(^|[^A-Za-z0-9_])" + EReg.escape(name) + "($|[^A-Za-z0-9_])", "");
+		var mentioned = false;
+		function scan(n:ElixirAST):ElixirAST {
+			if (mentioned || n == null || n.def == null)
+				return n;
+			switch (n.def) {
+				case ERaw(code):
+					if (code != null && word.match(code))
+						mentioned = true;
+				default:
+					ElixirASTTransformer.transformAST(n, scan);
+			}
+			return n;
+		}
+		scan(node);
+		return mentioned;
+	}
+
+	/** The value of `name = value` (either match form); null for any other statement. */
+	static function simpleAssignedValue(stmt:ElixirAST, name:String):Null<ElixirAST> {
+		if (stmt == null || stmt.def == null)
+			return null;
+		return switch (stmt.def) {
+			case EMatch(PVar(bound), value) if (bound == name): value;
+			case EBinary(Match, {def: EVar(bound)}, value) if (bound == name): value;
+			default: null;
+		};
 	}
 
 	private static function rebuildWrapper(originalStmt:ElixirAST, rewrittenReduce:ElixirAST, outerTupleBind:Null<EPattern>):ElixirAST {
@@ -447,106 +719,6 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	private static function extractIteratorReduceWhile(stmt:ElixirAST, iterVar:String):Null<{
-		initialAcc:ElixirAST,
-		accPattern:EPattern,
-		thenBody:ElixirAST,
-		maybeOuterTupleBind:Null<EPattern>
-	}> {
-		if (stmt == null || stmt.def == null)
-			return null;
-
-		var callNode:Null<ElixirAST> = null;
-		// Unwrap common wrappers: `_ = Enum.reduce_while(...)` or bare call.
-		switch (stmt.def) {
-			case EMatch(pat, rhs):
-				callNode = rhs;
-			case EBinary(Match, left, rhs):
-				switch (left.def) {
-					case EVar("_") | EUnderscore: callNode = rhs;
-					default: callNode = stmt;
-				}
-			default:
-				callNode = stmt;
-		}
-
-		if (callNode == null || callNode.def == null)
-			return null;
-		// Some passes wrap statements in parens or single-statement blocks.
-		callNode = unwrapSingleStatementBlock(callNode);
-
-		// Expect Enum.reduce_while(Stream.iterate(...), acc, fn _, accPat -> try do if iter.has_next.() do ... end catch ... end end)
-		var initialAcc:Null<ElixirAST> = null;
-		var fnNode:Null<ElixirAST> = null;
-
-		switch (unwrapParen(callNode).def) {
-			case ERemoteCall(mod, "reduce_while", args) if (isEnum(mod) && args != null && args.length == 3):
-				if (!isStreamIterate(args[0]))
-					return null;
-				initialAcc = args[1];
-				fnNode = args[2];
-			case ECall(target, "reduce_while", args) if (target != null && isEnum(target) && args != null && args.length == 3):
-				if (!isStreamIterate(args[0]))
-					return null;
-				initialAcc = args[1];
-				fnNode = args[2];
-			default:
-				return null;
-		}
-
-		fnNode = fnNode != null ? unwrapSingleStatementBlock(fnNode) : fnNode;
-
-		var accPattern:Null<EPattern> = null;
-		var thenBody:Null<ElixirAST> = null;
-
-		switch (fnNode.def) {
-			case EFn(clauses) if (clauses != null && clauses.length == 1):
-				var clause = clauses[0];
-				if (clause.args == null || clause.args.length != 2)
-					return null;
-				accPattern = clause.args[1];
-
-				var extracted = extractTryIfThenBody(clause.body, iterVar);
-				if (extracted == null)
-					return null;
-				thenBody = extracted;
-			default:
-				return null;
-		}
-
-		// If the reduce_while call is used as a bare statement and initialAcc is `{outer}`,
-		// bind it so mutations persist: `{outer} = Enum.reduce_while(...)`.
-		var outerTupleBind:Null<EPattern> = null;
-		var wrapperIsDiscard = switch (stmt.def) {
-			case EMatch(pattern, _):
-				switch (pattern) {
-					case PWildcard | PVar("_"): true;
-					default: false;
-				}
-			case EBinary(Match, left, _):
-				switch (left.def) {
-					case EVar("_") | EUnderscore: true;
-					default: false;
-				}
-			default:
-				false;
-		};
-		var isWrapped = switch (stmt.def) {
-			case EMatch(_, _) | EBinary(Match, _, _): true;
-			default: false;
-		};
-		// Bind when the reduce_while is a bare statement *or* wrapped in a discard assignment.
-		if (!isWrapped || wrapperIsDiscard)
-			outerTupleBind = extractSingleVarTuplePattern(initialAcc);
-
-		return {
-			initialAcc: initialAcc,
-			accPattern: accPattern,
-			thenBody: thenBody,
-			maybeOuterTupleBind: outerTupleBind
-		};
-	}
-
 	private static function extractSingleVarTuplePattern(initialAcc:ElixirAST):Null<EPattern> {
 		if (initialAcc == null || initialAcc.def == null)
 			return null;
@@ -558,36 +730,15 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	private static function extractTryIfThenBody(body:ElixirAST, iterVar:String):Null<ElixirAST> {
-		if (body == null || body.def == null)
-			return null;
-
-		// Expect: try do if iter.has_next.() do <then> else <else> end catch ... end
-		var root = unwrapSingleStatementBlock(body);
-		switch (root.def) {
-			case ETry(tryBody, rescue, catchClauses, afterBlock, elseBlock):
-				var inner = unwrapSingleStatementBlock(tryBody);
-				switch (inner.def) {
-					case EIf(cond, thenBranch, _elseBranch):
-						if (!isHasNextCall(cond, iterVar))
-							return null;
-						var cleanedThen = dropLeadingNextAdvance(thenBranch, iterVar);
-						return makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock));
-					default:
-						return null;
-				}
-			default:
-				return null;
-		}
-	}
-
-	private static function extractIteratorReduceWhileAnyIter(stmt:ElixirAST):Null<{
-		iterVar:String,
-		initialAcc:ElixirAST,
-		accPattern:EPattern,
-		thenBody:ElixirAST,
-		maybeOuterTupleBind:Null<EPattern>
-	}> {
+	/**
+	 * Matches the iterator-driven loop statement
+	 * `Enum.reduce_while(Stream.iterate(...), acc, fn _, acc -> try do if iter.has_next.() do ... end ... end end)`,
+	 * optionally wrapped in `_ = ...` or `{outer} = ...`, and returns its parts: the iterator
+	 * (`has_next` receiver), the loop variable, and the body without the `x = iter.next.()` advance.
+	 * Returns null for any other statement, and when the loop cannot be rewritten safely
+	 * (see `splitLeadingNextAdvance`).
+	 */
+	private static function extractIteratorLoop(stmt:ElixirAST):Null<IteratorLoop> {
 		if (stmt == null || stmt.def == null)
 			return null;
 
@@ -630,6 +781,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		var accPattern:Null<EPattern> = null;
 		var thenBody:Null<ElixirAST> = null;
 		var iterVar:Null<String> = null;
+		var loopVar:Null<String> = null;
 
 		switch (fnNode.def) {
 			case EFn(clauses) if (clauses != null && clauses.length == 1):
@@ -642,6 +794,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 				if (extracted == null)
 					return null;
 				iterVar = extracted.iterVar;
+				loopVar = extracted.loopVar;
 				thenBody = extracted.thenBody;
 			default:
 				return null;
@@ -671,6 +824,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 
 		return {
 			iterVar: iterVar,
+			loopVar: loopVar,
 			initialAcc: initialAcc,
 			accPattern: accPattern,
 			thenBody: thenBody,
@@ -678,7 +832,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	private static function extractTryIfThenBodyAnyIter(body:ElixirAST):Null<{iterVar:String, thenBody:ElixirAST}> {
+	private static function extractTryIfThenBodyAnyIter(body:ElixirAST):Null<{iterVar:String, loopVar:String, thenBody:ElixirAST}> {
 		if (body == null || body.def == null)
 			return null;
 
@@ -691,8 +845,14 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 						var iterVar = extractHasNextVar(cond);
 						if (iterVar == null)
 							return null;
-						var cleanedThen = dropLeadingNextAdvance(thenBranch, iterVar);
-						return {iterVar: iterVar, thenBody: makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock))};
+						var split = splitLeadingNextAdvance(thenBranch, iterVar);
+						if (split == null)
+							return null;
+						return {
+							iterVar: iterVar,
+							loopVar: split.loopVar,
+							thenBody: makeAST(ETry(split.body, rescue, catchClauses, afterBlock, elseBlock))
+						};
 					default:
 						return null;
 				}
@@ -739,62 +899,53 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	private static function dropLeadingNextAdvance(thenBranch:ElixirAST, iterVar:String):ElixirAST {
+	/**
+	 * Splits the loop's advance statement from the rest of the `has_next` branch.
+	 *
+	 * Returns the loop variable and the remaining statements. The loop variable is the name
+	 * that the first statement binds to `iter.next.()` (`x = iter.next.()` gives `x`; the
+	 * name can differ from `iter`). For `_ = iter.next.()` or a bare `iter.next.()`, it is
+	 * `iter`, as before.
+	 *
+	 * Returns null, so the loop is left unchanged, when:
+	 * - the branch does not start with one of these advance statements. Such a loop does not
+	 *   take one key per step (`while (it.hasNext()) { n++; if (n > 5) break; }` never
+	 *   advances, and `if (rare) it.next();` advances only sometimes), so a loop over the
+	 *   keys list would compute another result;
+	 * - the loop variable differs from `iter` and a later statement still reads `iter`: the
+	 *   new `fn` binds only the loop variable, so that read would be lost.
+	 */
+	private static function splitLeadingNextAdvance(thenBranch:ElixirAST, iterVar:String):Null<{loopVar:String, body:ElixirAST}> {
 		if (thenBranch == null || thenBranch.def == null)
-			return thenBranch;
+			return null;
 		var stmts:Array<ElixirAST> = switch (unwrapParen(thenBranch).def) {
 			case EBlock(ss): ss;
 			case EDo(ss): ss;
 			default: [thenBranch];
 		};
 		if (stmts.length == 0)
-			return thenBranch;
+			return null;
 
-		var startIndex = 0;
-		// Drop the loop's "advance" statement if it is the first statement:
-		// - `iter = iter.next.()`
-		// - `_ = iter.next.()`
-		// - `iter.next.()` (statement position)
-		if (isNextAdvanceStmt(stmts[0], iterVar))
-			startIndex = 1;
-
-		var outStmts = stmts.slice(startIndex);
-		return makeAST(EBlock(outStmts));
+		var first = stmts[0];
+		if (isNextDiscard(first, iterVar) || isNextCall(first, iterVar))
+			return {loopVar: iterVar, body: makeAST(EBlock(stmts.slice(1)))};
+		var bound = nextAssignTarget(first, iterVar);
+		if (bound == null)
+			return null;
+		var rest = stmts.slice(1);
+		if (bound != iterVar && Lambda.exists(rest, s -> refersTo(s, iterVar)))
+			return null;
+		return {loopVar: bound, body: makeAST(EBlock(rest))};
 	}
 
-	private static function isHasNextCall(expr:ElixirAST, iterVar:String):Bool {
-		if (expr == null || expr.def == null)
-			return false;
-		if (extractStructuralCallReceiver(expr, "has_next") == iterVar)
-			return true;
-		return switch (unwrapParen(expr).def) {
-			case ECall(target, "", args) if (args != null && args.length == 0):
-				switch (unwrapParen(target).def) {
-					case EField({def: EVar(v)}, "has_next") if (v == iterVar):
-						true;
-					default:
-						false;
-				}
-			default:
-				false;
-		};
-	}
-
-	private static function isNextAssign(stmt:ElixirAST, iterVar:String):Bool {
+	/** Returns `x` when `stmt` is `x = iter.next.()` (either match form, `x` not `_`); null otherwise. */
+	private static function nextAssignTarget(stmt:ElixirAST, iterVar:String):Null<String> {
 		if (stmt == null || stmt.def == null)
-			return false;
+			return null;
 		return switch (stmt.def) {
-			case EMatch(PVar(name), rhs) if (name == iterVar):
-				isNextCall(rhs, iterVar);
-			case EBinary(Match, left, rhs):
-				switch (left.def) {
-					case EVar(varName) if (varName == iterVar):
-						isNextCall(rhs, iterVar);
-					default:
-						false;
-				}
-			default:
-				false;
+			case EMatch(PVar(name), rhs) if (name != "_" && isNextCall(rhs, iterVar)): name;
+			case EBinary(Match, {def: EVar(name)}, rhs) if (name != "_" && isNextCall(rhs, iterVar)): name;
+			default: null;
 		};
 	}
 
@@ -816,19 +967,6 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			default:
 				false;
 		};
-	}
-
-	private static function isNextAdvanceStmt(stmt:ElixirAST, iterVar:String):Bool {
-		if (stmt == null || stmt.def == null)
-			return false;
-		if (isNextAssign(stmt, iterVar))
-			return true;
-		if (isNextDiscard(stmt, iterVar))
-			return true;
-		// Bare call expression in statement position.
-		if (isNextCall(stmt, iterVar))
-			return true;
-		return false;
 	}
 
 	private static function isNextCall(expr:ElixirAST, iterVar:String):Bool {

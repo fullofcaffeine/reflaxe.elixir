@@ -64,7 +64,7 @@ import haxe.macro.TypedExprTools;
  * - A variable that the loop or switch lowering binds as an Elixir `fn` argument or a
  *   clause pattern is never renamed, because Elixir already scopes it: the element of
  *   a `for` loop or comprehension (`var x = _g1[_g]`), the index of a range loop
- *   (`var i = _g++`), an iterator element (`var x = it.next()` directly in the body of
+ *   (`var i = _g++`), an iterator element (`var x = it.next()` as the first statement of
  *   `while (it.hasNext())`), a key or value of a key-value loop (`var k = _g1.key`),
  *   and a match binder (`var value = _g1`). See `isLoweredBinderInit`.
  * - A loop variable `var k = k.next()` always has the Elixir name of its iterator `k`,
@@ -258,7 +258,7 @@ class ShadowedLocals {
 	 * and the lowering may not carry the new name to every read.
 	 *
 	 * An iterator element `var x = it.next()` counts only in the loop shape, which
-	 * `ShadowScan` checks: directly in the body of `while (it.hasNext())`. Elsewhere,
+	 * `ShadowScan` checks: the first statement of `while (it.hasNext())`. Elsewhere,
 	 * such as `var tok = lx.next()` in an inlined function, it is an ordinary local.
 	 */
 	public static function isLoweredBinderInit(init:Null<TypedExpr>):Bool {
@@ -348,7 +348,7 @@ private class ShadowScan {
 	/** For each read, its position and the outermost open loop that starts after the declaration. */
 	final liveReads = new Map<Int, Array<{at:Int, loop:Null<PositionRange>}>>();
 
-	/** IDs of `var x = it.next()` declared directly in the body of `while (it.hasNext())`. */
+	/** IDs of `var x = it.next()` declared as the first statement of `while (it.hasNext())`. */
 	final iteratorElements = new Map<Int, Bool>();
 
 	var position = 0;
@@ -450,35 +450,15 @@ private class ShadowScan {
 	}
 
 	/**
-	 * Records each `var x = it.next()` directly in `body` when `cond` is `it.hasNext()`
-	 * on the same iterator: the element of an iterator loop, which the loop lowering
-	 * binds as an fn argument.
+	 * Records the element `x` of a loop `while (it.hasNext()) { var x = it.next(); ... }`:
+	 * the first declaration of the body, on the same iterator (`HaxeTempLocals.iteratorLoopHead`).
+	 * The loop lowering binds it as an fn argument. A later `var y = it.next()` in the body
+	 * is an ordinary local: the lowering leaves such a loop unchanged.
 	 */
 	function markIteratorElements(cond:TypedExpr, body:TypedExpr):Void {
-		final iterator = hasNextReceiver(cond);
-		if (iterator == null)
-			return;
-		switch (body.expr) {
-			case TBlock(exprs):
-				for (statement in exprs)
-					switch (statement.expr) {
-						case TVar(v, init) if (v != null):
-							final source = HaxeTempLocals.iteratorOfNextCall(init);
-							if (source != null && source.id == iterator.id) iteratorElements.set(v.id, true);
-						default:
-					}
-			default:
-		}
-	}
-
-	/** Returns `it` when `cond` is the call `it.hasNext()`; null otherwise. */
-	static function hasNextReceiver(cond:TypedExpr):Null<TVar> {
-		return switch (cond.expr) {
-			case TParenthesis(inner) | TMeta(_, inner): hasNextReceiver(inner);
-			case TCall({expr: TField({expr: TLocal(it)}, FInstance(_, _, cf) | FAnon(cf) | FClosure(_, cf))}, []) if (cf.get().name == "hasNext"): it;
-			case TCall({expr: TField({expr: TLocal(it)}, FDynamic("hasNext"))}, []): it;
-			default: null;
-		};
+		final head = HaxeTempLocals.iteratorLoopHead(cond, body);
+		if (head != null)
+			iteratorElements.set(head.element.id, true);
 	}
 
 	public function walk(e:TypedExpr):Void {
