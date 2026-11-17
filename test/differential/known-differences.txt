@@ -27,3 +27,4 @@ p19_iife DIFF haxe.elixir.codex-rrsr item 4: iife_side_out and iife_side, a side
 q02_exits DIFF haxe.elixir.codex-rrsr item 3: thr_boom, a throw inside a nested while inside try loses earlier pushes (also wrong with the local renamed from g)
 q03_scopes DIFF haxe.elixir.codex-rrsr item 5: closure and closureInFor, pushes made inside a closure are lost (also wrong with the local renamed from g)
 q14_comp_in_iter DIFF haxe.elixir.codex-lw0k comment: comprehension used as the iterable of an inner clause overwrites the outer state
+r18_name_drift_binders COMPILE-FAIL:elixir haxe.elixir.codex-hhp5 LocalVarReferenceFix moves reads of a fn argument, loop element or catch binder to the inner shadow (q -> q1); NumericSuffixVarNormalize renames q1 but not its reads inside an interpolated string (undefined q1, q2, v2, e1)
