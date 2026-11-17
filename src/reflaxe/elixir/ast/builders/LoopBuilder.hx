@@ -2807,6 +2807,11 @@ class LoopBuilder {
 			// If the user body mutates outer locals, lower to Enum.reduce with an explicit
 			// state accumulator so mutations survive across iterations.
 			var mutated = MutabilityDetector.detectMutatedVariables(forInArrayPattern.userBody);
+			// The element local is declared fresh for each iteration (`var item = array[g]`), and
+			// the reducer binds it as `fn item, ...`. An assignment to it in the body, such as
+			// `if (item > 1) item = 0;`, only changes this iteration. It is not outer state, so
+			// it must not join the accumulator tuple: there is no outer `item` to seed it from.
+			mutated.remove(forInArrayPattern.elementVar.id);
 			var loopControl = analyzeCurrentLoopControl(forInArrayPattern.userBody);
 			var bodyContainsLoopControl = loopControl.hasBreak || loopControl.hasContinue;
 			var bodyContainsReturn = containsNonLocalReturn(forInArrayPattern.userBody);
@@ -3770,6 +3775,7 @@ class LoopBuilder {
 	static function detectForInArrayPattern(econd:TypedExpr, body:TypedExpr):Null<{
 		arrayExpr:TypedExpr,
 		counterVar:TVar,
+		elementVar:TVar,
 		elementVarName:String,
 		isExclusive:Bool,
 		userBody:TypedExpr
@@ -3819,6 +3825,7 @@ class LoopBuilder {
 			};
 		}
 
+		var elementVar:Null<TVar> = null;
 		var elementVarName:Null<String> = null;
 		var userStmtsStart = 0;
 
@@ -3837,6 +3844,7 @@ class LoopBuilder {
 							};
 							if (!sameArray)
 								return null;
+							elementVar = v;
 							elementVarName = v.name;
 							userStmtsStart = 1;
 						}
@@ -3844,7 +3852,7 @@ class LoopBuilder {
 				}
 			default:
 		}
-		if (elementVarName == null)
+		if (elementVar == null || elementVarName == null)
 			return null;
 
 		// Second statement: counter++
@@ -3896,6 +3904,7 @@ class LoopBuilder {
 		return {
 			arrayExpr: arrayExpr,
 			counterVar: counterVar,
+			elementVar: elementVar,
 			elementVarName: elementVarName,
 			isExclusive: isExclusive,
 			userBody: userBody

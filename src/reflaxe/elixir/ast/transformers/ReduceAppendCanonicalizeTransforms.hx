@@ -27,7 +27,8 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
 	* HOW
 	* - Match ERemoteCall(_, "reduce", [list, init, fn]) with single-clause EFn having two args `(binder, acc)`.
 	* - Inside the reducer body:
-	*   1) Remember a local alias of the binder if present: `local = binder`.
+	*   1) Remember a local alias of the binder if present: `local = binder`, and only when
+	*      `ReduceAccAliasUnifyTransforms.isFoldableBinderAlias` proves it keeps the binder's value.
 	*   2) Rewrite any `alias = Enum.concat(alias, [expr])` to `acc = Enum.concat(acc, [expr'])` where expr' replaces
 	*      occurrences of the local alias with the binder.
 	*   3) Keep all other statements; ensure body still returns acc.
@@ -185,6 +186,12 @@ class ReduceAppendCanonicalizeTransforms {
 										if (lhs2 != null && rhsIsBinder2) elementAlias = lhs2;
 									default:
 								}
+							// Reading the binder in place of the alias is only right when the alias
+							// keeps the binder's value. `t = x`, `t = t + 100`, `acc ++ [t]` must
+							// append `t`, not `x` (haxe.elixir.codex-3qab).
+							if (elementAlias != null
+								&& !ReduceAccAliasUnifyTransforms.isFoldableBinderAlias(cl.body, elementAlias, binderName))
+								elementAlias = null;
 							#if debug_reduce_append_canon
 							#end
 							// Second pass: rewrite alias concat to acc concat and substitute alias->binder in RHS list expr

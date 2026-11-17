@@ -19,7 +19,6 @@
 p03_iters DIFF haxe.elixir.codex-rrsr item 6: user-class iterator (Countdown) in a comprehension, inner a_custom crashes and outer custom_a also fails; a_kvarr and a_str match when run alone
 p04_scopes COMPILE-FAIL:elixir haxe.elixir.codex-rrsr item 2: throw in a comprehension element prints Enum.concat(g_acc, [raise ..., [...]]), an Elixir syntax error
 p05_names DIFF haxe.elixir.codex-rrsr item 1: user local g_acc read in a nested comprehension is hidden by the reducer parameter; ArithmeticError, later lines missing
-p09_while DIFF haxe.elixir.codex-rrsr item 7: comp_while_body, the while result inside a comprehension body is dropped
 p11_scopes2 DIFF haxe.elixir.codex-lw0k comp_in_comp: nested comprehension used as a value inside another comprehension element gives 0
 p13_closures DIFF haxe.elixir.codex-rrsr item 5: iter_capture, mutation of a captured local inside Lambda.iter is lost
 p16_valueblocks DIFF haxe.elixir.codex-rrsr item 3: try_in_loop, a throw inside a nested loop loses earlier pushes

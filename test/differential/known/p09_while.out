@@ -1,5 +1,0 @@
-for_while=[10,20,21,30,31,32]
-comp_while_body=[2,4,6]
-while_for=[1,2,3,11,12,13]
-stmt_keys=[a1,b2]
-[exit status 0]
