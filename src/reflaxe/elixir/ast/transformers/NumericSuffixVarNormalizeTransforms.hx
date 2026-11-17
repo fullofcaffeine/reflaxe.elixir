@@ -246,6 +246,13 @@ class NumericSuffixVarNormalizeTransforms {
 				used.set(k, true);
 		// Raw code reads these names and a rename cannot follow them there: keep each such
 		// binder, and never pick one of them as a new name.
+		// Side effect: a raw read of the base now counts as "base declared" below, so this
+		// renames more binders than before. Example: in `fn x2 -> IO.puts("saw #{x}"); x2 + 1 end`
+		// the base `x` is read only in raw text. Before, `x2` was kept; now it becomes
+		// `x_value`. This is safe: the binder itself is not read in raw code (skipped below),
+		// so the rename reaches the binder and every `EVar` read of it. The new name is not
+		// in `used` (this scope's binders, reserved names, raw reads and reads), the same
+		// check that the existing "base declared" path relies on. Only the spelling changes.
 		if (rawNames != null)
 			for (k in rawNames.keys())
 				used.set(k, true);

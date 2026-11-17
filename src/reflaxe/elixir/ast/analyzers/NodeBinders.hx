@@ -24,7 +24,7 @@ import reflaxe.elixir.ast.ElixirPatternChildren;
  *
  * WHY
  * - A pass that renames a reference because "its name is not bound in this function"
- *   must see every binder. Several passes collected only the `def` arguments and the
+ *   must see every binder it can. Several passes collected only the `def` arguments and the
  *   `=` patterns. A `fn q -> ... end` argument then looked unbound, and the reference
  *   `q` was rewritten to another variable `q1`: the program computed with the wrong
  *   value (`haxe.elixir.codex-hhp5`).
@@ -33,8 +33,18 @@ import reflaxe.elixir.ast.ElixirPatternChildren;
  * HOW
  * - A switch over the binder-owning node kinds, then `ElixirPatternChildren.walk` over
  *   each owned pattern. The order of calls is deterministic (field order).
- * - `EBinary(Match, ...)`, the expression form of `a = b = rhs`, is not a pattern; its
- *   caller handles it.
+ * - `EBinary(Match, ...)`, the expression form of `a = rhs`, is not a pattern node, so
+ *   `forEach` reports nothing for it. `LocalVarReferenceFixTransforms` adds the plain
+ *   variables of an `a = b = rhs` chain itself.
+ *
+ * LIMITS
+ * - This is not every binding in the program. It does not see names bound:
+ *   - by an expression-form match whose left side is not a plain variable
+ *     (`{a, b} = rhs` as `EBinary(Match, ETuple(...), rhs)`);
+ *   - inside raw code (`ERaw`, `__elixir__` text);
+ *   - by macros, such as an Ecto query binding `[t]` in `where(query, [t], t.name)`.
+ * - So "no binder declares this name" does not prove that a read is undefined. Use the
+ *   result to block a rewrite, not to choose a new name.
  *
  * EXAMPLES
  * - `fn q -> q * 2 end`                         -> `q`

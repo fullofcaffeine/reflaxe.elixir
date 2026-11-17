@@ -7,6 +7,8 @@
 //   to the inner `q1`, because it did not count those binders as declared;
 // - NumericSuffixVarNormalize renamed the binder `q1` but not its reads inside an interpolated
 //   string, so the read was undefined and the declaration was dropped.
+// The control `rawBoundNextToNumberedArg` (review probe z01) checks that LocalVarReferenceFix takes
+// rename targets only from def arguments and `=` binders, so a raw-bound read stays put.
 // Reference: haxe --interp. Run: scripts/test-differential.sh --fixture r18_name_drift_binders
 enum Res {
 	Ok(value:Int);
@@ -143,6 +145,22 @@ class Main {
 		return out;
 	}
 
+	// Control: a name bound only by raw Elixir code, next to a lambda argument with the same
+	// name plus a digit. The read of `base` is valid but has no binder that the compiler can
+	// see, so a shape rule must not move it to `base1` (main gets this right). The escape
+	// hatch is the boundary under test: no typed Haxe surface binds a name that the compiler
+	// cannot see.
+	static function rawBoundNextToNumberedArg(xs:Array<Int>):Int {
+		#if elixir
+		untyped __elixir__('{base, _} = {41, 0}');
+		var b:Int = untyped base;
+		#else
+		var b:Int = 41;
+		#end
+		var ys = xs.map(function(base1) return base1 + 1);
+		return b + ys.length;
+	}
+
 	static function main() {
 		run("shadowOfClosureArg", () -> shadowOfClosureArg(4));
 		run("lambdaArgInnerShadow", () -> lambdaArgInnerShadow([1, 2]));
@@ -153,5 +171,6 @@ class Main {
 		run("nestedLoops", () -> nestedLoops());
 		run("threeLevels", () -> threeLevels());
 		run("digitNamedLocals", () -> digitNamedLocals(3));
+		run("rawBoundNextToNumberedArg", () -> rawBoundNextToNumberedArg([1, 2]));
 	}
 }
