@@ -258,7 +258,7 @@ class HaxeTempLocals {
 	 * Use this, not `iteratorOfNextCall` alone, to pair a loop variable with its iterator:
 	 * `var g = g.next()` outside such a loop (a linked-list step) is not a loop variable.
 	 */
-	static function iteratorLoopHead(cond:TypedExpr, body:TypedExpr):Null<{iterator:TVar, element:TVar}> {
+	public static function iteratorLoopHead(cond:TypedExpr, body:TypedExpr):Null<{iterator:TVar, element:TVar}> {
 		final iterator = receiverOfZeroArgumentCall(cond, "hasNext");
 		if (iterator == null)
 			return null;
