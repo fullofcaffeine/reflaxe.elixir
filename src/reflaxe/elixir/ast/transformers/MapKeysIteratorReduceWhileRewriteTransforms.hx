@@ -46,6 +46,12 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   which holds the keys list. It rewrites only when nothing else reads or rebinds the
  *   iterator between its binding and the loop, and nothing reads it after the loop: the
  *   list is not consumed as the Haxe iterator is, so a later read would see other values.
+ * - The rewrite drops the iterator's init statement (`it = Map.keys(m)`), so it runs only
+ *   when no later statement in the same list reads the iterator before rebinding it.
+ *   Otherwise that read would see an older binding with the same name (an argument `it`)
+ *   and compute a wrong value without an error.
+ * - The loop body must start with an advance statement (`x = it.next.()`, `_ = it.next.()`
+ *   or a bare `it.next.()`). A loop that does not take one key per step is left unchanged.
  * - The same name in two places counts as the same variable only inside one statement
  *   list with no rebinding in between, so it identifies an Elixir binding.
  *
@@ -182,10 +188,14 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			// In that shape the init isn't a top-level statement, so hoist it here.
 			// The init binds `iter` and the very next statement reads `iter.has_next`, so the
 			// same name is the same Elixir variable (no rebinding can come in between).
+			// The rewrite drops the init, so it runs only when no later statement reads `iter`
+			// before rebinding it (`deadFrom`). Otherwise that read would see an older binding
+			// with the same name, such as an argument `it`, instead of the iterator: a silent
+			// wrong value. Then the loop stays as it is.
 			var nestedInit = extractTrailingMapKeysInitFromStmtBlock(stmts[i]);
 			if (nestedInit != null && i + 1 < stmts.length) {
 				var reduce0 = extractIteratorLoop(stmts[i + 1]);
-				if (reduce0 != null && reduce0.iterVar == nestedInit.iterVar) {
+				if (reduce0 != null && reduce0.iterVar == nestedInit.iterVar && deadFrom(stmts, i + 2, nestedInit.iterVar)) {
 					var trimmedBlockStmt0 = nestedInit.rebuildWithoutKeysInit();
 					if (trimmedBlockStmt0 != null)
 						out.push(trimmedBlockStmt0);
@@ -199,7 +209,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			var init = extractMapKeysInit(stmts[i]);
 			if (init != null && i + 1 < stmts.length) {
 				var reduce = extractIteratorLoop(stmts[i + 1]);
-				if (reduce != null && reduce.iterVar == init.iterVar) {
+				if (reduce != null && reduce.iterVar == init.iterVar && deadFrom(stmts, i + 2, init.iterVar)) {
 					#if debug_map_keys_reduce_while
 					#if sys
 					Sys.println('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
@@ -762,29 +772,34 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	 *
 	 * Returns the loop variable and the remaining statements. The loop variable is the name
 	 * that the first statement binds to `iter.next.()` (`x = iter.next.()` gives `x`; the
-	 * name can differ from `iter`). For `_ = iter.next.()`, a bare `iter.next.()` or no
-	 * advance statement, it is `iter`, as before.
+	 * name can differ from `iter`). For `_ = iter.next.()` or a bare `iter.next.()`, it is
+	 * `iter`, as before.
 	 *
-	 * Returns null when the loop variable differs from `iter` and a later statement still
-	 * reads `iter`: the new `fn` binds only the loop variable, so that read would be lost.
+	 * Returns null, so the loop is left unchanged, when:
+	 * - the branch does not start with one of these advance statements. Such a loop does not
+	 *   take one key per step (`while (it.hasNext()) { n++; if (n > 5) break; }` never
+	 *   advances, and `if (rare) it.next();` advances only sometimes), so a loop over the
+	 *   keys list would compute another result;
+	 * - the loop variable differs from `iter` and a later statement still reads `iter`: the
+	 *   new `fn` binds only the loop variable, so that read would be lost.
 	 */
 	private static function splitLeadingNextAdvance(thenBranch:ElixirAST, iterVar:String):Null<{loopVar:String, body:ElixirAST}> {
 		if (thenBranch == null || thenBranch.def == null)
-			return {loopVar: iterVar, body: thenBranch};
+			return null;
 		var stmts:Array<ElixirAST> = switch (unwrapParen(thenBranch).def) {
 			case EBlock(ss): ss;
 			case EDo(ss): ss;
 			default: [thenBranch];
 		};
 		if (stmts.length == 0)
-			return {loopVar: iterVar, body: thenBranch};
+			return null;
 
 		var first = stmts[0];
 		if (isNextDiscard(first, iterVar) || isNextCall(first, iterVar))
 			return {loopVar: iterVar, body: makeAST(EBlock(stmts.slice(1)))};
 		var bound = nextAssignTarget(first, iterVar);
 		if (bound == null)
-			return {loopVar: iterVar, body: makeAST(EBlock(stmts.slice(0)))};
+			return null;
 		var rest = stmts.slice(1);
 		if (bound != iterVar && Lambda.exists(rest, s -> VarUseAnalyzer.stmtUsesVarExact(s, iterVar)))
 			return null;

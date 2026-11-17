@@ -1,0 +1,14 @@
+staleParam THREW
+staleParamFor THREW
+staleKeys THREW
+staleKeysBreak THREW
+staleLocal THREW
+staleResume THREW
+stalePassedOn THREW
+staleSameName THREW
+staleSameNameZ THREW
+iterUsedAfter THREW
+hasNextNoAdvance THREW
+hasNextNoAdvanceHeld THREW
+rareAdvanceHeld THREW
+[exit status 0]

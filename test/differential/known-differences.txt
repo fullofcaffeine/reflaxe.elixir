@@ -27,3 +27,4 @@ p19_iife DIFF haxe.elixir.codex-rrsr item 4: iife_side_out and iife_side, a side
 q02_exits DIFF haxe.elixir.codex-rrsr item 3: thr_boom, a throw inside a nested while inside try loses earlier pushes (also wrong with the local renamed from g)
 q03_scopes DIFF haxe.elixir.codex-rrsr item 5: closure and closureInFor, pushes made inside a closure are lost (also wrong with the local renamed from g)
 q14_comp_in_iter DIFF haxe.elixir.codex-lw0k comment: comprehension used as the iterable of an inner clause overwrites the outer state
+r17_keys_loop_stale DIFF haxe.elixir.codex-p2ms a map-keys iterator read again after its loop (resume, drain, pass on, hasNext), or a loop that does not advance once per step, keeps the iterator protocol on the keys list and throws; it must not give a wrong value

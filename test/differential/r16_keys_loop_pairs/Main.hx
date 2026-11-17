@@ -4,16 +4,16 @@
 // iterator `it` with its loop variable `x` by this shape, not by name: Haxe can name
 // them apart (`g1` and `g`), and the program can hold the iterator itself.
 // Reference: haxe --interp. Run: scripts/test-differential.sh --fixture r16_keys_loop_pairs
-class Node {
+class ListNode {
 	public var v:Int;
-	public var tail:Null<Node>;
+	public var tail:Null<ListNode>;
 
-	public function new(v:Int, tail:Null<Node>) {
+	public function new(v:Int, tail:Null<ListNode>) {
 		this.v = v;
 		this.tail = tail;
 	}
 
-	public function next():Node
+	public function next():ListNode
 		return tail == null ? this : tail;
 }
 
@@ -146,6 +146,18 @@ class Main {
 		return z + ":" + a + ":" + out;
 	}
 
+	// Two keys loops with the same names, then a local with that name: each later name is
+	// bound again before it is read, so each loop can drop its iterator.
+	static function seqThenLocal(m:Map<Int, Int>):Int {
+		var acc = 0;
+		for (g in m.keys())
+			acc += g;
+		for (g in m.keys())
+			acc += g * 10;
+		var g = 5;
+		return acc + g * 1000;
+	}
+
 	// The program holds the keys iterator: `for (g in it)`.
 	static function progIter(m:Map<Int, Int>):Int {
 		var it = m.keys();
@@ -260,7 +272,7 @@ class Main {
 
 	// `var g = g.next()` outside a hasNext loop is not an iterator pair.
 	static function shadowNext():Int {
-		var g = new Node(1, new Node(2, null));
+		var g = new ListNode(1, new ListNode(2, null));
 		var acc = 0;
 		{
 			var g = g.next();
@@ -270,7 +282,7 @@ class Main {
 	}
 
 	static function shadowNextUnread():Int {
-		var g = new Node(1, new Node(2, null));
+		var g = new ListNode(1, new ListNode(2, null));
 		var acc = 0;
 		{
 			var g = g.next();
@@ -279,7 +291,7 @@ class Main {
 		return acc;
 	}
 
-	static function shadowNextArg(g:Node):Int {
+	static function shadowNextArg(g:ListNode):Int {
 		var acc = 0;
 		{
 			var g = g.next();
@@ -300,6 +312,7 @@ class Main {
 		run("zAll", () -> zAll([1, 2, 3]));
 		run("gArg", () -> gArg(100, [1, 2, 3]));
 		run("zArg", () -> zArg(100, [1, 2, 3]));
+		run("seqThenLocal", () -> seqThenLocal([1 => 10, 2 => 20, 3 => 30]));
 		run("progIter", () -> progIter([1 => 10, 2 => 20, 3 => 30]));
 		run("iterNamedG", () -> iterNamedG([1 => 10, 2 => 20, 3 => 30]));
 		run("gInG", () -> gInG([1 => 10, 2 => 20, 3 => 30]));
@@ -314,6 +327,6 @@ class Main {
 		run("keyValueShadow", () -> keyValueShadow());
 		run("shadowNext", () -> shadowNext());
 		run("shadowNextUnread", () -> shadowNextUnread());
-		run("shadowNextArg", () -> shadowNextArg(new Node(1, new Node(2, null))));
+		run("shadowNextArg", () -> shadowNextArg(new ListNode(1, new ListNode(2, null))));
 	}
 }
