@@ -2,8 +2,9 @@
 // Each loop here uses a map-keys iterator in a way that a loop over the keys list cannot copy:
 // the iterator is read again after the loop (to resume it, drain it or pass it on), or the
 // loop does not take one key per step. The compiler must leave these loops alone, so they
-// fail loudly (THREW) on the BEAM. They must never give a silent wrong value: an earlier
-// version dropped `it = Map.keys(n)` and a later read saw the older argument `it`.
+// fail loudly (THREW) on the BEAM (unsupported: haxe.elixir.codex-tvfb). They must never
+// give a silent wrong value: an earlier version dropped `it = Map.keys(n)` and a later
+// read saw the older argument `it`.
 // Reference: haxe --interp. Run: scripts/test-differential.sh --fixture r17_keys_loop_stale
 class Main {
 	static function run(name:String, f:Void->Dynamic) {
