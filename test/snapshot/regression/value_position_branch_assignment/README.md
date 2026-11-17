@@ -104,6 +104,11 @@ end
 For a `var` inside the branch, the capture is made just before that `var`, so
 it holds what the branch wrote to the outer variable until then.
 
+A branch-local `var` whose outer variable is read again later usually does
+not reach this capture any more: before the builders run, `ShadowedLocals`
+gives it a fresh name (`v` -> `v_shadow`), and the branch returns the outer `v`
+directly. The capture still covers pattern binders, which keep their names.
+
 The shapes, each in value and in statement position where both exist:
 
 - a pattern binder with the name of the updated variable (`Ok(value)`,

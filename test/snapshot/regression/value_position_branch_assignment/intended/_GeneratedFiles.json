@@ -53,7 +53,7 @@
 		},
 		{
 			"path": "main.ex",
-			"sha256": "e64e7ff2e377382dcb3c32775f4f1200922483adf46164d8b6c7e06c8c6e7d01"
+			"sha256": "f3fbf2702fb28a657bdf2df253cf691572c2689b4924aa0fd5e1eeb004d92bc4"
 		},
 		{
 			"path": "opt.ex",
@@ -81,7 +81,7 @@
 		},
 		{
 			"path": "shadowing.ex",
-			"sha256": "1c636cf4ec961989b4bedbe92d719466a49344c2e37bb4ed4979c1c37da5d9b7"
+			"sha256": "8e68678ce2922a55645ef3c473b9fae3f6df3d3867e3921d1b17a7d35977065f"
 		},
 		{
 			"path": "std.ex",

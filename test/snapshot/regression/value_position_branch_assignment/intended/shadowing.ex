@@ -141,9 +141,8 @@ defmodule Shadowing do
     {label, count} = (case r do
       {:ok, value} ->
         v = value
-        reflaxe_outer_count_7 = count
-        count = id(v) * 2
-        {"ok#{Reflaxe.Elixir.HaxeFloat.to_string(count)}", reflaxe_outer_count_7}
+        count_shadow = id(v) * 2
+        {"ok#{Reflaxe.Elixir.HaxeFloat.to_string(count_shadow)}", count}
       {:error, reason} ->
         e = reason
         count = count + StringTools.haxe_length(e)
@@ -153,9 +152,9 @@ defmodule Shadowing do
   end
   def binder_opt(o) do
     out = "d"
-    reflaxe_outer_out_8 = out
+    reflaxe_outer_out_7 = out
     {r, out} = (case o do
-      {:some, out} -> {StringTools.haxe_length(out), reflaxe_outer_out_8}
+      {:some, out} -> {StringTools.haxe_length(out), reflaxe_outer_out_7}
       {:none} ->
         out = "none"
         {0, out}
@@ -165,11 +164,11 @@ defmodule Shadowing do
   def binder_other_write(o) do
     v = "outer"
     n = 1
-    reflaxe_outer_v_9 = v
+    reflaxe_outer_v_8 = v
     {r, n, v} = (case o do
       {:some, v} ->
         n = n + StringTools.haxe_length(v)
-        {"#{v}!", n, reflaxe_outer_v_9}
+        {"#{v}!", n, reflaxe_outer_v_8}
       {:none} ->
         n = -n
         v = "none"
@@ -184,9 +183,8 @@ defmodule Shadowing do
         items = items ++ [v]
         {1, items}
       {:none} ->
-        reflaxe_outer_items_10 = items
-        items = fresh()
-        {length(items) + 10, reflaxe_outer_items_10}
+        items_shadow = fresh()
+        {length(items_shadow) + 10, items}
     end)
     "#{Reflaxe.Elixir.HaxeFloat.to_string(r)}/#{Enum.join(items, ",")}"
   end
@@ -199,19 +197,17 @@ defmodule Shadowing do
         r = r + 1
         {items, r}
       {:none} ->
-        reflaxe_outer_items_11 = items
-        items = fresh()
-        r = r + length(items) + 10
-        {reflaxe_outer_items_11, r}
+        items_shadow = fresh()
+        r = r + length(items_shadow) + 10
+        {items, r}
     end)
     "#{Reflaxe.Elixir.HaxeFloat.to_string(r)}/#{Enum.join(items, ",")}"
   end
   def local_value(c) do
     v = 1
     {r, v} = if (c) do
-      reflaxe_outer_v_12 = v
-      v = id(5)
-      {v + 1, reflaxe_outer_v_12}
+      v_shadow = id(5)
+      {v_shadow + 1, v}
     else
       v = v + 1
       {0, v}
@@ -222,10 +218,9 @@ defmodule Shadowing do
     v = 1
     r = 0
     {r, v} = if (c) do
-      reflaxe_outer_v_13 = v
-      v = id(5)
-      r = v + 1
-      {r, reflaxe_outer_v_13}
+      v_shadow = id(5)
+      r = v_shadow + 1
+      {r, v}
     else
       v = v + 1
       {r, v}
@@ -236,9 +231,8 @@ defmodule Shadowing do
     v = 1
     {r, v} = if (c) do
       v = v + 1
-      reflaxe_outer_v_14 = v
-      v = id(5)
-      {v + 1, reflaxe_outer_v_14}
+      v_shadow = id(5)
+      {v_shadow + 1, v}
     else
       {0, v}
     end
@@ -250,9 +244,8 @@ defmodule Shadowing do
       sum = Enum.reduce(xs, sum, fn x, sum_acc -> sum_acc + x end)
       {"loop", sum}
     else
-      reflaxe_outer_sum_15 = sum
-      sum = id(7)
-      {"local#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}", reflaxe_outer_sum_15}
+      sum_shadow = id(7)
+      {"local#{Reflaxe.Elixir.HaxeFloat.to_string(sum_shadow)}", sum}
     end
     "#{r}/#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}"
   end
@@ -260,14 +253,13 @@ defmodule Shadowing do
     v = 1
     total = 0
     {r, _total, v} = if (c) do
-      reflaxe_outer_v_16 = v
-      v = id(0) * 2
-      total = total + v
-      v = id(1) * 2
-      total = total + v
-      v = id(2) * 2
-      total = total + v
-      {total, total, reflaxe_outer_v_16}
+      v_shadow = id(0) * 2
+      total = total + v_shadow
+      v_shadow = id(1) * 2
+      total = total + v_shadow
+      v_shadow = id(2) * 2
+      total = total + v_shadow
+      {total, total, v}
     else
       v = v + 1
       {0, total, v}
@@ -279,16 +271,15 @@ defmodule Shadowing do
     total = 0
     {r, _total, v} = if (c) do
       x = 1
-      reflaxe_outer_v_17 = v
-      v = id(x) * 2
-      total = total + v
+      v_shadow = id(x) * 2
+      total = total + v_shadow
       x = 2
-      v = id(x) * 2
-      total = total + v
+      v_shadow = id(x) * 2
+      total = total + v_shadow
       x = 3
-      v = id(x) * 2
-      total = total + v
-      {total, total, reflaxe_outer_v_17}
+      v_shadow = id(x) * 2
+      total = total + v_shadow
+      {total, total, v}
     else
       v = v + 1
       {0, total, v}
@@ -301,10 +292,9 @@ defmodule Shadowing do
     {out, n, _seen} = if (c) do
       {n, seen} = (case o do
         {:some, x} ->
-          reflaxe_outer_n_18 = n
-          n = StringTools.haxe_length(x)
-          seen = n
-          {reflaxe_outer_n_18, seen}
+          n_shadow = StringTools.haxe_length(x)
+          seen = n_shadow
+          {n, seen}
         {:none} ->
           n = -1
           {n, seen}
@@ -323,10 +313,9 @@ defmodule Shadowing do
       r = "#{r}loop"
       {r, sum}
     else
-      reflaxe_outer_sum_19 = sum
-      sum = id(7)
-      r = "#{r}local#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}"
-      {r, reflaxe_outer_sum_19}
+      sum_shadow = id(7)
+      r = "#{r}local#{Reflaxe.Elixir.HaxeFloat.to_string(sum_shadow)}"
+      {r, sum}
     end
     "#{r}/#{Reflaxe.Elixir.HaxeFloat.to_string(sum)}"
   end
