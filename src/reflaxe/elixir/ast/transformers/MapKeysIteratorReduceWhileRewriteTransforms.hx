@@ -352,18 +352,47 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	/**
 	 * True when no statement from `start` on reads `name` before a plain `name = value`
 	 * (whose value does not read it) or another binding replaces it.
+	 *
+	 * A read counts only when it can see the outer binding (`readsOuter`). Example: in
+	 * `show((fn -> k = Map.keys(m); ... k ... end).())` the function binds its own `k`
+	 * before it reads it, so that statement does not read the outer `k`.
 	 */
 	static function deadFrom(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
 		for (k in start...stmts.length) {
 			var rebound = simpleAssignedValue(stmts[k], name);
 			if (rebound != null)
-				return !VarUseAnalyzer.stmtUsesVarExact(rebound, name);
-			if (VarUseAnalyzer.stmtUsesVarExact(stmts[k], name))
+				return !readsOuter(rebound, name);
+			if (readsOuter(stmts[k], name))
 				return false;
 			if (BinderTransforms.statementBindsName(stmts[k], name))
 				return true;
 		}
 		return true;
+	}
+
+	/**
+	 * True when `node` reads `name` from the enclosing scope: a free reference that no
+	 * binder inside `node` shadows (`VarUseAnalyzer.usesFreeVarExact`), or any mention in
+	 * opaque raw Elixir code, which the lexical analysis cannot see into (fail closed).
+	 */
+	static function readsOuter(node:ElixirAST, name:String):Bool {
+		if (VarUseAnalyzer.usesFreeVarExact(node, name))
+			return true;
+		var mentioned = false;
+		function scanRaw(n:ElixirAST):ElixirAST {
+			if (mentioned || n == null || n.def == null)
+				return n;
+			switch (n.def) {
+				case ERaw(_):
+					if (VarUseAnalyzer.stmtUsesVarExact(n, name))
+						mentioned = true;
+				default:
+					ElixirASTTransformer.transformAST(n, scanRaw);
+			}
+			return n;
+		}
+		scanRaw(node);
+		return mentioned;
 	}
 
 	/** The value of `name = value` (either match form); null for any other statement. */
