@@ -194,6 +194,16 @@ class ReduceAppendCanonicalizeTransforms {
 								elementAlias = null;
 							#if debug_reduce_append_canon
 							#end
+							// A self-append names the accumulator only when that name is the accumulator or a
+							// free stale name of it. The element (`a = a ++ [1]` from `a.push(1)`) or a body
+							// local is a list of its own and must keep its name (haxe.elixir.codex-g4xy).
+							var declinedSelfAppend = false;
+							function isAlias(name:String):Bool {
+								var alias = name == accName || ReduceAccAliasUnifyTransforms.isAccumulatorAlias(cl.body, name, binderName);
+								if (!alias)
+									declinedSelfAppend = true;
+								return alias;
+							}
 							// Second pass: rewrite alias concat to acc concat and substitute alias->binder in RHS list expr
 							var newBody:Array<ElixirAST> = [];
 							var didRewrite = false;
@@ -228,7 +238,7 @@ class ReduceAppendCanonicalizeTransforms {
 												case EVar(n): n;
 												default: null;
 											};
-											if (lhs != null && containsSelfAppend(rhs, lhs)) {
+											if (lhs != null && containsSelfAppend(rhs, lhs) && isAlias(lhs)) {
 												localRewrote = true;
 												var rhs2 = ElixirASTTransformer.transformNode(rhs, function(t:ElixirAST):ElixirAST {
 													return switch (t.def) {
@@ -242,7 +252,7 @@ class ReduceAppendCanonicalizeTransforms {
 											} else switch (rhs.def) {
 												case ERemoteCall(_, "concat", cargs) if (lhs != null && cargs.length == 2):
 													var arg0IsLhs = switch (cargs[0].def) {
-														case EVar(n2): (n2 == lhs);
+														case EVar(n2): (n2 == lhs) && isAlias(lhs);
 														default: false;
 													};
 													if (arg0IsLhs) {
@@ -260,7 +270,7 @@ class ReduceAppendCanonicalizeTransforms {
 													} else node;
 												case EBinary(Concat, lcat, rcat):
 													var lhsIsCat = switch (lcat.def) {
-														case EVar(nlc) if (lhs != null && nlc == lhs): true;
+														case EVar(nlc) if (lhs != null && nlc == lhs): isAlias(lhs);
 														default: false;
 													};
 													if (lhsIsCat) {
@@ -279,7 +289,7 @@ class ReduceAppendCanonicalizeTransforms {
 													} else node;
 												case ECall(_, "concat", cargsC) if (lhs != null && cargsC.length == 2):
 													var isSelfC = switch (cargsC[0].def) {
-														case EVar(nc) if (nc == lhs): true;
+														case EVar(nc) if (nc == lhs): isAlias(lhs);
 														default: false;
 													};
 													if (isSelfC) {
@@ -303,7 +313,7 @@ class ReduceAppendCanonicalizeTransforms {
 												case PVar(n): n;
 												default: null;
 											};
-											if (lhs2 != null && containsSelfAppend(rhs2, lhs2)) {
+											if (lhs2 != null && containsSelfAppend(rhs2, lhs2) && isAlias(lhs2)) {
 												localRewrote = true;
 												var rhs2b = ElixirASTTransformer.transformNode(rhs2, function(t2:ElixirAST):ElixirAST {
 													return switch (t2.def) {
@@ -317,7 +327,7 @@ class ReduceAppendCanonicalizeTransforms {
 											} else switch (rhs2.def) {
 												case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
 													var arg0IsLhs2 = switch (cargs2[0].def) {
-														case EVar(n3): (n3 == lhs2);
+														case EVar(n3): (n3 == lhs2) && isAlias(lhs2);
 														default: false;
 													};
 													if (arg0IsLhs2) {
@@ -348,7 +358,7 @@ class ReduceAppendCanonicalizeTransforms {
 							// Enum.concat(_, list) call in the body, rebuild body as
 							// acc = Enum.concat(acc, list') ; acc
 							var usedSpecificRewrite = didRewrite;
-							if (!usedSpecificRewrite) {
+							if (!usedSpecificRewrite && !declinedSelfAppend) {
 								#if debug_reduce_append_canon
 								#end
 								var foundList:Null<ElixirAST> = null;

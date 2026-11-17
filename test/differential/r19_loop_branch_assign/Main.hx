@@ -217,6 +217,102 @@ class Main {
 		return t + ":" + out;
 	}
 
+	// g4xy, no carried local (Enum.each): the element is written, then printed.
+	static function eachElemWrite(xs:Array<Int>):Int {
+		for (k in xs) {
+			k = k * 2;
+			Sys.println("  write k" + k);
+		}
+		return 0;
+	}
+
+	// g4xy, no carried local: the element is written in an `if`.
+	static function eachElemIfWrite(xs:Array<Int>):Int {
+		for (k in xs) {
+			if (k > 1)
+				k = 0;
+			Sys.println("  if k" + k);
+		}
+		return 0;
+	}
+
+	// g4xy, no carried local: the element has the name of an outer local, read after the loop.
+	static function eachOuterSame(xs:Array<Int>):Int {
+		var k = 100;
+		for (k in xs) {
+			k = 5;
+			Sys.println("  outer k" + k);
+		}
+		return k;
+	}
+
+	// g4xy, no carried local: the element has the name of a parameter, read after the loop.
+	static function eachParamSame(k:Int, xs:Array<Int>):Int {
+		for (k in xs) {
+			k = k + 5;
+			Sys.println("  param k" + k);
+		}
+		return k;
+	}
+
+	// g4xy, no carried local: the usual trim of each line.
+	static function eachTrim(lines:Array<String>):Int {
+		for (line in lines) {
+			line = StringTools.trim(line);
+			if (line == "")
+				Sys.println("  <empty>");
+			else
+				Sys.println("  [" + line + "]");
+		}
+		return 0;
+	}
+
+	// g4xy, no carried local: a null element gets a default.
+	static function eachNullDefault(xs:Array<Null<Int>>):Int {
+		for (v in xs) {
+			if (v == null)
+				v = -1;
+			Sys.println("  v" + v);
+		}
+		return 0;
+	}
+
+	// 3qab, no carried local: a copy of the element is written, then printed.
+	static function eachCopyWrite(xs:Array<Int>):Int {
+		for (x in xs) {
+			var t = x;
+			t = t * 2;
+			Sys.println("  copy t" + t);
+		}
+		return 0;
+	}
+
+	// g4xy: the element list is extended (`concat` and `push`); the outer list is not.
+	static function elemSelfAppend(xss:Array<Array<Int>>):String {
+		var out:Array<Int> = [];
+		var total = 0;
+		for (a in xss) {
+			a = a.concat([0]);
+			out = out.concat(a);
+		}
+		for (b in xss) {
+			b.push(1);
+			total += b.length;
+		}
+		return out.join(",") + ":" + total;
+	}
+
+	// 3qab: a body-local copy of the element is extended.
+	static function copySelfAppend(xss:Array<Array<Int>>):Int {
+		var total = 0;
+		for (x in xss) {
+			var a = x.copy();
+			a.push(1);
+			total += a.length;
+		}
+		return total;
+	}
+
 	// The copy is read in a closure that runs after the loop.
 	static function copyInClosure(xs:Array<Int>):Int {
 		var fs:Array<Void->Int> = [];
@@ -297,6 +393,15 @@ class Main {
 		run("rangeLocalIf", () -> rangeLocalIf(4));
 		run("shadowBranch", () -> shadowBranch([1, 2, 3]));
 		run("twoShadows", () -> twoShadows([1, 2, 3, 4]));
+		run("eachElemWrite", () -> eachElemWrite([1, 2, 3]));
+		run("eachElemIfWrite", () -> eachElemIfWrite([1, 2, 3]));
+		run("eachOuterSame", () -> eachOuterSame([1, 2]));
+		run("eachParamSame", () -> eachParamSame(9, [1, 2]));
+		run("eachTrim", () -> eachTrim([" a ", "  ", "b"]));
+		run("eachNullDefault", () -> eachNullDefault([1, null, 3]));
+		run("eachCopyWrite", () -> eachCopyWrite([1, 2, 3]));
+		run("elemSelfAppend", () -> elemSelfAppend([[1], [2, 3]]));
+		run("copySelfAppend", () -> copySelfAppend([[1], [2, 3], []]));
 		run("copyInClosure", () -> copyInClosure([1, 2, 3]));
 		run("copyReadOnly", () -> copyReadOnly([1, 2, 3]));
 		run("copyThenElemWrite", () -> copyThenElemWrite([1, 2, 3]));

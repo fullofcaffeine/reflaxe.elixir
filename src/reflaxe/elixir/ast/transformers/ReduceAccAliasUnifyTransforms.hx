@@ -271,6 +271,44 @@ class ReduceAccAliasUnifyTransforms {
 		return foldedReads != null && foldedReads == aliasCensus.reads;
 	}
 
+	/**
+	 * Returns true when the self-appended name `alias` can only be a stale name of the accumulator.
+	 *
+	 * WHAT
+	 * - `alias` is not the callback's element binder, it appears in no raw code, and every
+	 *   binding of it in the callback body (nested functions included) is a self-append
+	 *   `alias = Enum.concat(alias, ...)` / `alias = alias ++ ...`. So the body never gives it a
+	 *   value of its own.
+	 *
+	 * WHY
+	 * - A loop that changes one outer local has one accumulator, so a free name that the body
+	 *   appends to can only be that accumulator. A name the body binds is a local instead:
+	 *   `a = a ++ [0]` on the element `a` (Haxe `a = a.concat([0])` or `a.push(0)`), or
+	 *   `a = x` then `a = a ++ [1]` (Haxe `var a = x.copy(); a.push(1);`). Renaming those
+	 *   to the accumulator appended to the wrong list (haxe.elixir.codex-g4xy).
+	 * - `EFnAliasConcatToAccTransforms` uses the same check.
+	 */
+	public static function isAccumulatorAlias(body:ElixirAST, alias:String, binderName:Null<String>):Bool {
+		if (alias == null || alias == binderName)
+			return false;
+		var selfAppends = 0;
+		function count(node:ElixirAST):Void {
+			if (node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EBinary(Match, {def: EVar(lhs)}, rhs) if (lhs == alias && isSelfAppend(rhs, alias)):
+					selfAppends++;
+				case EMatch(PVar(lhs), rhs) if (lhs == alias && isSelfAppend(rhs, alias)):
+					selfAppends++;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, count);
+		}
+		count(body);
+		var census = nameCensus(body, alias);
+		return selfAppends > 0 && !census.opaque && census.bindings == selfAppends;
+	}
+
 	static function isSelfAppend(rhs:ElixirAST, lhs:String):Bool {
 		var result = false;
 		transformCurrentCallbackScope(rhs, function(n:ElixirAST):ElixirAST {
@@ -375,7 +413,10 @@ class ReduceAccAliasUnifyTransforms {
 								return x;
 							});
 							// Unify all discovered aliases (one or more) to acc across reducer body
-							var accAliases = [for (k in accAliasSet.keys()) k];
+							var accAliases = [
+								for (k in accAliasSet.keys())
+									if (isAccumulatorAlias(cl.body, k, binderName)) k
+							];
 							var binderAliases = [
 								for (k in binderAliasSet.keys())
 									if (binderName != null && isFoldableBinderAlias(cl.body, k, binderName)) k
