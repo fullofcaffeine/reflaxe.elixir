@@ -92,14 +92,14 @@ class ReduceAliasConcatToAccTransforms {
 											default: stmt;
 										}
 									case EMatch(pat, rhs2):
-										var lhs2:Null<String> = switch (pat) {
+										var concatTarget:Null<String> = switch (pat) {
 											case PVar(nm): nm;
 											default: null;
 										};
 										switch (rhs2.def) {
-											case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
-												var isSelf2 = switch (cargs2[0].def) {
-													case EVar(nm3): (nm3 == lhs2) && isAlias(lhs2);
+											case ERemoteCall(_, "concat", cargs2) if (concatTarget != null && cargs2.length == 2):
+												var isSelf2 = isAlias(concatTarget) && switch (cargs2[0].def) {
+													case EVar(nm3): (nm3 == concatTarget);
 													default: false;
 												};
 												if (isSelf2) {
