@@ -205,6 +205,59 @@ class Main {
 		return cnt;
 	}
 
+	// Loops inside a closure that writes a captured local or rebinds a captured iterator.
+	// A write from a closure to a captured local can be lost (haxe.elixir.codex-rrsr item
+	// 5), so inside a closure the compiler keeps to the loops that main rewrote, and these
+	// throw as on main instead of giving a wrong value.
+	static function closureAssigns(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var g = function():Int {
+			var a = 0;
+			it = n.keys();
+			while (it.hasNext()) {
+				var x = it.next();
+				a += x;
+			}
+			return a;
+		};
+		var r = g();
+		return r + ":" + drain(it);
+	}
+
+	static function closureAssignsFor(it:Iterator<Int>, n:Map<Int, Int>):String {
+		var g = function():Int {
+			var a = 0;
+			it = n.keys();
+			for (x in it)
+				a += x;
+			return a;
+		};
+		var r = g();
+		return r + ":" + drain(it);
+	}
+
+	static function captureAccHeldKeys(m:Map<Int, Int>):String {
+		var a = 0;
+		var g = function():Void {
+			var it = m.keys();
+			for (x in it)
+				a += x;
+		};
+		g();
+		return a + "";
+	}
+
+	static function captureAccShadowKeys(m:Map<Int, Int>):String {
+		var a = 0;
+		var k = 100;
+		var g = function():Void {
+			for (k in m.keys())
+				a += k;
+			a += k;
+		};
+		g();
+		return a + "";
+	}
+
 	static function main() {
 		run("staleParam", () -> staleParam([7, 8, 9, 10].iterator(), [1 => 10, 2 => 20, 3 => 30]));
 		run("staleParamFor", () -> staleParamFor([7, 8, 9, 10].iterator(), [1 => 10, 2 => 20, 3 => 30]));
@@ -219,5 +272,9 @@ class Main {
 		run("hasNextNoAdvance", () -> hasNextNoAdvance([1 => 10, 2 => 20, 3 => 30]));
 		run("hasNextNoAdvanceHeld", () -> hasNextNoAdvanceHeld([1 => 10, 2 => 20, 3 => 30]));
 		run("rareAdvanceHeld", () -> rareAdvanceHeld([1 => 10, 2 => 20, 3 => 30]));
+		run("closureAssigns", () -> closureAssigns([100, 200, 300, 400].iterator(), [4 => 1, 5 => 2]));
+		run("closureAssignsFor", () -> closureAssignsFor([100, 200, 300, 400].iterator(), [4 => 1, 5 => 2]));
+		run("captureAccHeldKeys", () -> captureAccHeldKeys([1 => 10, 2 => 20, 3 => 30]));
+		run("captureAccShadowKeys", () -> captureAccShadowKeys([1 => 10, 2 => 20, 3 => 30]));
 	}
 }

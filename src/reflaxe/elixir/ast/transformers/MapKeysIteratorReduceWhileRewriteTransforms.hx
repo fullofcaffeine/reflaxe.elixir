@@ -5,6 +5,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 #if debug_map_keys_reduce_while
 import reflaxe.elixir.ast.ElixirASTPrinter;
@@ -52,6 +53,10 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   and compute a wrong value without an error.
  * - The loop body must start with an advance statement (`x = it.next.()`, `_ = it.next.()`
  *   or a bare `it.next.()`). A loop that does not take one key per step is left unchanged.
+ * - Inside a closure (a Haxe function expression, or any `fn` that is not a loop lowering's
+ *   `Enum` callback), only the shape that main rewrote is rewritten: a loop variable named
+ *   like its iterator. A write from a closure to a captured local can be lost
+ *   (haxe.elixir.codex-rrsr item 5); a loop that the pass leaves alone throws instead.
  * - The same name in two places counts as the same variable only inside one statement
  *   list with no rebinding in between, so it identifies an Elixir binding.
  *
@@ -103,18 +108,63 @@ private typedef IteratorLoop = {
 
 class MapKeysIteratorReduceWhileRewriteTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
-			return switch (n.def) {
-				case EBlock(stmts):
-					var rewritten = rewriteStatementList(stmts);
-					rewritten == stmts ? n : makeASTWithMeta(EBlock(rewritten), n.metadata, n.pos);
-				case EDo(stmts):
-					var rewrittenDo = rewriteStatementList(stmts);
-					rewrittenDo == stmts ? n : makeASTWithMeta(EDo(rewrittenDo), n.metadata, n.pos);
-				default:
-					n;
-			}
-		});
+		return visit(ast, false);
+	}
+
+	/**
+	 * Rewrites every statement list under `node`, children first (as `transformNode` does),
+	 * and tracks whether the list is inside a closure.
+	 *
+	 * A closure here is any `fn` except the callback that a loop lowering passes to an
+	 * `Enum` function (`Enum.reduce_while(..., fn _, acc -> ... end)`), which threads its
+	 * state through the accumulator. A Haxe function expression (`function() {...}`,
+	 * `x -> ...`) is a closure even when it is passed to `Enum`; the builder records it as
+	 * the `fn`'s source expression. A write from a closure to a captured local can be lost
+	 * (haxe.elixir.codex-rrsr item 5), so inside a closure the pass keeps to the rewrites
+	 * that main made (`rewriteStatementList`): a loop that it leaves alone throws instead of
+	 * computing a wrong value.
+	 */
+	static function visit(node:ElixirAST, inClosure:Bool):ElixirAST {
+		if (node == null || node.def == null)
+			return node;
+		var rebuilt = switch (node.def) {
+			case ERemoteCall(mod, _, args) if (args != null && isEnum(mod)):
+				ElixirASTTransformer.transformAST(node,
+					child -> isLoopCallback(child) ? ElixirASTTransformer.transformAST(child,
+						grandchild -> visit(grandchild, inClosure)) : visit(child, inClosure));
+			case EFn(_):
+				ElixirASTTransformer.transformAST(node, child -> visit(child, true));
+			default:
+				ElixirASTTransformer.transformAST(node, child -> visit(child, inClosure));
+		};
+		return switch (rebuilt.def) {
+			case EBlock(stmts):
+				makeASTWithMeta(EBlock(rewriteStatementList(stmts, inClosure)), rebuilt.metadata, rebuilt.pos);
+			case EDo(stmts):
+				makeASTWithMeta(EDo(rewriteStatementList(stmts, inClosure)), rebuilt.metadata, rebuilt.pos);
+			default:
+				rebuilt;
+		};
+	}
+
+	/** True for an `fn` argument of an `Enum` call that did not come from a Haxe function expression. */
+	static function isLoopCallback(arg:ElixirAST):Bool {
+		if (arg == null || arg.def == null)
+			return false;
+		return switch (arg.def) {
+			case EFn(_): !isHaxeFunctionExpression(arg);
+			default: false;
+		};
+	}
+
+	/** True when the builder recorded a Haxe function expression (`TFunction`) as this node's source. */
+	static function isHaxeFunctionExpression(node:ElixirAST):Bool {
+		if (node.metadata == null || node.metadata.sourceExpr == null)
+			return false;
+		return switch (node.metadata.sourceExpr.expr) {
+			case TFunction(_): true;
+			default: false;
+		};
 	}
 
 	static inline function isModuleName(mod:ElixirAST, name:String):Bool {
@@ -130,7 +180,15 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		};
 	}
 
-	static function rewriteStatementList(stmts:Array<ElixirAST>):Array<ElixirAST> {
+	/**
+	 * Rewrites the iterator loops over map keys in one statement list.
+	 *
+	 * Inside a closure (`inClosure`, see `visit`) it makes only the rewrites that main made:
+	 * the loop variable must have the iterator's name, and the program-held iterator variant
+	 * is off. Outside a closure, the loop variable can have another name, and a program-held
+	 * iterator is followed back to its keys list.
+	 */
+	static function rewriteStatementList(stmts:Array<ElixirAST>, inClosure:Bool):Array<ElixirAST> {
 		if (stmts == null || stmts.length < 2)
 			return stmts;
 
@@ -169,7 +227,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			var nestedTail = extractTrailingMapKeysDiscardFromStmtBlock(stmts[i]);
 			if (nestedTail != null && i + 1 < stmts.length) {
 				var reduceAny0 = extractIteratorLoop(stmts[i + 1]);
-				if (reduceAny0 != null) {
+				if (reduceAny0 != null && allowedIn(reduceAny0, inClosure)) {
 					var trimmedBlockStmt = nestedTail.rebuildWithoutKeysDiscard();
 					if (trimmedBlockStmt != null)
 						out.push(trimmedBlockStmt);
@@ -195,7 +253,10 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			var nestedInit = extractTrailingMapKeysInitFromStmtBlock(stmts[i]);
 			if (nestedInit != null && i + 1 < stmts.length) {
 				var reduce0 = extractIteratorLoop(stmts[i + 1]);
-				if (reduce0 != null && reduce0.iterVar == nestedInit.iterVar && deadFrom(stmts, i + 2, nestedInit.iterVar)) {
+				if (reduce0 != null
+					&& reduce0.iterVar == nestedInit.iterVar
+					&& allowedIn(reduce0, inClosure)
+					&& deadFrom(stmts, i + 2, nestedInit.iterVar, reduce0.loopVar != reduce0.iterVar)) {
 					var trimmedBlockStmt0 = nestedInit.rebuildWithoutKeysInit();
 					if (trimmedBlockStmt0 != null)
 						out.push(trimmedBlockStmt0);
@@ -209,7 +270,10 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			var init = extractMapKeysInit(stmts[i]);
 			if (init != null && i + 1 < stmts.length) {
 				var reduce = extractIteratorLoop(stmts[i + 1]);
-				if (reduce != null && reduce.iterVar == init.iterVar && deadFrom(stmts, i + 2, init.iterVar)) {
+				if (reduce != null
+					&& reduce.iterVar == init.iterVar
+					&& allowedIn(reduce, inClosure)
+					&& deadFrom(stmts, i + 2, init.iterVar, reduce.loopVar != reduce.iterVar)) {
 					#if debug_map_keys_reduce_while
 					#if sys
 					Sys.println('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
@@ -230,7 +294,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 			var keysDiscard = extractMapKeysDiscard(stmts[i]);
 			if (keysDiscard != null && i + 1 < stmts.length) {
 				var reduceAny = extractIteratorLoop(stmts[i + 1]);
-				if (reduceAny != null) {
+				if (reduceAny != null && allowedIn(reduceAny, inClosure)) {
 					#if debug_map_keys_reduce_while
 					#if sys
 					Sys.println('[MapKeysReduceWhile] rewrite via discard iterVar=' + reduceAny.iterVar);
@@ -246,7 +310,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 
 			// Variant: the program holds the iterator. `it = Map.keys(m)` comes earlier, and
 			// the loop drives `it` itself or a copy of it (`g = it`) bound before the loop.
-			var held = extractIteratorLoop(stmts[i]);
+			var held = inClosure ? null : extractIteratorLoop(stmts[i]);
 			if (held != null) {
 				var source = resolveHeldKeysSource(out, held, stmts, i + 1);
 				if (source != null) {
@@ -263,6 +327,11 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 		}
 
 		return out;
+	}
+
+	/** Inside a closure, only a loop variable named like its iterator (the shape main rewrote). */
+	static function allowedIn(loop:IteratorLoop, inClosure:Bool):Bool {
+		return !inClosure || loop.loopVar == loop.iterVar;
 	}
 
 	/** Builds `Enum.reduce_while(keys, acc, fn loopVar, accPattern -> body end)` for a matched loop. */
@@ -318,14 +387,14 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 				return null;
 			if (touchedIn(out, keysIndex + 1, bindIndex, copied) || touchedIn(out, bindIndex + 1, out.length, copied))
 				return null;
-			if (!deadFrom(stmts, after, iterVar))
+			if (!deadFrom(stmts, after, iterVar, true))
 				return null;
 			keysVar = copied;
 			copyIndex = bindIndex;
 		}
 		if (keysVar != loop.loopVar && VarUseAnalyzer.stmtUsesVarExact(loop.thenBody, keysVar))
 			return null;
-		if (!deadFrom(stmts, after, keysVar))
+		if (!deadFrom(stmts, after, keysVar, true))
 			return null;
 		return {keysVar: keysVar, copyIndex: copyIndex};
 	}
@@ -356,13 +425,18 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	 * A read counts only when it can see the outer binding (`readsOuter`). Example: in
 	 * `show((fn -> k = Map.keys(m); ... k ... end).())` the function binds its own `k`
 	 * before it reads it, so that statement does not read the outer `k`.
+	 *
+	 * `scanRaw` also counts a variable reference inside opaque raw Elixir code. Callers pass
+	 * false for a loop variable named like its iterator: the program cannot name such an
+	 * iterator (Haxe named it after the loop variable), and main rewrote that shape without
+	 * any check.
 	 */
-	static function deadFrom(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
+	static function deadFrom(stmts:Array<ElixirAST>, start:Int, name:String, scanRaw:Bool):Bool {
 		for (k in start...stmts.length) {
 			var rebound = simpleAssignedValue(stmts[k], name);
 			if (rebound != null)
-				return !readsOuter(rebound, name);
-			if (readsOuter(stmts[k], name))
+				return !readsOuter(rebound, name, scanRaw);
+			if (readsOuter(stmts[k], name, scanRaw))
 				return false;
 			if (BinderTransforms.statementBindsName(stmts[k], name))
 				return true;
@@ -372,26 +446,33 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 
 	/**
 	 * True when `node` reads `name` from the enclosing scope: a free reference that no
-	 * binder inside `node` shadows (`VarUseAnalyzer.usesFreeVarExact`), or any mention in
-	 * opaque raw Elixir code, which the lexical analysis cannot see into (fail closed).
+	 * binder inside `node` shadows (`VarUseAnalyzer.usesFreeVarExact`), or, with `scanRaw`,
+	 * a variable reference in opaque raw Elixir code, which the lexical analysis cannot
+	 * see into. Raw code is read with `ElixirCodeVarRefTokenizer`, which skips quoted
+	 * strings, atoms and keyword keys: `Map.get(o, "key")` or `%d` in a format string does
+	 * not read a variable `key` or `d`.
 	 */
-	static function readsOuter(node:ElixirAST, name:String):Bool {
+	static function readsOuter(node:ElixirAST, name:String, scanRaw:Bool):Bool {
 		if (VarUseAnalyzer.usesFreeVarExact(node, name))
 			return true;
+		if (!scanRaw)
+			return false;
 		var mentioned = false;
-		function scanRaw(n:ElixirAST):ElixirAST {
+		function scan(n:ElixirAST):ElixirAST {
 			if (mentioned || n == null || n.def == null)
 				return n;
 			switch (n.def) {
-				case ERaw(_):
-					if (VarUseAnalyzer.stmtUsesVarExact(n, name))
+				case ERaw(code):
+					var refs = new Map<String, Bool>();
+					ElixirCodeVarRefTokenizer.collectFromElixirCode(code, refs);
+					if (refs.exists(name))
 						mentioned = true;
 				default:
-					ElixirASTTransformer.transformAST(n, scanRaw);
+					ElixirASTTransformer.transformAST(n, scan);
 			}
 			return n;
 		}
-		scanRaw(node);
+		scan(node);
 		return mentioned;
 	}
 

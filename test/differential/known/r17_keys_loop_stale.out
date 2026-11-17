@@ -11,4 +11,8 @@ iterUsedAfter THREW
 hasNextNoAdvance THREW
 hasNextNoAdvanceHeld THREW
 rareAdvanceHeld THREW
+closureAssigns THREW
+closureAssignsFor THREW
+captureAccHeldKeys THREW
+captureAccShadowKeys THREW
 [exit status 0]

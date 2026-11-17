@@ -17,6 +17,18 @@ class ListNode {
 		return tail == null ? this : tail;
 }
 
+typedef User = {name:String, id:Int};
+
+class Person {
+	public var name:String;
+	public var id:Int;
+
+	public function new(name:String, id:Int) {
+		this.name = name;
+		this.id = id;
+	}
+}
+
 class Main {
 	static function run(name:String, f:Void->Dynamic) {
 		try {
@@ -300,6 +312,189 @@ class Main {
 		return acc * 10 + g.v;
 	}
 
+	// Text after a same-name keys loop that has the loop variable's name but does not
+	// read it: a string, an atom, a field, a key or a format directive (`%d`, `%m` in
+	// Date.toString). The rewrite must not take it for a read of the iterator.
+	static function concatStringLiteral(m:Map<Int, Int>):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		var o = ["key" => 9];
+		return a + ":" + o.get("key");
+	}
+
+	static function interpPlainText(m:Map<Int, Int>):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		return 'key $a key';
+	}
+
+	static function interpStringLiteral(m:Map<Int, Int>):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		var o = ["key" => 9];
+		return '$a:${o.get("key")}';
+	}
+
+	static function interpCallSameName(m:Map<Int, Int>):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		var o = ["key" => 9];
+		return '$a:${o.get("key")}';
+	}
+
+	static function interpAnonField(m:Map<Int, Int>, u:User):String {
+		var a = 0;
+		for (name in m.keys())
+			a += name;
+		return '$a:${u.name}:${u.id}';
+	}
+
+	static function interpClassField(m:Map<Int, Int>, p:Person):String {
+		var a = 0;
+		for (name in m.keys())
+			a += name;
+		return '$a:${p.name}:${p.id}';
+	}
+
+	static function interpDynamicField(m:Map<Int, Int>, d:Dynamic):String {
+		var a = 0;
+		for (name in m.keys())
+			a += name;
+		return '$a:${d.name}';
+	}
+
+	static function interpInPrintln(m:Map<Int, Int>):String {
+		var a = 0;
+		for (id in m.keys())
+			a += id;
+		var row = ["id" => 7];
+		var s = 'row ${row.get("id")} of ${a}';
+		return s;
+	}
+
+	static function interpAfterInnerLoop(m:Map<Int, Int>):String {
+		var out = [];
+		var o = ["key" => 9];
+		for (i in 0...2) {
+			var a = 0;
+			for (key in m.keys())
+				a += key;
+			out.push('$i:$a:${o.get("key")}');
+		}
+		return out.join("|");
+	}
+
+	static function interpFreshLocal(m:Map<Int, Int>):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		var key = "fresh";
+		return '$a:${key}';
+	}
+
+	static function switchOnWord(m:Map<Int, Int>, w:String):String {
+		var a = 0;
+		for (key in m.keys())
+			a += key;
+		var b = switch (w) {
+			case "key": 1;
+			default: 0;
+		};
+		return a + ":" + b;
+	}
+
+	// The raw Elixir code is the shape under test: text the compiler cannot parse, which
+	// binds its own `k` or names `k` only as an atom key. No typed Haxe surface emits it.
+	static function rawBindsSameName(m:Map<Int, Int>):String {
+		var a = 0;
+		for (k in m.keys())
+			a += k;
+		var b:Int = #if elixir untyped __elixir__("Enum.reduce([1, 2, 3], 0, fn k, acc -> k + acc end)") #else 6 #end;
+		return a + ":" + b;
+	}
+
+	static function rawAtomSameName(m:Map<Int, Int>):String {
+		var a = 0;
+		for (k in m.keys())
+			a += k;
+		var b:Int = #if elixir untyped __elixir__("Map.get(%{k: 7}, :k)") #else 7 #end;
+		return a + ":" + b;
+	}
+
+	static function dateAfterLoopNamedD(q:Map<Int, Int>):String {
+		var a = 0;
+		for (d in q.keys())
+			a += d;
+		var s = Date.fromTime(0).toString();
+		return a + ":" + s.length;
+	}
+
+	static function dateAfterLoopNamedM(q:Map<Int, Int>):String {
+		var a = 0;
+		for (m in q.keys())
+			a += m;
+		var s = Date.fromTime(0).toString();
+		return a + ":" + s.length;
+	}
+
+	static function dateInIfAfterLoopNamedD(q:Map<Int, Int>, c:Bool):String {
+		var a = 0;
+		for (d in q.keys())
+			a += d;
+		var n = 0;
+		if (c)
+			n = Date.fromTime(0).toString().length;
+		return a + ":" + n;
+	}
+
+	static function dateBeforeLoopNamedD(q:Map<Int, Int>):String {
+		var s = Date.fromTime(0).toString();
+		var a = 0;
+		for (d in q.keys())
+			a += d;
+		return a + ":" + s.length;
+	}
+
+	static function dateInsideLoopNamedD(q:Map<Int, Int>):String {
+		var a = 0;
+		for (d in q.keys())
+			a += d + Date.fromTime(0).toString().length;
+		return a + "";
+	}
+
+	static function dateBetweenLoopsNamedD(q:Map<Int, Int>):String {
+		var a = 0;
+		for (d in q.keys())
+			a += d;
+		var s = Date.fromTime(0).toString();
+		for (d in q.keys())
+			a += d * 10;
+		return a + ":" + s.length;
+	}
+
+	static function dateAfterInnerLoopNamedD(q:Map<Int, Int>):String {
+		var a = 0;
+		for (j in q.keys()) {
+			for (d in q.keys())
+				a += d * j;
+			a += Date.fromTime(0).toString().length;
+		}
+		return a + "";
+	}
+
+	static function stringKeysNamedD(q:Map<String, Int>):String {
+		var names = [];
+		for (d in q.keys())
+			names.push(d);
+		names.sort((x, y) -> x < y ? -1 : (x > y ? 1 : 0));
+		var s = Date.fromTime(0).toString();
+		return names.join(",") + ":" + s.length;
+	}
+
 	static function main() {
 		run("nestedOuterAfter", () -> nestedOuterAfter([1 => 10, 2 => 20], [5 => 1, 6 => 2]));
 		run("nestedOuterBefore", () -> nestedOuterBefore([1 => 10, 2 => 20], [5 => 1, 6 => 2]));
@@ -328,5 +523,27 @@ class Main {
 		run("shadowNext", () -> shadowNext());
 		run("shadowNextUnread", () -> shadowNextUnread());
 		run("shadowNextArg", () -> shadowNextArg(new ListNode(1, new ListNode(2, null))));
+		var tm = [1 => 10, 2 => 20, 3 => 30];
+		run("concatStringLiteral", () -> concatStringLiteral(tm));
+		run("interpPlainText", () -> interpPlainText(tm));
+		run("interpStringLiteral", () -> interpStringLiteral(tm));
+		run("interpCallSameName", () -> interpCallSameName(tm));
+		run("interpAnonField", () -> interpAnonField(tm, {name: "ann", id: 4}));
+		run("interpClassField", () -> interpClassField(tm, new Person("bob", 5)));
+		run("interpDynamicField", () -> interpDynamicField(tm, {name: "cy"}));
+		run("interpInPrintln", () -> interpInPrintln(tm));
+		run("interpAfterInnerLoop", () -> interpAfterInnerLoop(tm));
+		run("interpFreshLocal", () -> interpFreshLocal(tm));
+		run("switchOnWord", () -> switchOnWord(tm, "key"));
+		run("rawBindsSameName", () -> rawBindsSameName(tm));
+		run("rawAtomSameName", () -> rawAtomSameName(tm));
+		run("dateAfterLoopNamedD", () -> dateAfterLoopNamedD(tm));
+		run("dateAfterLoopNamedM", () -> dateAfterLoopNamedM(tm));
+		run("dateInIfAfterLoopNamedD", () -> dateInIfAfterLoopNamedD(tm, true));
+		run("dateBeforeLoopNamedD", () -> dateBeforeLoopNamedD(tm));
+		run("dateInsideLoopNamedD", () -> dateInsideLoopNamedD(tm));
+		run("dateBetweenLoopsNamedD", () -> dateBetweenLoopsNamedD(tm));
+		run("dateAfterInnerLoopNamedD", () -> dateAfterInnerLoopNamedD(tm));
+		run("stringKeysNamedD", () -> stringKeysNamedD(["a" => 1, "b" => 2]));
 	}
 }
