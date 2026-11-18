@@ -14,6 +14,11 @@ typedef Outer = {
 	final inner:Pair;
 }
 
+typedef Mut = {
+	var a:Int;
+	var b:Int;
+}
+
 class Main {
 	static function run(name:String, f:Void->Dynamic) {
 		try {
@@ -29,6 +34,15 @@ class Main {
 
 	static function findOuter(x:Int):Null<Outer> {
 		return x > 0 ? {inner: {a: x, b: 2}} : null;
+	}
+
+	static function findMut(x:Int):Null<Mut> {
+		return x > 0 ? {a: x, b: 2} : null;
+	}
+
+	// A value from Dynamic that lacks the field `b` that its type requires.
+	static function dyn(x:Int):Dynamic {
+		return x > 0 ? {a: x} : null;
 	}
 
 	// The reported shape.
@@ -106,9 +120,9 @@ class Main {
 		return (head == null || head.a == head.b) ? -1 : head.a;
 	}
 
-	// The rewrite binds `v.a` to a new name `v_a` inside a case clause. These shapes
-	// must keep the plain `if`: a later `v.a` reads a new `v`, or a local already has
-	// the binder's name. Main returned silent wrong values for the nil-last shapes.
+	// An older rewrite bound `v.a` to a new name `v_a` in a case clause up front. That
+	// read the wrong value when a later `v.a` meant a new `v`, or when a local already
+	// had the name `v_a`. Main returned silent wrong values for the nil-last shapes.
 	static function rebindNilLast(x:Int, flag:Bool):Int {
 		var v = find(x);
 		if (flag || v == null)
@@ -155,6 +169,125 @@ class Main {
 		if (head == null || head.a == head.b)
 			return headA;
 		return head.a;
+	}
+
+	// The second operand binds a variable (`n++`, `n += 1`, `v.a++`). The binding
+	// must reach the code after the `if`. Only non-null values run here: for a null
+	// value the compiler still runs the binding before the nil test
+	// (an open gap, see the pass documentation).
+	static function postIncr(x:Int):Int {
+		var n = 2;
+		var r = 0;
+		final v = find(x);
+		if (v == null || v.a == n++)
+			r = 1;
+		else
+			r = v.b;
+		return n * 100 + r;
+	}
+
+	static function preIncr(x:Int):Int {
+		var n = 2;
+		var r = 0;
+		final v = find(x);
+		if (v == null || v.a == ++n)
+			r = 1;
+		else
+			r = v.b;
+		return n * 100 + r;
+	}
+
+	static function postDecr(x:Int):Int {
+		var n = 2;
+		var r = 0;
+		final v = find(x);
+		if (v == null || v.a == n--)
+			r = 1;
+		else
+			r = v.b;
+		return n * 100 + r;
+	}
+
+	static function plusAssign(x:Int):Int {
+		var n = 2;
+		var r = 0;
+		final v = find(x);
+		if (v == null || v.a == (n += 1))
+			r = 1;
+		else
+			r = v.b;
+		return n * 100 + r;
+	}
+
+	static function incrTernary(x:Int):Int {
+		var n = 2;
+		final v = find(x);
+		final r = (v == null || v.a == n++) ? 1 : v.b;
+		return n * 100 + r;
+	}
+
+	static function indexIncr(x:Int):Int {
+		final kinds = [2, 9, 9];
+		var pos = 0;
+		final v = find(x);
+		final r = (v == null || v.a == kinds[pos++]) ? 1 : v.b;
+		return pos * 100 + r;
+	}
+
+	static function condFieldIncr(x:Int):Int {
+		final v = findMut(x);
+		var r = 0;
+		if (v == null || v.a++ == v.b)
+			r = 1;
+		else
+			r = v.b;
+		return (v == null ? 0 : v.a * 100) + r;
+	}
+
+	// The counter moves only in the guard and also ends the loop.
+	static function whileIncr(m:Int):Int {
+		var i = 0;
+		var guard = 0;
+		var sum = 0;
+		while (i < m && guard < 50) {
+			guard++;
+			final v = find(i + 1);
+			if (v == null || v.a == i++ * 0 + 2)
+				sum += 1000;
+			else
+				sum += v.a;
+		}
+		return guard * 100000 + sum;
+	}
+
+	// The increment runs first in the source too.
+	static function incrNilLast(x:Int):Int {
+		var n = 2;
+		var r = 0;
+		final v = find(x);
+		if (x == n++ || v == null)
+			r = 1;
+		else
+			r = v.b;
+		return n * 100 + r;
+	}
+
+	// The value lacks `b`. Haxe reads a missing field as null only when it runs
+	// the read, so the guard must not read every field up front.
+	static function missingKeyFlag(x:Int, flag:Bool):Int {
+		final d:Dynamic = dyn(x);
+		final p:Null<Pair> = d;
+		if (p == null || flag)
+			return -1;
+		return p.a;
+	}
+
+	static function missingKeyCondRead(x:Int):Int {
+		final d:Dynamic = dyn(x);
+		final p:Null<Pair> = d;
+		if (p == null || p.a == 3)
+			return -1;
+		return p.a == 1 ? -3 : p.b;
 	}
 
 	// Controls: shapes that main already gets right.
@@ -217,6 +350,25 @@ class Main {
 		run("binderNameNilFirst0", () -> binderNameNilFirst(0));
 		run("binderNameNilFirst2", () -> binderNameNilFirst(2));
 		run("binderNameNilFirst3", () -> binderNameNilFirst(3));
+		for (x in [2, 3]) {
+			run("postIncr" + x, () -> postIncr(x));
+			run("preIncr" + x, () -> preIncr(x));
+			run("postDecr" + x, () -> postDecr(x));
+			run("plusAssign" + x, () -> plusAssign(x));
+			run("incrTernary" + x, () -> incrTernary(x));
+			run("indexIncr" + x, () -> indexIncr(x));
+			run("condFieldIncr" + x, () -> condFieldIncr(x));
+		}
+		run("whileIncr", () -> whileIncr(4));
+		run("incrNilLast0", () -> incrNilLast(0));
+		run("incrNilLast2", () -> incrNilLast(2));
+		run("incrNilLast3", () -> incrNilLast(3));
+		run("missingKeyFlag0", () -> missingKeyFlag(0, false));
+		run("missingKeyFlag3", () -> missingKeyFlag(3, true));
+		run("missingKeyFlag4", () -> missingKeyFlag(4, false));
+		run("missingKeyCondRead0", () -> missingKeyCondRead(0));
+		run("missingKeyCondRead1", () -> missingKeyCondRead(1));
+		run("missingKeyCondRead3", () -> missingKeyCondRead(3));
 		run("splitIf0", () -> splitIf(0));
 		run("splitIf1", () -> splitIf(1));
 		run("nullOnly0", () -> nullOnly(0));
