@@ -67,7 +67,7 @@ defmodule TodoApp.MixProject do
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:swoosh, "~> 1.26.3"},
+      {:swoosh, "~> 1.30"},
       {:bandit, "~> 1.14.1"},
       {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
