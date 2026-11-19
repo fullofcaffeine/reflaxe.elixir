@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * ReduceAccAliasUnifyTransforms
@@ -28,7 +29,8 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *      `Enum.concat/2`, `concat/2`, or `++`.
  *      Collect these LHS names as accumulator aliases (excluding the real `acc`).
  *   2) Scan the body for trivial binder alias rebinds: `alias = binder` or `EMatch(PVar(alias), EVar(binder))` and
- *      collect `alias` as binder aliases (excluding the real `binder`).
+ *      collect `alias` as binder aliases (excluding the real `binder`). Keep only the aliases that
+ *      `isFoldableBinderAlias` proves always hold the binder's value (see there).
  *   3) Rewrite only that same lexical scope:
  *      - Replace `EVar(alias)` with `acc` (for acc aliases) or `binder` (for binder aliases).
  *      - For alias assignments, drop the rebind by rewriting to the RHS expression (keeps value semantics without
@@ -77,6 +79,234 @@ class ReduceAccAliasUnifyTransforms {
 				default: false;
 			};
 		});
+	}
+
+	/**
+	 * Counts how a callback body uses one variable name.
+	 *
+	 * WHAT
+	 * - `bindings`: places that bind or pin the name: the left side of `=`, and any pattern
+	 *   (match, `case`, `fn` arguments, `with`, `for`, `rescue`, `catch`, `receive`).
+	 * - `reads`: every other `name` reference.
+	 * - `opaque`: the name appears in raw Elixir code or in a string interpolation, where
+	 *   this count cannot tell a read from a write.
+	 *
+	 * WHY
+	 * - `isFoldableBinderAlias` needs exact counts over the whole body, nested functions
+	 *   included, to prove that a fold cannot change any value.
+	 */
+	static function nameCensus(body:ElixirAST, name:String):{bindings:Int, reads:Int, opaque:Bool} {
+		var patternBindings = 0;
+		var lhsVars = 0;
+		var allVars = 0;
+		var opaque = false;
+
+		function patternCount(pattern:EPattern):Int {
+			if (pattern == null)
+				return 0;
+			return switch (pattern) {
+				case PVar(bound): bound == name ? 1 : 0;
+				case PAlias(bound, inner): (bound == name ? 1 : 0) + patternCount(inner);
+				case PTuple(items) | PList(items): Lambda.fold(items, (item, total) -> total + patternCount(item), 0);
+				case PCons(head, tail): patternCount(head) + patternCount(tail);
+				case PMap(pairs): Lambda.fold(pairs, (pair, total) -> total + patternCount(pair.value), 0);
+				case PStruct(_, fields): Lambda.fold(fields, (field, total) -> total + patternCount(field.value), 0);
+				case PBinary(segments): Lambda.fold(segments, (segment, total) -> total + patternCount(segment.pattern), 0);
+				// A pin reads the name; count it here so that any pin blocks the fold.
+				case PPin(inner): patternCount(inner);
+				default: 0;
+			};
+		}
+
+		function varCount(expr:ElixirAST):Int {
+			var count = 0;
+			function visit(node:ElixirAST):Void {
+				if (node == null || node.def == null)
+					return;
+				switch (node.def) {
+					case EVar(v) if (v == name):
+						count++;
+					default:
+				}
+				ElixirASTTransformer.iterateAST(node, visit);
+			}
+			visit(expr);
+			return count;
+		}
+
+		function mentionsInCode(code:String, interpolatedText:Bool):Bool {
+			var refs = new Map<String, Bool>();
+			if (interpolatedText)
+				ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(code, refs);
+			else
+				ElixirCodeVarRefTokenizer.collectFromElixirCode(code, refs);
+			return refs.exists(name);
+		}
+
+		function walk(node:ElixirAST):Void {
+			if (node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EVar(v) if (v == name):
+					allVars++;
+				case EBinary(Match, lhs, _):
+					lhsVars += varCount(lhs);
+				case EMatch(pattern, _):
+					patternBindings += patternCount(pattern);
+				case ECase(_, clauses):
+					for (clause in clauses)
+						patternBindings += patternCount(clause.pattern);
+				case EReceive(clauses, _):
+					for (clause in clauses)
+						patternBindings += patternCount(clause.pattern);
+				case EWith(clauses, _, _):
+					for (clause in clauses)
+						patternBindings += patternCount(clause.pattern);
+				case EFor(generators, _, _, _, _):
+					for (generator in generators)
+						patternBindings += patternCount(generator.pattern);
+				case EFn(clauses):
+					for (clause in clauses)
+						for (arg in clause.args)
+							patternBindings += patternCount(arg);
+				case ETry(_, rescues, catches, _, _):
+					for (rescue in rescues)
+						patternBindings += patternCount(rescue.pattern) + (rescue.varName == name ? 1 : 0);
+					for (catchClause in catches)
+						patternBindings += patternCount(catchClause.pattern);
+				case EDef(_, args, _, _) | EDefp(_, args, _, _) | EDefmacro(_, args, _, _) | EDefmacrop(_, args, _, _):
+					for (arg in args)
+						patternBindings += patternCount(arg);
+				case EString(text) if (text != null && text.indexOf("#{") != -1):
+					if (mentionsInCode(text, true))
+						opaque = true;
+				case ERaw(code):
+					if (mentionsInCode(code, false))
+						opaque = true;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, walk);
+		}
+
+		walk(body);
+		return {bindings: patternBindings + lhsVars, reads: allVars - lhsVars, opaque: opaque};
+	}
+
+	/**
+	 * Returns true when `alias = binder` may be folded: every `alias` read can become `binder`.
+	 *
+	 * WHAT
+	 * - The fold drops the match and reads `binder` instead of `alias`. That is only right when
+	 *   `alias` always holds the binder's value wherever it is read.
+	 *
+	 * WHY
+	 * - Haxe `var t = x; t += 100; sum += t;` lowers to `t = x`, `t = t + 100`,
+	 *   `sum_acc = sum_acc + t`. Folding `t` into `x` dropped the second write, so the loop
+	 *   added `x` instead of `x + 100` (haxe.elixir.codex-3qab).
+	 *
+	 * HOW
+	 * - Over the whole callback body, nested functions included:
+	 *   - `alias` is bound exactly once (this match) and `binder` is never bound or pinned;
+	 *   - neither name appears in raw code or a string interpolation.
+	 * - The match is a direct statement of a block outside any nested function, and every
+	 *   `alias` read is in a later statement of that same block, outside any nested function.
+	 *   A read before the match, in another branch, or in a closure would see another value
+	 *   (or no value) after the fold, because the rewrite does not enter nested functions.
+	 *
+	 * - `ReduceAppendCanonicalizeTransforms` uses the same check before it reads the binder in
+	 *   place of an element alias inside an append.
+	 *
+	 * EXAMPLES
+	 * - Folds: `todo = entry` then `render(todo)` (`todo` bound once, read after it).
+	 * - Keeps: `t = x` then `t = t + 100` (`t` bound twice).
+	 * - Keeps: `t = x` then `x = 0` then `use(t)` (`binder` rebound).
+	 */
+	public static function isFoldableBinderAlias(body:ElixirAST, alias:String, binder:String):Bool {
+		var aliasCensus = nameCensus(body, alias);
+		if (aliasCensus.opaque || aliasCensus.bindings != 1)
+			return false;
+		var binderCensus = nameCensus(body, binder);
+		if (binderCensus.opaque || binderCensus.bindings != 0)
+			return false;
+
+		function isAliasMatch(stmt:ElixirAST):Bool {
+			return switch (stmt.def) {
+				case EBinary(Match, {def: EVar(lhs)}, {def: EVar(rhs)}): lhs == alias && rhs == binder;
+				case EMatch(PVar(lhs), {def: EVar(rhs)}): lhs == alias && rhs == binder;
+				default: false;
+			};
+		}
+
+		// Reads of `alias` in the statements after the match, outside nested functions.
+		var foldedReads:Null<Int> = null;
+		function countScopeReads(node:ElixirAST):Int {
+			var count = 0;
+			transformCurrentCallbackScope(node, function(n:ElixirAST):ElixirAST {
+				switch (n.def) {
+					case EVar(v) if (v == alias):
+						count++;
+					default:
+				}
+				return n;
+			});
+			return count;
+		}
+		transformCurrentCallbackScope(body, function(n:ElixirAST):ElixirAST {
+			if (foldedReads != null)
+				return n;
+			switch (n.def) {
+				case EBlock(stmts) | EDo(stmts):
+					for (index in 0...stmts.length)
+						if (isAliasMatch(stmts[index])) {
+							var reads = 0;
+							for (later in (index + 1)...stmts.length)
+								reads += countScopeReads(stmts[later]);
+							foldedReads = reads;
+							break;
+						}
+				default:
+			}
+			return n;
+		});
+		return foldedReads != null && foldedReads == aliasCensus.reads;
+	}
+
+	/**
+	 * Returns true when the self-appended name `alias` can only be a stale name of the accumulator.
+	 *
+	 * WHAT
+	 * - `alias` is not the callback's element binder, it appears in no raw code, and every
+	 *   binding of it in the callback body (nested functions included) is a self-append
+	 *   `alias = Enum.concat(alias, ...)` / `alias = alias ++ ...`. So the body never gives it a
+	 *   value of its own.
+	 *
+	 * WHY
+	 * - A loop that changes one outer local has one accumulator, so a free name that the body
+	 *   appends to can only be that accumulator. A name the body binds is a local instead:
+	 *   `a = a ++ [0]` on the element `a` (Haxe `a = a.concat([0])` or `a.push(0)`), or
+	 *   `a = x` then `a = a ++ [1]` (Haxe `var a = x.copy(); a.push(1);`). Renaming those
+	 *   to the accumulator appended to the wrong list (haxe.elixir.codex-g4xy).
+	 * - `EFnAliasConcatToAccTransforms` uses the same check.
+	 */
+	public static function isAccumulatorAlias(body:ElixirAST, alias:String, binderName:Null<String>):Bool {
+		if (alias == null || alias == binderName)
+			return false;
+		var selfAppends = 0;
+		function count(node:ElixirAST):Void {
+			if (node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EBinary(Match, {def: EVar(lhs)}, rhs) if (lhs == alias && isSelfAppend(rhs, alias)):
+					selfAppends++;
+				case EMatch(PVar(lhs), rhs) if (lhs == alias && isSelfAppend(rhs, alias)):
+					selfAppends++;
+				default:
+			}
+			ElixirASTTransformer.iterateAST(node, count);
+		}
+		count(body);
+		var census = nameCensus(body, alias);
+		return selfAppends > 0 && !census.opaque && census.bindings == selfAppends;
 	}
 
 	static function isSelfAppend(rhs:ElixirAST, lhs:String):Bool {
@@ -183,8 +413,14 @@ class ReduceAccAliasUnifyTransforms {
 								return x;
 							});
 							// Unify all discovered aliases (one or more) to acc across reducer body
-							var accAliases = [for (k in accAliasSet.keys()) k];
-							var binderAliases = [for (k in binderAliasSet.keys()) k];
+							var accAliases = [
+								for (k in accAliasSet.keys())
+									if (isAccumulatorAlias(cl.body, k, binderName)) k
+							];
+							var binderAliases = [
+								for (k in binderAliasSet.keys())
+									if (binderName != null && isFoldableBinderAlias(cl.body, k, binderName)) k
+							];
 							// DEBUG: Sys.println('[ReduceAccAliasUnify] reducer acc=' + accName + (binderName != null ? (', binder=' + binderName) : '') + ', accAliases=' + accAliases.length + ', binderAliases=' + binderAliases.length);
 							if (accAliases.length == 0 && binderAliases.length == 0)
 								return n;

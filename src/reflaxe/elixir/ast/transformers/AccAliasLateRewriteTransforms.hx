@@ -97,8 +97,16 @@ class AccAliasLateRewriteTransforms {
 	 * loop of `[for (x in xs) for (k in m.keys()) x + k]` is
 	 * `{acc} = Enum.reduce_while(keys, {acc}, fn k, {acc__g_acc} -> acc__g_acc = acc__g_acc ++ [x <> k] ... end)`;
 	 * renaming its update to the outer `acc` lost every element.
+	 *
+	 * Only the accumulator itself, or a free stale name of it
+	 * (`ReduceAccAliasUnifyTransforms.isAccumulatorAlias`), is rewritten. The element or a
+	 * body local that the body appends to, such as `a = a ++ [1]` from Haxe `a.push(1)` on the
+	 * loop element, is a list of its own (haxe.elixir.codex-g4xy).
 	 */
-	static function rewriteCurrentScope(body:ElixirAST, accName:String):ElixirAST {
+	static function rewriteCurrentScope(body:ElixirAST, accName:String, binderName:Null<String>):ElixirAST {
+		inline function isAlias(name:String):Bool {
+			return name == accName || ReduceAccAliasUnifyTransforms.isAccumulatorAlias(body, name, binderName);
+		}
 		return ElixirASTTransformer.transformNodeUntil(body, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EBinary(Match, left, rhs):
@@ -106,7 +114,7 @@ class AccAliasLateRewriteTransforms {
 						case EVar(nm): nm;
 						default: null;
 					};
-					if (lhsName != null && isSelfAppend(rhs, lhsName)) {
+					if (lhsName != null && isSelfAppend(rhs, lhsName) && isAlias(lhsName)) {
 						rewriteToAcc(lhsName, rhs, accName, n.metadata, n.pos);
 					} else n;
 				case EMatch(pat, rhs2):
@@ -114,7 +122,7 @@ class AccAliasLateRewriteTransforms {
 						case PVar(nm): nm;
 						default: null;
 					};
-					if (lhsName2 != null && isSelfAppend(rhs2, lhsName2)) {
+					if (lhsName2 != null && isSelfAppend(rhs2, lhsName2) && isAlias(lhsName2)) {
 						rewriteToAcc(lhsName2, rhs2, accName, n.metadata, n.pos);
 					} else n;
 				default:
@@ -141,7 +149,13 @@ class AccAliasLateRewriteTransforms {
 					};
 					if (accName == null)
 						return n;
-					makeASTWithMeta(EFn([{args: cl.args, guard: cl.guard, body: rewriteCurrentScope(cl.body, accName)}]), n.metadata, n.pos);
+					var binderName:Null<String> = switch (cl.args[0]) {
+						case PVar(b): b;
+						default: null;
+					};
+					makeASTWithMeta(EFn([
+						{args: cl.args, guard: cl.guard, body: rewriteCurrentScope(cl.body, accName, binderName)}
+					]), n.metadata, n.pos);
 				default:
 					n;
 			}

@@ -142,6 +142,15 @@ class MapAndCollectionTransforms {
 								});
 							}
 
+							// An alias `t = binder` is only dropped when `t` keeps the binder's value.
+							// `t = x`, `t = t * 2`, `note(t)` must read the doubled `t`, not `x`
+							// (haxe.elixir.codex-3qab). The check sees the body after the head-access
+							// rewrite, so `todo = list[0]` counts as `todo = binder`.
+							var checkedBody = makeAST(EBlock([for (s in stmts) replaceHeadAccess(s)]));
+							inline function isDroppableAlias(alias:String):Bool {
+								return ReduceAccAliasUnifyTransforms.isFoldableBinderAlias(checkedBody, alias, replacementName);
+							}
+
 							var newStmts:Array<ElixirAST> = [];
 							var promoteFieldsList:Bool = false; // when alias is Reflect.fields(listExpr)[0]
 							var droppedAlias:Null<String> = null;
@@ -166,7 +175,7 @@ class MapAndCollectionTransforms {
 											case EVar(nm2) if (nm2 == replacementName): true;
 											default: false;
 										};
-										if (lvar != null && rIsBinder) {
+										if (lvar != null && rIsBinder && isDroppableAlias(lvar)) {
 											droppedAlias = lvar;
 											continue;
 										}
@@ -179,7 +188,7 @@ class MapAndCollectionTransforms {
 											case EVar(nm4) if (nm4 == replacementName): true;
 											default: false;
 										};
-										if (pvar != null && rIsBinder2) {
+										if (pvar != null && rIsBinder2 && isDroppableAlias(pvar)) {
 											droppedAlias = pvar;
 											continue;
 										}

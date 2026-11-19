@@ -26,7 +26,8 @@ import reflaxe.elixir.ast.ASTUtils;
 	*     `EBinary(Match, EVar(lhs), ERemoteCall(_, "concat", [EVar(lhs), rhs]))`
 	*   or
 	*     `EMatch(PVar(lhs), ERemoteCall(_, "concat", [EVar(lhs), rhs]))`
-	*   rewrite lhs to acc on both sides.
+	*   rewrite lhs to acc on both sides, when lhs is the accumulator or
+	*   `ReduceAccAliasUnifyTransforms.isAccumulatorAlias` proves it is a stale name of it.
 
 	*
 	* EXAMPLES
@@ -73,6 +74,15 @@ class EFnAliasConcatToAccTransforms {
 					};
 					if (accName == null)
 						return n;
+					var binderName:Null<String> = switch (cl.args[0]) {
+						case PVar(b): b;
+						default: null;
+					};
+					// Only a free name can be a stale accumulator name; a name the body binds
+					// (the element, or a local copy) is a list of its own (haxe.elixir.codex-g4xy).
+					inline function isAlias(name:String):Bool {
+						return name == accName || ReduceAccAliasUnifyTransforms.isAccumulatorAlias(cl.body, name, binderName);
+					}
 					var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
 						case EBlock(ss): ss;
 						default: [cl.body];
@@ -85,7 +95,7 @@ class EFnAliasConcatToAccTransforms {
 									case EVar(nm): nm;
 									default: null;
 								};
-								if (lhs != null && isSelfAppend(rhs, lhs)) {
+								if (lhs != null && isSelfAppend(rhs, lhs) && isAlias(lhs)) {
 									var replLeft = makeAST(EVar(accName));
 									// Rebuild right, preserving list arg and replacing prefix with acc
 									var newRight = ElixirASTTransformer.transformNode(rhs, function(z:ElixirAST):ElixirAST {
@@ -109,7 +119,7 @@ class EFnAliasConcatToAccTransforms {
 									case PVar(nm): nm;
 									default: null;
 								};
-								if (lhsName != null && isSelfAppend(rhsExpr, lhsName)) {
+								if (lhsName != null && isSelfAppend(rhsExpr, lhsName) && isAlias(lhsName)) {
 									var newLeft = makeAST(EVar(accName));
 									var rewrittenRight = ElixirASTTransformer.transformNode(rhsExpr, function(node:ElixirAST):ElixirAST {
 										return switch (node.def) {

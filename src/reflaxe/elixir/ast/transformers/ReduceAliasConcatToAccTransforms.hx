@@ -50,6 +50,15 @@ class ReduceAliasConcatToAccTransforms {
 							};
 							if (accName == null)
 								return n;
+							var binderName:Null<String> = switch (cl.args[0]) {
+								case PVar(b): b;
+								default: null;
+							};
+							// Only the accumulator or a free stale name of it is renamed; the element or a
+							// body local appended to is a list of its own (haxe.elixir.codex-g4xy).
+							inline function isAlias(name:String):Bool {
+								return name == accName || ReduceAccAliasUnifyTransforms.isAccumulatorAlias(cl.body, name, binderName);
+							}
 							var bodyStmts:Array<ElixirAST> = switch (cl.body.def) {
 								case EBlock(ss): ss;
 								default: [cl.body];
@@ -68,7 +77,7 @@ class ReduceAliasConcatToAccTransforms {
 													case EVar(nm2): nm2;
 													default: null;
 												};
-												var isSelf = (arg0Name != null && arg0Name == lhs);
+												var isSelf = (arg0Name != null && arg0Name == lhs && isAlias(lhs));
 												if (isSelf) {
 													var replLeft = makeAST(EVar(accName));
 													var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
@@ -83,14 +92,14 @@ class ReduceAliasConcatToAccTransforms {
 											default: stmt;
 										}
 									case EMatch(pat, rhs2):
-										var lhs2:Null<String> = switch (pat) {
+										var concatTarget:Null<String> = switch (pat) {
 											case PVar(nm): nm;
 											default: null;
 										};
 										switch (rhs2.def) {
-											case ERemoteCall(_, "concat", cargs2) if (lhs2 != null && cargs2.length == 2):
-												var isSelf2 = switch (cargs2[0].def) {
-													case EVar(nm3): (nm3 == lhs2);
+											case ERemoteCall(_, "concat", cargs2) if (concatTarget != null && cargs2.length == 2):
+												var isSelf2 = isAlias(concatTarget) && switch (cargs2[0].def) {
+													case EVar(nm3): (nm3 == concatTarget);
 													default: false;
 												};
 												if (isSelf2) {

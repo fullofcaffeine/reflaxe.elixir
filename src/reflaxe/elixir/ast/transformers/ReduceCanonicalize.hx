@@ -82,6 +82,11 @@ class ReduceCanonicalize {
 	}
 
 	static function rewriteBody(body:ElixirAST, binderName:Null<String>, accName:Null<String>, listExpr:ElixirAST):ElixirAST {
+		// Only the accumulator or a free stale name of it is renamed; the element or a body
+		// local appended to is a list of its own (haxe.elixir.codex-g4xy).
+		inline function isAlias(name:String):Bool {
+			return name == accName || ReduceAccAliasUnifyTransforms.isAccumulatorAlias(body, name, binderName);
+		}
 		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
 			return switch (x.def) {
 				// lhs = Enum.concat(lhs, list) → acc = Enum.concat(acc, list)
@@ -91,7 +96,7 @@ class ReduceCanonicalize {
 						default: null;
 					};
 					var isSelf = switch (cargs[0].def) {
-						case EVar(n): (lhsName != null && n == lhsName);
+						case EVar(n): (lhsName != null && n == lhsName && isAlias(lhsName));
 						default: false;
 					};
 					if (isSelf) {
