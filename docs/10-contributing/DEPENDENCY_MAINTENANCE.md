@@ -47,36 +47,9 @@ maintainers prepare focused, reviewable updates instead of accepting broad autom
 5. If an update is deferred, record the reason, affected versions, known exposure, and next review
    date in a tracked issue. Never add a broad advisory ignore merely to make CI green.
 
-### Temporary picomatch acknowledgement
-
-`npm run audit:npm-high` still rejects each unacknowledged high- or critical-severity finding. Until
-2026-12-17, it acknowledges one advisory:
-[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) (CVE-2026-112366). An
-attacker who controls a glob pattern such as `+(*)` can make picomatch use a large amount of CPU. Every
-picomatch release through 4.0.7, the latest, is affected. No fixed release exists yet.
-
-The acknowledgement accepts only these three locked copies:
-
-- `node_modules/picomatch` 2.3.2, from `semantic-release` and `@semantic-release/commit-analyzer`
-  through `micromatch`;
-- `node_modules/tinyglobby/node_modules/picomatch` 4.0.5, from `@semantic-release/github` through
-  `tinyglobby` and `fdir`;
-- `node_modules/npm/node_modules/tinyglobby/node_modules/picomatch` 4.0.4, from the npm archive that
-  `@semantic-release/npm` installs, through `@npmcli/run-script`, `node-gyp`, and `tinyglobby`.
-
-npm audit also reports the packages on those paths as high findings. The policy accepts such a parent
-only when every high or critical cause it reports ends at the acknowledged picomatch finding. A
-moderate advisory on a parent does not block, and it does not hide a high one.
-
-All of these packages are development-only release tooling. Compiler packages and generated
-applications do not include them. The glob patterns they compile come from repository files
-(`release.config.js` and `release/manifest.json`) and contain no extglob syntax, so no untrusted
-pattern reaches the vulnerable parser. Release inputs must remain trusted repository data while this
-acknowledgement is active.
-
-The policy fails if the advisory identity, a path, or a locked version changes. It also fails for a
-new high or critical advisory and after the review date. Remove the acknowledgement, and upgrade
-picomatch, as soon as a fixed release exists.
+`npm run audit:npm-high` fails on every high- or critical-severity finding. It has no advisory
+acknowledgements: the temporary picomatch exception for GHSA-fc5q-39xc-vjpf was removed after GitHub
+withdrew that advisory on 2026-11-18.
 
 ## Updating Gitleaks Safely
 
