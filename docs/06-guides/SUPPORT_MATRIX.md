@@ -43,7 +43,8 @@ Phoenix coverage:
 
 - `examples/todo-app` pins Phoenix `~> 1.7.24` and is exercised via the QA sentinel workflow (boot + Playwright smoke).
 - The runnable Phoenix/Ecto examples use the primary Elixir `1.18.3` / OTP `27.2` toolchain. Their
-  current security-patched dependency graph requires Elixir `1.16+` (notably Swoosh `1.26.3`).
+  current security-patched dependency graph requires Elixir `1.16+` (notably Swoosh `1.30.0`, which also
+  allows the repaired idna `8.0.0`).
   This does not raise the compiler's Elixir `1.14+` minimum: the minimum-toolchain job validates the
   compiler and runtime libraries, while application dependencies set their own higher requirements.
 
