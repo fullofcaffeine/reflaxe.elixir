@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * NumericSuffixVarNormalizeTransforms
@@ -35,6 +36,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *      - If base is free, rename binder to base; otherwise choose a descriptive
  *        alternative (base_value/base_entry/base_next/...) that avoids numbers.
  *   3) Rewrite all EVar references in the corresponding body using the computed map.
+ * - A name that raw Elixir code in the scope reads (`ERaw`, such as an interpolated
+ *   string `"#{q1}"`, or `EString` interpolation) is never renamed, and no new name
+ *   may equal it. The rename map rewrites `EVar` nodes only, so it cannot reach those
+ *   reads: renaming `q1 = 2` to `q_entry = 2` left `"#{q1}"` reading an undefined
+ *   variable, and a later pass then dropped the unused `q_entry` (`haxe.elixir.codex-hhp5`,
+ *   regression fixture `test/differential/r18_name_drift_binders`).
  * - Module names and atoms are never touched (we only rewrite lower-case EVar/PVar).
  *
  * EXAMPLES
@@ -64,7 +71,7 @@ class NumericSuffixVarNormalizeTransforms {
 						// Consider both guard and body references to decide if base names are desired
 						var refScope = (cl.guard == null) ? cl.body : makeASTWithMeta(EBlock([cl.guard, cl.body]), {}, cl.body.pos);
 						var refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(refScope);
-						var rename = computeNumericRenamesGated(declared, refs);
+						var rename = computeNumericRenamesGated(declared, refs, null, rawCodeNames(refScope));
 						var newPattern = renamePattern(cl.pattern, rename);
 						var newBody = renameBodyVars(cl.body, rename);
 						var newGuard = (cl.guard == null) ? null : renameBodyVars(cl.guard, rename);
@@ -79,7 +86,7 @@ class NumericSuffixVarNormalizeTransforms {
 							for (nm in collectPatternVars(a).keys())
 								paramVars.set(nm, true);
 						var refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(cl.body);
-						var rename = computeNumericRenamesGated(paramVars, refs);
+						var rename = computeNumericRenamesGated(paramVars, refs, null, rawCodeNames(cl.body));
 						out.push({args: [for (a in cl.args) renamePattern(a, rename)], guard: cl.guard, body: renameBodyVars(cl.body, rename)});
 					}
 					makeASTWithMeta(EFn(out), n.metadata, n.pos);
@@ -98,7 +105,8 @@ class NumericSuffixVarNormalizeTransforms {
 		// Propose renames for numeric-suffixed declared names in params
 		// Conservative gating: only rename when the base form is referenced or also declared.
 		var __refs = reflaxe.elixir.ast.analyzers.VariableUsageCollector.referencedInFunctionScope(body);
-		var paramRename = containsERaw(body) ? new Map<String, String>() : computeNumericRenamesGated(declared, __refs);
+		var rawNames = rawCodeNames(body);
+		var paramRename = containsERaw(body) ? new Map<String, String>() : computeNumericRenamesGated(declared, __refs, null, rawNames);
 		var newParams = [for (p in params) renamePattern(p, paramRename)];
 
 		// Extend declared with any new param names post-rename
@@ -113,7 +121,7 @@ class NumericSuffixVarNormalizeTransforms {
 		for (k in declared.keys())
 			if (bodyDecl.exists(k))
 				bodyDecl.remove(k);
-		var bodyRename = containsERaw(body) ? new Map<String, String>() : computeNumericRenamesGated(bodyDecl, __refs, declared);
+		var bodyRename = containsERaw(body) ? new Map<String, String>() : computeNumericRenamesGated(bodyDecl, __refs, declared, rawNames);
 
 		// Merge rename maps (params first, then body).
 		var rename = new Map<String, String>();
@@ -227,13 +235,26 @@ class NumericSuffixVarNormalizeTransforms {
 	}
 
 	// Conservative numeric-suffix normalization: only when base is present/referenced.
-	static function computeNumericRenamesGated(toNormalize:Map<String, Bool>, refs:Map<String, Bool>, ?reserved:Map<String, Bool>):Map<String, String> {
+	static function computeNumericRenamesGated(toNormalize:Map<String, Bool>, refs:Map<String, Bool>, ?reserved:Map<String, Bool>,
+			?rawNames:Map<String, Bool>):Map<String, String> {
 		var rename = new Map<String, String>();
 		var used = new Map<String, Bool>();
 		for (k in toNormalize.keys())
 			used.set(k, true);
 		if (reserved != null)
 			for (k in reserved.keys())
+				used.set(k, true);
+		// Raw code reads these names and a rename cannot follow them there: keep each such
+		// binder, and never pick one of them as a new name.
+		// Side effect: a raw read of the base now counts as "base declared" below, so this
+		// renames more binders than before. Example: in `fn x2 -> IO.puts("saw #{x}"); x2 + 1 end`
+		// the base `x` is read only in raw text. Before, `x2` was kept; now it becomes
+		// `x_value`. This is safe: the binder itself is not read in raw code (skipped below),
+		// so the rename reaches the binder and every `EVar` read of it. The new name is not
+		// in `used` (this scope's binders, reserved names, raw reads and reads), the same
+		// check that the existing "base declared" path relies on. Only the spelling changes.
+		if (rawNames != null)
+			for (k in rawNames.keys())
 				used.set(k, true);
 		// Reads can refer to enclosing bindings that are absent from this scope's
 		// declarations. Reserve both spellings because later warning cleanup may
@@ -245,6 +266,8 @@ class NumericSuffixVarNormalizeTransforms {
 			}
 
 		for (k in toNormalize.keys()) {
+			if (rawNames != null && rawNames.exists(k))
+				continue;
 			var split = splitNumericSuffix(k);
 			if (split == null)
 				continue;
@@ -299,6 +322,26 @@ class NumericSuffixVarNormalizeTransforms {
 					x;
 			}
 		});
+	}
+
+	/**
+	 * Returns the local names that raw Elixir code under `node` reads: the text of each
+	 * `ERaw` node (for example an interpolated string built by `StringInterpolation`) and
+	 * the `#{...}` parts of each `EString`.
+	 *
+	 * A rename here rewrites `EVar` nodes only, so it must keep these names: renaming the
+	 * binder `q1` while `"#{q1}"` still reads `q1` leaves that read undefined.
+	 */
+	static function rawCodeNames(node:ElixirAST):Map<String, Bool> {
+		var names = new Map<String, Bool>();
+		reflaxe.elixir.ast.ASTUtils.walk(node, n -> switch (n.def) {
+			case ERaw(code):
+				ElixirCodeVarRefTokenizer.collectFromElixirCode(code, names);
+			case EString(text):
+				ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(text, names);
+			default:
+		});
+		return names;
 	}
 
 	static function containsERaw(n:ElixirAST):Bool {
