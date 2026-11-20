@@ -483,6 +483,52 @@ complete live module set with the last successful request lets Reflaxe detect
 the deletion safely. This is a correctness fallback for uncommon project-shape
 changes, not a second incremental cache.
 
+### Dead-code elimination can change a class that you did not edit
+
+Haxe's dead-code elimination (DCE) removes the members that no live code uses.
+With `-dce full` it does this for your classes, and with the default `-dce std`
+for standard-library classes. DCE looks at the whole program after typing, so an
+edit in one class can add a member to another class, or remove one, although
+Haxe did not type that other class again. For example:
+
+```haxe
+class Helper {
+  public static function title():String return "Todos";
+  public static function format(s:String):String return s.toUpperCase(); // unused: DCE removes it
+}
+
+class Page {
+  public static function render():String return Helper.title(); // edit: Helper.format(Helper.title())
+}
+```
+
+After the edit, Haxe types only `Page` again, but `Helper` now has `format`, and
+a fresh build writes `def format(s)` in `helper.ex`. The edit back removes it
+again.
+
+For each class that it builds, Reflaxe.Elixir records the members that Haxe
+kept, for the class and for each of its superclasses. A warm request builds a
+class again when these members differ from that record, in both directions. The
+record changes only after the build output was published, so a failed request
+does not lose it. Private methods that only a removed member called are removed
+from their own class too, and that class is built again for the same reason.
+
+Inherited members count because a subclass module repeats them. When `Kid`
+extends `Base`, `kid.ex` gets `def hello(struct), do: Base.hello(struct)` for
+each public instance method of `Base`. If an edit elsewhere makes `Base.hello`
+live, `Kid` is built again too, although neither class was edited.
+
+A module-level function can name its module with `@:native`. A fresh build reads
+that name from all module-level functions of the file, also from the ones that
+DCE removes. A warm request now reads the same name, because the compiler keeps
+that metadata with the typed module. Before, a warm request read it only from
+the live functions, and a call such as `Shared.plain()` could change its target
+module after an unrelated edit.
+
+The `dce-members` case of `npm run test:reflaxe-server-cache` makes members live
+and dead with edits in another class and compares each warm build with a fresh
+build.
+
 This is real compiler-state reuse, but not a universal module-artifact cache:
 
 - Reflaxe still performs required whole-program fact collection and output work.

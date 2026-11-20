@@ -21,8 +21,20 @@ import haxe.macro.Type;
  *
  * HOW
  * - `capture()` is called from a global build macro (`AnnotatedModuleEnumerator`).
- * - We store field metadata + local import table by module path.
+ * - We store field metadata on the carrier class itself, and the local import
+ *   table by module path.
  * - Compiler phases query this registry to merge metadata and resolve short type refs.
+ *
+ * WHY THE METADATA LIVES ON THE CLASS
+ * - A Haxe compilation server reuses a typed module without running its build
+ *   macro again, and resets request-local statics. Metadata kept only in a
+ *   static map was then missing on a warm request, and the compiler saw only
+ *   the metadata of the fields that dead-code elimination kept. Example under
+ *   `-dce full`: `@:native("SharedNamed") function named()` names the module of
+ *   `Shared.hx`. A fresh build names it `SharedNamed` also while `named` is
+ *   unused; a warm request named it `Shared_Fields_`, and `Shared.plain()`
+ *   called a module that a fresh build does not have. The typed class keeps its
+ *   metadata between requests, so both builds now read the same entries.
  */
 typedef ModuleFieldImportData = {
 	var explicitImports:Map<String, String>;
@@ -40,7 +52,12 @@ class ModuleFieldMetadataRegistry {
 	 */
 	public static inline final MODULE_ROUTES_CACHE_META = ":reflaxeElixirModuleRoutes";
 
-	static var metadataByModulePath:Map<String, Array<MetadataEntry>> = new Map();
+	/**
+	 * Internal class metadata that carries one module-level field metadata
+	 * entry: its name as the first parameter, then its own parameters.
+	 */
+	static inline final MODULE_FIELD_META = ":reflaxeElixirModuleFieldMeta";
+
 	static var importsByModulePath:Map<String, ModuleFieldImportData> = new Map();
 	static var fieldInitializersByModulePath:Map<String, Map<String, Expr>> = new Map();
 
@@ -149,11 +166,12 @@ class ModuleFieldMetadataRegistry {
 			}
 		}
 
-		if (entries.length == 0)
+		if (entries.length == 0 || classType.meta.has(MODULE_FIELD_META))
 			return;
 
-		for (key in captureKeys(classType)) {
-			metadataByModulePath.set(key, entries);
+		for (entry in entries) {
+			var name:Expr = {expr: EConst(CString(entry.name)), pos: entry.pos};
+			classType.meta.add(MODULE_FIELD_META, [name].concat(entry.params), entry.pos);
 		}
 	}
 
@@ -274,13 +292,25 @@ class ModuleFieldMetadataRegistry {
 			keys.push(key);
 	}
 
+	/** Returns the module-level field metadata kept on a carrier class, in source order. */
 	static function findMetadata(classType:ClassType):Null<Array<MetadataEntry>> {
-		for (key in lookupKeys(classType)) {
-			var entries = metadataByModulePath.get(key);
-			if (entries != null && entries.length > 0)
-				return entries;
+		// Module-level metadata belongs only to the synthetic KModuleFields carrier type.
+		switch (classType.kind) {
+			case KModuleFields(_):
+			default:
+				return null;
 		}
-		return null;
+		var entries:Array<MetadataEntry> = [];
+		for (carried in classType.meta.extract(MODULE_FIELD_META)) {
+			if (carried.params == null || carried.params.length == 0)
+				continue;
+			switch (carried.params[0].expr) {
+				case EConst(CString(name, _)):
+					entries.push({name: name, params: carried.params.slice(1), pos: carried.pos});
+				case _:
+			}
+		}
+		return entries;
 	}
 
 	static function findImports(classType:ClassType):Null<ModuleFieldImportData> {
