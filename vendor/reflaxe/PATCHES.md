@@ -97,64 +97,88 @@ The private-export add/remove cases and the `dce-members` case in
 `haxe.elixir.codex-x31` and `haxe.elixir.codex-c0o.23`. This patch stays local
 until an equivalent upstream cache hook is reviewed, adopted, and verified.
 
-### Cached Rebuild Matches `@:native` Classes By Source Path
+### Types That Haxe Typed Again Carry The Request That Typed Them
 
-On a compilation server, Reflaxe keeps only the classes that Haxe typed again
-in the current request. It found them by comparing `pack` and `name` of the
-class seen by the build macro with the class in the post-typing list. Haxe
-renames a class with `@:native("MyAppWeb.ErrorJSON")` to its native path before
-the target runs, so the comparison never matched. The edited class was dropped,
-the old target file stayed on disk, and the build reported success.
+On a compilation server, Reflaxe keeps only the types that Haxe typed again in
+the current request. Upstream Reflaxe finds them with a global build macro,
+`addToBuildCache`, that its initialization macro registers. A build macro runs
+only for a type that Haxe types after the macro was registered. A type that
+Haxe typed earlier in the request was never recorded.
 
-`ReflectCompiler.isSameSourceClass` now compares the source module and the Haxe
-path, which Haxe keeps in `@:realPath`. Most Phoenix modules use `@:native`
-(controllers, endpoints, JSON views), so this is required before a warm server
-can be trusted for a Phoenix application.
+Observed failure shape: a project HXML had a line
+`--macro haxe.macro.Context.getType("CacheNative")` in front of
+`-lib reflaxe.elixir`. After an ordinary edit of `CacheNative`, Haxe typed the
+class again, before Reflaxe started. The cache filter left the class out, the
+old `cache_web/native_label.ex` stayed on disk, and the build exited 0. The
+same happened to an enum in the request after a same-second edit (see below).
 
-The `native-class` variant in `test:reflaxe-server-cache` edits only the body of
-a `@:native` class and compares warm output with fresh output. This patch stays
-local until upstream Reflaxe has an equivalent comparison.
+Local fix: `ReflectCompiler.onAfterTyping` adds
+`@:reflaxe.typedIn("<request token>")` to each type that has no such metadata
+yet. A request token is the request's start time and a request count. A type
+that Haxe reused from the server cache keeps the token of the request that
+typed it; a type that Haxe typed again is a new object without metadata and
+gets the current token. `wasTypedThisRequest(type)` returns true when the type
+has no token or the current one. This does not depend on when Haxe typed the
+type.
 
-### Cached Rebuild Skips Enums That Haxe Reused
+Why it is exact on Haxe 4.3:
 
-Upstream Reflaxe generates each enum, typedef and abstract again on each warm
-request, because it records only rebuilt classes. Haxe also runs a build macro
-when it types an enum, so `ReflectCompiler.addToBuildCache` now records enums
-too, and the cache filter drops an enum that Haxe reused from the server cache.
+- Haxe saves the metadata of a class after typing and puts it back when a later
+  request reuses the class. `onAfterTyping` runs before that save, so the token
+  is part of the saved state. Metadata added later, for example after output
+  publication, is removed again on reuse; a first version of this fix did that
+  and built every class again in each request.
+- Haxe adds the typed modules of a request to its cache only when the request
+  had no error. A type with an older token therefore comes from a request that
+  published its output.
+- The metadata has a position outside every source file. With the type's own
+  position, an editor request on a cached module found the metadata at the
+  cursor and failed with "No completion point was found".
 
+The token lives on the type object, so a class that Haxe renamed with
+`@:native("MyAppWeb.ErrorJSON")` is found without a path comparison. The
+earlier patch compared the source module and the Haxe path (`@:realPath`),
+because the build macro saw the Haxe path and the target saw the native one;
+that comparison is no longer needed and was removed.
+
+The cache filter uses the same query for enums. Upstream Reflaxe generates each
+enum again on each warm request; this patch drops an enum that Haxe reused.
 Why this is safe: Haxe types an enum again when its source file or a module
-that it uses changed, and the existing source fingerprint of every non-class
-declaration still forces one full target build when any such file changes.
-Typedefs and abstracts have no build macro and are still always passed on; the
-Elixir target generates no module for them.
+that it uses changed, and the source fingerprint of every non-class declaration
+(patch 9) still forces one full target build when any such file changes.
+Typedefs and abstracts are still always passed on; the Elixir target generates
+no module for them. Measured on a consumer backend with 80 enum modules: the
+pass pipeline of a one-class warm edit ran for 81 modules (about 3.2 s) before,
+and for 1 module (about 0.06 s) after.
 
-Measured on a consumer backend with 80 enum modules: the pass pipeline of a
-one-class warm edit ran for 81 modules (about 3.2 s) before, and for 1 module
-(about 0.06 s) after. `test:reflaxe-server-cache` checks that a one-class edit
-builds no enum module, and each of its variants still compares the complete
+Reflaxe.Elixir also uses `wasTypedThisRequest` to keep per-class results
+between server requests: private-method export uses, clean reference-semantics
+scans, and the module name and member list that each class was built with
+(`ClassResultCache`). Before, each warm request scanned every class body two
+times (about 0.6 s on the todo-app under load), and the printer's module
+registry missed the classes that the request did not build, so a one-class
+edit printed `FlashTypeTools` where a fresh build printed
+`TodoApp.FlashTypeTools`.
+
+Reflaxe.Elixir's `ServerSourceFreshness.refuseStaleReuse` uses the same query
+for the last gap: a same-second edit of a file whose module Haxe loaded before
+the target started. Haxe then holds the old type in that request, and no
+filter can produce the new output. The build stops with an error that names
+the module, and writes nothing; Haxe types the module again in the next build.
+
+Tests in `test:reflaxe-server-cache`: `early-typed` (an ordinary class edit, an
+unchanged request that must build no class module, an ordinary enum edit, and
+a same-second enum edit that must refuse once and then equal a fresh build),
+`native-class` (a `@:native` class body edit), `private-exports` (a one-class
+edit scans fewer classes than a full scan), and every variant's comparison of
 warm output with a fresh build. This patch stays local until upstream Reflaxe
-tracks rebuilt enums.
+has an equivalent query.
 
-### Public Query For Classes That Haxe Typed Again
-
-`ReflectCompiler.wasTypedThisRequest(cls)` returns true when the global build
-macro recorded `cls` in this compilation request, or when the request cannot
-tell (the first server request, a build without a server, or
-`reflaxe.disallow_build_cache_check`). It reuses the list and the
-`sourceTypeKey` comparison that the cache filter already uses, so a class with
-`@:native` is found under its Haxe path.
-
-Reflaxe.Elixir uses it to keep per-class results between server requests:
-private-method export uses, clean reference-semantics scans, and the module
-name and member list that each class was built with (`ClassResultCache`).
-Before, each warm request
-scanned every class body two times (about 0.6 s on the todo-app under load),
-and the printer's module registry missed the classes that the request did not
-build, so a one-class edit printed `FlashTypeTools` where a fresh build printed
-`TodoApp.FlashTypeTools`. The `private-exports` case of
-`test:reflaxe-server-cache` checks that a one-class edit scans fewer classes
-than a full scan and still equals a fresh build. This patch stays local until
-upstream Reflaxe offers an equivalent query.
+Limits: the exactness argument rests on the Haxe 4.3 server rules above. A
+Haxe version that rebuilds cached type objects from a binary cache without the
+metadata would build more types again, not fewer. A type that Haxe types only
+after `onAfterTyping`, for example from a target callback, has no token and is
+built again in the next request.
 
 ### 1. `Run.hx`: Build Root File Copy
 
@@ -511,14 +535,14 @@ Files:
 Why it exists:
 
 During a normal Haxe compilation-server edit, Reflaxe can regenerate only the
-classes Haxe reports as rebuilt. Two boundaries cannot be represented safely by
-that class-only list:
+types that Haxe typed again. Two boundaries cannot be represented safely by
+that list:
 
-- A deleted class no longer exists, so Haxe cannot report it as rebuilt. A
-  rename is the same problem expressed as one deletion plus one addition.
-- Haxe build macros do not run on enums, typedefs, or abstracts. These types can
-  still affect otherwise unchanged classes through inline code, representation,
-  metadata, and global framework registries.
+- A deleted class no longer exists, so Haxe cannot type it again. A rename is
+  the same problem expressed as one deletion plus one addition.
+- Enums, typedefs, and abstracts can affect otherwise unchanged classes through
+  inline code, representation, metadata, and global framework registries.
+  Building only the changed declaration again is not enough.
 
 Observed failure shape:
 

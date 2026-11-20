@@ -412,9 +412,18 @@ applies to them:
 - a `.hx` file that only macro code imports;
 - an `import.hx` file;
 - a file that a macro registers with `Context.registerModuleDependency` (see
-  [External files read by macros](#external-files-read-by-macros));
-- a module that a `--macro` line of your HXML asks for before
-  `-lib reflaxe.elixir`, for example `--macro haxe.macro.Context.getType("A")`.
+  [External files read by macros](#external-files-read-by-macros)).
+
+**A module that Haxe types before Reflaxe.Elixir starts.** A `--macro` line in
+front of `-lib reflaxe.elixir`, for example
+`--macro haxe.macro.Context.getType("A")`, makes Haxe load `A` before
+Reflaxe.Elixir can tell Haxe to read a file again. After a same-second edit of
+`A.hx`, Haxe holds the old `A` in that build. The build then stops with an
+error that names `A` ("the compilation server used an old copy of A") and
+writes nothing. Run the build again: Haxe reads `A.hx` again, and the build
+writes the new output. An ordinary save, with a new file time, needs no second
+build. If `A.hx` is new to the server, the build cannot see the change and can
+keep the old output once, as for the other files in this list.
 
 **A file that the server sees for the first time.** The server has no earlier
 copy of such a file to compare with. It trusts the file only when the last
@@ -438,6 +447,19 @@ nothing. A file that changed with the same file time more than two seconds
 before that request stays old until you change it again. `mix haxe.watch` gives
 each HXML file its own server, so a change of defines does not happen there;
 an error in macro code can happen on any server.
+
+### Which modules a warm build builds again
+
+Reflaxe marks each type when Haxe types it: the type gets the name of the build
+request that typed it. A type that the server reuses keeps the mark of an
+earlier build, and a warm build leaves it out. A type that Haxe typed again
+gets the mark of the current build and is built again. This does not depend on
+when Haxe typed the module. For example, a `--macro` line in front of
+`-lib reflaxe.elixir` can make Haxe type `CacheNative` before Reflaxe.Elixir
+starts; an edit of `CacheNative.hx` still writes the new Elixir. Before this
+mark existed, Reflaxe found the typed-again types with a build macro that it
+registers when it starts, so it missed such a module, and the warm build kept
+the old file and exited 0.
 
 Changing an enum, typedef, or abstract intentionally
 causes one full target regeneration. These declarations can affect otherwise

@@ -70,11 +70,13 @@ private typedef SourceSnapshot = {
  *   file time more than two seconds before that request then stays old until
  *   it changes again. One server that takes turns between two HXML files with
  *   different defines is not covered across each change.
- * - A module that Haxe loads before this macro runs is not covered: the few
- *   base modules such as `StdTypes`, and any module that an earlier
- *   initialization macro of the project asks for, for example
- *   `--macro haxe.macro.Context.getType("A")` in front of `-lib reflaxe.elixir`.
- *   Haxe has then already decided to reuse the module in this request.
+ * - Haxe can load a module before this macro runs: the few base modules such
+ *   as `StdTypes`, and any module that an earlier initialization macro of the
+ *   project asks for, for example `--macro haxe.macro.Context.getType("A")` in
+ *   front of `-lib reflaxe.elixir`. Haxe has then already decided to reuse the
+ *   module in this request. When such a module is a known file that changed,
+ *   `refuseStaleReuse` stops the build, and the next build uses the new text.
+ *   A first-time file has no snapshot, so this cannot be seen for it.
  * - Some requests record nothing: an editor (display) request, and a request
  *   that stops before Haxe finished typing, for example on a syntax error. A
  *   file that Haxe parsed for the first time in such a request, and that then
@@ -124,6 +126,13 @@ class ServerSourceFreshness {
 	static var trustedBeforeMs:Float = 0.0;
 
 	/**
+	 * The full paths of the known files whose bytes differ from their snapshot
+	 * in this request. Not persistent, so each request starts with none.
+	 * `refuseStaleReuse` reads it.
+	 */
+	static var changedThisRequest:Null<Map<String, Bool>> = null;
+
+	/**
 	 * Compares every known source file with its snapshot and tells Haxe to
 	 * forget each file that differs. Must run before anything asks Haxe for a
 	 * type, because Haxe decides about a cached module when it loads it.
@@ -158,6 +167,14 @@ class ServerSourceFreshness {
 				}
 				if (previous == null || !sameSnapshot(previous, current))
 					changed.push(path);
+				// `UNPROVEN` holds no bytes; a snapshot of it is read again below and
+				// is not a known change. Its file time tells it apart, because a
+				// new request makes a new `UNPROVEN` object.
+				if (previous != null && previous.modifiedMs >= 0 && previous.bytes.compare(current.bytes) != 0) {
+					if (changedThisRequest == null)
+						changedThisRequest = new Map();
+					changedThisRequest.set(path, true);
+				}
 				known.set(path, current);
 			}
 			if (changed.length > 0)
@@ -165,6 +182,63 @@ class ServerSourceFreshness {
 		}
 
 		Context.onAfterTyping(recordTypedSources);
+		#end
+	}
+
+	/**
+	 * Stops the build when Haxe used an old copy of a type whose source file
+	 * changed with the same file time.
+	 *
+	 * WHY
+	 * - `start` tells Haxe to forget a changed file, but Haxe may have loaded
+	 *   the module before `start` ran: for example for a project line
+	 *   `--macro haxe.macro.Context.getType("Status")` in front of
+	 *   `-lib reflaxe.elixir`. Haxe then keeps the old type in this request,
+	 *   and the build would write old Elixir and report success.
+	 *
+	 * HOW
+	 * - A type of a file that changed in this request (`changedThisRequest`)
+	 *   is old exactly when Haxe did not type it again:
+	 *   `ReflectCompiler.wasTypedThisRequest` returns false. Then this function
+	 *   reports an error, and the build writes nothing.
+	 * - Haxe has already been told to forget the file, so the next request
+	 *   types the module again, and Reflaxe builds it again.
+	 *
+	 * An ordinary edit, with a new file time, is not stopped: Haxe sees it by
+	 * itself and types the module again.
+	 */
+	public static function refuseStaleReuse(types:Array<ModuleType>):Void {
+		#if macro
+		final changed = changedThisRequest;
+		if (changed == null)
+			return;
+		final staleNames:Array<String> = [];
+		var firstPosition:Null<haxe.macro.Expr.Position> = null;
+		for (type in types) {
+			final baseType:BaseType = switch (type) {
+				case TClassDecl(_.get() => classType): classType;
+				case TEnumDecl(_.get() => enumType): enumType;
+				case TTypeDecl(_.get() => defType): defType;
+				case TAbstract(_.get() => abstractType): abstractType;
+			}
+			final file = Context.getPosInfos(baseType.pos).file;
+			if (file == null || file.length == 0)
+				continue;
+			final path = changed.exists(file) ? file : try FileSystem.fullPath(file) catch (_:haxe.Exception) null;
+			if (path == null || !changed.exists(path) || reflaxe.ReflectCompiler.wasTypedThisRequest(baseType))
+				continue;
+			staleNames.push(baseType.module + " (" + file + ")");
+			if (firstPosition == null)
+				firstPosition = baseType.pos;
+		}
+		if (firstPosition == null)
+			return;
+		Context.error("reflaxe.elixir: the compilation server used an old copy of "
+			+ staleNames.join(", ")
+			+ ". The file changed with the same file time, and Haxe loaded the module before reflaxe.elixir started,"
+			+ " for example for a --macro line in front of -lib reflaxe.elixir."
+			+ " This build would write old Elixir, so it writes nothing. Haxe reads the file again in the next build: run the build again.",
+			firstPosition);
 		#end
 	}
 

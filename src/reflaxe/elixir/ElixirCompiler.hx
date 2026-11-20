@@ -486,6 +486,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		// Before any work: a warm request that holds an old copy of a changed
+		// type must write nothing (see ServerSourceFreshness.refuseStaleReuse).
+		if (moduleTypes != null)
+			ServerSourceFreshness.refuseStaleReuse(moduleTypes);
 		// The diagnostic ran in Haxe's after-typing callback, before this reset.
 		phaseTimings.record("reference_semantics_diagnostics", ReferenceSemanticsDiagnostics.lastDurationMs);
 		if (ReferenceSemanticsDiagnostics.lastScannedClassCount > 0)

@@ -405,6 +405,122 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-after-display-removed"
 }
 
+# Writes the project HXML with one `--macro` line for each argument, in front
+# of `-lib reflaxe.elixir`. Haxe runs initialization macros in HXML order, so
+# such a line can ask Haxe for a project type before Reflaxe.Elixir starts.
+write_early_macro_project_hxml() {
+	{
+		printf '%s\n' "-cp src"
+		local early_macro
+		for early_macro in "$@"; do
+			printf '%s\n' "--macro $early_macro"
+		done
+		cat <<'HXML'
+-lib reflaxe
+-lib reflaxe.elixir
+-D reflaxe_runtime
+-D source-map
+--no-output
+Main
+HXML
+	} >"$PROJECT_DIR/compile.hxml"
+}
+
+# Copies a source over a project file and makes sure that the file time moves
+# forward by at least two seconds: an ordinary save, which Haxe sees by itself.
+copy_with_new_file_time() {
+	python3 - "$1" "$2" <<'PY'
+import os
+import shutil
+import sys
+import time
+
+source, target = sys.argv[1], sys.argv[2]
+old = os.stat(target).st_mtime
+shutil.copyfile(source, target)
+stamp = max(time.time(), old + 2)
+os.utime(target, (stamp, stamp))
+PY
+}
+
+# An "early-typed" module is one that Haxe types before Reflaxe.Elixir starts,
+# here because a project `--macro` line asks for it in front of
+# `-lib reflaxe.elixir`. Reflaxe once found the types that Haxe typed again
+# with a build macro that it registers when it starts, so it missed these
+# modules: an edited class kept its old Elixir and the build exited 0.
+run_early_typed_variant() {
+	local variants="$FIXTURE_DIR/variants"
+	local log="$TMP_ROOT/early-typed.log"
+	local unchanged_count
+
+	write_early_macro_project_hxml \
+		'haxe.macro.Context.getType("CacheStatus")' \
+		'haxe.macro.Context.getType("CacheNative")'
+	cp "$variants/early-typed/MainEarly.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/native-class/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-before"
+	compare_generated_output "$TMP_ROOT/direct-early-before" "$SERVER_OUTPUT" "early-typed-before"
+
+	# An ordinary edit of an early-typed class.
+	copy_with_new_file_time "$variants/native-class/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-class"
+	compare_generated_output "$TMP_ROOT/direct-early-class" "$SERVER_OUTPUT" "early-typed-class"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:early-typed-class kept the stale class body" >&2
+		return 1
+	}
+
+	# Without an edit, the early-typed modules are reused, not built again.
+	compile_server "$SERVER_OUTPUT" >"$log"
+	unchanged_count="$(built_class_count "$log")"
+	if ((unchanged_count != 0)); then
+		echo "SERVER_CACHE_REUSE:early-typed-unchanged built $unchanged_count class modules again without an edit" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:early-typed-unchanged:PASS"
+
+	# An ordinary edit of an early-typed enum.
+	copy_with_new_file_time "$variants/enum/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-enum"
+	compare_generated_output "$TMP_ROOT/direct-early-enum" "$SERVER_OUTPUT" "early-typed-enum"
+
+	# A same-second edit of an early-typed enum. Haxe loads the old enum before
+	# Reflaxe.Elixir can tell it to read the file again, so the first build must
+	# refuse instead of writing old Elixir. Haxe types the enum again in the
+	# next build, and that build must write the new enum.
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheStatus.hx" "Archived;" "Archived; Paused;"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:early-typed-same-second accepted an old copy of CacheStatus" >&2
+		return 1
+	fi
+	grep -Fq 'used an old copy of CacheStatus' "$log" || {
+		echo "SERVER_CACHE_PARITY:early-typed-same-second failed for the wrong reason" >&2
+		sed -n '1,80p' "$log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_REFUSAL:early-typed-same-second:PASS"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-same-second"
+	compare_generated_output "$TMP_ROOT/direct-early-same-second" "$SERVER_OUTPUT" "early-typed-same-second"
+	grep -Fq 'def paused()' "$SERVER_OUTPUT/cache_status.ex" || {
+		echo "SERVER_CACHE_PARITY:early-typed-same-second kept the stale enum" >&2
+		return 1
+	}
+
+	write_project_hxml "$PROJECT_DIR"
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "early-typed-removed"
+}
+
 run_module_rename_variant() {
 	local direct_legacy="$TMP_ROOT/direct-module-legacy"
 	local direct_renamed="$TMP_ROOT/direct-module-renamed"
@@ -1516,6 +1632,7 @@ BASELINE_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 # First, because every later variant relies on the server seeing each edit.
 run_same_second_edit_variant
 run_same_second_first_time_file_variant
+run_early_typed_variant
 
 run_variant \
 	"enum" \
