@@ -80,6 +80,16 @@ typedef EnumConstructorMeta = {
 }
 
 /**
+ * What one class's published Elixir module was built from: the module name
+ * that the class registered, and the members that Haxe kept for it
+ * (`PrivateMethodExports.memberNames`). See `ElixirCompiler.keptClassBuilds`.
+ */
+typedef KeptClassBuild = {
+	final moduleName:String;
+	final members:String;
+}
+
+/**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
  * 
  * This compiler extends GenericCompiler to provide comprehensive Haxe-to-Elixir transpilation
@@ -117,53 +127,80 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	static var globalModuleRegistry:Map<String, Bool> = new Map();
 
 	/**
-	 * The module name that each class registered when it was last built.
+	 * What each class was built from when its output was last published: the
+	 * module name that it registered and the members that Haxe kept for it.
 	 *
-	 * The printer qualifies a call in `TodoAppWeb.AuditLogLive` from
-	 * `FlashTypeTools` to `TodoApp.FlashTypeTools` only when a class registered
-	 * `TodoApp.FlashTypeTools`. A warm request builds only the classes that Haxe
-	 * typed again, so without these kept names the registry missed the other
-	 * classes, and a one-class edit printed a different call than a fresh build.
+	 * Module name: the printer qualifies a call in `TodoAppWeb.AuditLogLive`
+	 * from `FlashTypeTools` to `TodoApp.FlashTypeTools` only when a class
+	 * registered `TodoApp.FlashTypeTools`. A warm request builds only the
+	 * classes that Haxe typed again, so without these kept names the registry
+	 * missed the other classes, and a one-class edit printed a different call
+	 * than a fresh build.
+	 *
+	 * Members: Haxe's dead-code elimination (DCE) runs over the whole program
+	 * after typing, so an edit in one class can add members to, or remove
+	 * members from, a class that Haxe did not type again. Under `-dce full`,
+	 * the unused public `C.m` is removed; an edit in `U` that calls `C.m`
+	 * types only `U` again, but `C` now has `m`, and a fresh build writes
+	 * `def m`. `shouldRecompileClass` builds such a class again when its
+	 * current members differ from the kept ones, in both directions.
 	 */
-	@:persistent static var keptModuleNames:Null<ClassResultCache<String>> = null;
+	@:persistent static var keptClassBuilds:Null<ClassResultCache<KeptClassBuild>> = null;
 
 	public static function registerModule(name:String):Void {
 		if (name != null && name.length > 0)
 			globalModuleRegistry.set(name, true);
 	}
 
-	/** Registers the module that `classType` emits, and keeps it for warm requests. */
+	/**
+	 * Registers the module that `classType` emits, and keeps it, with the
+	 * members that the class is built with, for warm requests.
+	 */
 	public static function registerClassModule(classType:ClassType, name:String):Void {
 		registerModule(name);
-		if (keptModuleNames != null && name != null && name.length > 0)
-			keptModuleNames.record(classType, name);
+		if (keptClassBuilds != null && name != null && name.length > 0)
+			keptClassBuilds.record(classType, {moduleName: name, members: PrivateMethodExports.memberNames(classType)});
 	}
 
 	/**
 	 * Registers, at the start of a request, the module names of the live classes
-	 * that Haxe did not type again. A fresh build registers the same names when
-	 * it builds these classes, because a name depends only on the class and the
-	 * defines.
+	 * that this request will not build: Haxe did not type them again, and their
+	 * members are the ones that they were built with. A fresh build registers
+	 * the same names when it builds these classes. A class whose members changed
+	 * is built again (`shouldRecompileClass`) and registers its name then.
 	 */
-	static function registerKeptModuleNames(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
-		var names = keptModuleNames;
-		if (names == null) {
-			// A module name depends only on the class declaration and the defines,
-			// and is observed only while a class is built, so it must survive a
-			// failed request (see DECLARATION RESULTS in ClassResultCache).
-			names = new ClassResultCache(true);
-			keptModuleNames = names;
+	static function registerKeptClassBuilds(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+		var builds = keptClassBuilds;
+		if (builds == null) {
+			// A build record describes the published output of a class, and is
+			// observed only while the class is built, so it must survive a failed
+			// request (see DECLARATION RESULTS in ClassResultCache).
+			builds = new ClassResultCache(true);
+			keptClassBuilds = builds;
 		}
-		names.begin();
+		builds.begin();
 		for (moduleType in moduleTypes) {
 			switch (moduleType) {
 				case TClassDecl(classRef):
-					var name = names.reuse(classRef.get());
-					if (name != null)
-						registerModule(name);
+					var classType = classRef.get();
+					var build = builds.reuse(classType);
+					if (build != null && build.members == PrivateMethodExports.memberNames(classType))
+						registerModule(build.moduleName);
 				case _:
 			}
 		}
+	}
+
+	/**
+	 * Returns true when dead-code elimination changed the members of
+	 * `classType` since its output was last published (see `keptClassBuilds`).
+	 * Returns false for a class without a build record; such a class was not
+	 * built by an earlier successful request of this server, and a new live
+	 * class makes Reflaxe build every class anyway.
+	 */
+	static function membersChangedSinceBuild(classType:ClassType):Bool {
+		var build = keptClassBuilds != null ? keptClassBuilds.previous(classType) : null;
+		return build != null && build.members != PrivateMethodExports.memberNames(classType);
 	}
 
 	public static function isModuleKnown(name:String):Bool {
@@ -414,7 +451,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			phaseTimings.record("reference_semantics_class_scan", ReferenceSemanticsDiagnostics.lastScanDurationMs,
 				ReferenceSemanticsDiagnostics.lastScannedClassCount);
 		var result = filterTypesBody(moduleTypes);
-		registerKeptModuleNames(result);
+		registerKeptClassBuilds(result);
 		var exportsStarted = phaseTimings.start();
 		if (keptPrivateMethodExports == null)
 			keptPrivateMethodExports = new ClassResultCache();
@@ -464,9 +501,16 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		astPipelineStarted = phaseTimings.start();
 	}
 
-	/** Re-emit unchanged classes when caller edits change their required exports. */
+	/**
+	 * Builds a class that Haxe did not type again when an edit elsewhere changed
+	 * its output: a remote use of one of its private methods appeared or
+	 * disappeared, or dead-code elimination added or removed one of its members.
+	 * `changedForClass` sees only members that still exist; a member that DCE
+	 * removed shows up as a changed member list.
+	 */
 	public override function shouldRecompileClass(classType:ClassType):Bool {
-		return PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports);
+		return PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports)
+			|| membersChangedSinceBuild(classType);
 	}
 
 	public override function onCompileEnd():Void {
@@ -6645,8 +6689,8 @@ left_name == right_name and left_params == right_params';
 		// after the output that used them was published.
 		if (keptPrivateMethodExports != null)
 			keptPrivateMethodExports.commit();
-		if (keptModuleNames != null)
-			keptModuleNames.commit();
+		if (keptClassBuilds != null)
+			keptClassBuilds.commit();
 		ReferenceSemanticsDiagnostics.commitRequest();
 	}
 

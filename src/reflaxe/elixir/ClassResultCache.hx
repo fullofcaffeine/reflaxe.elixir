@@ -39,14 +39,19 @@ import reflaxe.ReflectCompiler;
  *   that a request does not see is dropped at `commit`.
  *
  * DECLARATION RESULTS
- * - `new ClassResultCache(true)` is for a result that depends only on the
- *   class's own declaration and the defines, such as its Elixir module name.
- *   Such a result stays correct while Haxe does not type the class again, also
- *   after a failed request and for another project on the same server. These
- *   results are never dropped as a whole, `commit` adds the request's results to
- *   the kept ones, and a class that Haxe typed again loses its kept result until
- *   the request records a new one. This matters when a caller cannot compute a
+ * - `new ClassResultCache(true)` is for a result that describes what the
+ *   class's published output was built from, such as its Elixir module name
+ *   and the members that Haxe kept for it. Such a result stays true until a
+ *   request builds the class again and publishes it, also after a failed
+ *   request and for another project on the same server. These results are
+ *   never dropped as a whole, `commit` adds the request's results to the kept
+ *   ones, and a class that Haxe typed again loses its kept result until the
+ *   request records a new one. This matters when a caller cannot compute a
  *   missing result, because the result is only observed while a class is built.
+ * - The caller must check that a kept result still applies before it uses it.
+ *   For example, dead-code elimination can change a class's members without
+ *   Haxe typing it again; `ElixirCompiler` then builds the class again instead
+ *   of using its kept module name.
  *
  * EXAMPLE
  * - A person edits a string in `AuditLogLive`. Haxe types `AuditLogLive` and
@@ -113,6 +118,17 @@ class ClassResultCache<T> {
 		}
 		next.set(key, known);
 		return known;
+	}
+
+	/**
+	 * Returns the result kept from the last published request for `classType`,
+	 * or null. Unlike `reuse`, it does not keep the result for the next request,
+	 * and does not check whether Haxe typed the class again. For a declaration
+	 * result, call it after `reuse` to compare the published state with the
+	 * current class.
+	 */
+	public function previous(classType:ClassType):Null<T> {
+		return kept.get(keyFor(classType));
 	}
 
 	/** Stores a result that this request computed or observed for `classType`. */

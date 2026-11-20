@@ -74,8 +74,12 @@ typedef CallerExports = {
 }
 
 /**
- * Returns the names of the members that a scan of `caller` reads, in order:
+ * Returns the member list of `caller` after dead-code elimination, in order:
  * statics, instance fields, then whether a constructor and an initializer exist.
+ * These are the members that a scan of `caller` reads, and the members that a
+ * build of `caller` emits. Two calls give the same text exactly when Haxe kept
+ * the same members. `ElixirCompiler.keptClassBuilds` stores it to find a class
+ * whose members changed without Haxe typing it again.
  */
 function memberNames(caller:ClassType):String {
 	var names = new StringBuf();

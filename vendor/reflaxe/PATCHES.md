@@ -81,8 +81,18 @@ source file did not change. Removing the call must restore `defp`. Dependency
 state advances only after successful output publication. The default hook
 returns false and preserves existing source-cache behavior for other targets.
 
-The private-export add/remove cases in `test:reflaxe-server-cache` compare warm
-output with fresh output. Owner: `haxe.elixir.codex-x31`. This patch stays local
+Reflaxe.Elixir also uses it when dead-code elimination changed the members of a
+class that Haxe did not type again. Under `-dce full`, an edit that calls an
+unused public method of an unchanged class gives that class the method, and an
+edit that stops the last use removes it. The target records the member list that
+each class was built with, beside the module name it registered, and the hook
+returns true when the current list differs. The upstream cache filter has the
+same blind spot for every target, because it rebuilds only the classes that
+Haxe typed again.
+
+The private-export add/remove cases and the `dce-members` case in
+`test:reflaxe-server-cache` compare warm output with fresh output. Owners:
+`haxe.elixir.codex-x31` and `haxe.elixir.codex-c0o.23`. This patch stays local
 until an equivalent upstream cache hook is reviewed, adopted, and verified.
 
 ### Cached Rebuild Matches `@:native` Classes By Source Path
@@ -134,7 +144,8 @@ tell (the first server request, a build without a server, or
 
 Reflaxe.Elixir uses it to keep per-class results between server requests:
 private-method export uses, clean reference-semantics scans, and the module
-name that each class registers (`ClassResultCache`). Before, each warm request
+name and member list that each class was built with (`ClassResultCache`).
+Before, each warm request
 scanned every class body two times (about 0.6 s on the todo-app under load),
 and the printer's module registry missed the classes that the request did not
 build, so a one-class edit printed `FlashTypeTools` where a fresh build printed
