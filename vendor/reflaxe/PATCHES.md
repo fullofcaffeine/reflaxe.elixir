@@ -84,9 +84,11 @@ returns false and preserves existing source-cache behavior for other targets.
 Reflaxe.Elixir also uses it when dead-code elimination changed the members of a
 class that Haxe did not type again. Under `-dce full`, an edit that calls an
 unused public method of an unchanged class gives that class the method, and an
-edit that stops the last use removes it. The target records the member list that
-each class was built with, beside the module name it registered, and the hook
-returns true when the current list differs. The upstream cache filter has the
+edit that stops the last use removes it. The target records the member lists
+that each class was built with, its own and those of its superclasses (a
+subclass module repeats its parent's public methods), beside the module name it
+registered. It keeps a record for every class that reaches `compileClassImpl`,
+and the hook returns true when the current lists differ. The upstream cache filter has the
 same blind spot for every target, because it rebuilds only the classes that
 Haxe typed again.
 

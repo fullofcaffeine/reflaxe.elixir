@@ -79,7 +79,8 @@ typedef CallerExports = {
  * These are the members that a scan of `caller` reads, and the members that a
  * build of `caller` emits. Two calls give the same text exactly when Haxe kept
  * the same members. `ElixirCompiler.keptClassBuilds` stores it to find a class
- * whose members changed without Haxe typing it again.
+ * whose members, or whose superclasses' members, changed without Haxe typing it
+ * again.
  */
 function memberNames(caller:ClassType):String {
 	var names = new StringBuf();

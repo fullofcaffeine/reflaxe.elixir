@@ -1308,6 +1308,9 @@ run_private_exports_variant() {
 # - fields-named and fields-none: a module-level function with `@:native`
 #   becomes live and dead again. That `@:native` names the module, and the
 #   module name must not depend on whether the function is live.
+# - inherited-hello and inherited-none: an inherited method of DceKid's parent
+#   becomes live and dead again. DceKid's own members do not change, but its
+#   module has a `hello` delegator only while the parent's `hello` is live.
 run_dce_members_variant() {
 	local variants="$FIXTURE_DIR/variants/dce-members"
 	local dce_args=(-dce full -main Main)
@@ -1355,6 +1358,29 @@ run_dce_members_variant() {
 		grep -Fq 'DceNamedFields.plain()' "$SERVER_OUTPUT/main.ex"
 	done
 	rm -f "$PROJECT_DIR/src/DceFields.hx" "$PROJECT_DIR/src/DceFieldsUser.hx"
+
+	cp "$variants/MainKid.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/DceBase.hx" "$PROJECT_DIR/src/DceBase.hx"
+	cp "$variants/DceKid.hx" "$PROJECT_DIR/src/DceKid.hx"
+	cp "$variants/DceKidUserNone.hx" "$PROJECT_DIR/src/DceKidUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-dce-inherited-start" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-dce-inherited-start" "$SERVER_OUTPUT" "dce-inherited-start"
+	for step in hello none; do
+		if [[ "$step" == hello ]]; then user=DceKidUserHello.hx; else user=DceKidUserNone.hx; fi
+		cp "$variants/$user" "$PROJECT_DIR/src/DceKidUser.hx"
+		compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+		compile_direct "$TMP_ROOT/direct-dce-inherited-$step" "${dce_args[@]}"
+		compare_generated_output "$TMP_ROOT/direct-dce-inherited-$step" "$SERVER_OUTPUT" "dce-inherited-$step"
+		# Guard the fixture: the step must add or remove the delegator.
+		if [[ "$step" == hello ]]; then
+			grep -Fxq '  def hello(struct) do' "$SERVER_OUTPUT/dce_kid.ex"
+		elif grep -Fq 'def hello(' "$SERVER_OUTPUT/dce_kid.ex"; then
+			echo "SERVER_CACHE_PARITY:dce-inherited-none kept the hello delegator" >&2
+			return 1
+		fi
+	done
+	rm -f "$PROJECT_DIR/src/DceBase.hx" "$PROJECT_DIR/src/DceKid.hx" "$PROJECT_DIR/src/DceKidUser.hx"
 
 	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"

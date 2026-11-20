@@ -81,11 +81,12 @@ typedef EnumConstructorMeta = {
 
 /**
  * What one class's published Elixir module was built from: the module name
- * that the class registered, and the members that Haxe kept for it
- * (`PrivateMethodExports.memberNames`). See `ElixirCompiler.keptClassBuilds`.
+ * that the class registered (null when the class registered none), and the
+ * members that Haxe kept for the class and each of its superclasses
+ * (`ElixirCompiler.builtMembers`). See `ElixirCompiler.keptClassBuilds`.
  */
 typedef KeptClassBuild = {
-	final moduleName:String;
+	final moduleName:Null<String>;
 	final members:String;
 }
 
@@ -144,6 +145,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * types only `U` again, but `C` now has `m`, and a fresh build writes
 	 * `def m`. `shouldRecompileClass` builds such a class again when its
 	 * current members differ from the kept ones, in both directions.
+	 *
+	 * Inherited members count too: a subclass module gets a delegator for each
+	 * public instance method of its parent (`def hello(struct), do:
+	 * Base.hello(struct)`) and the parent's instance variables, so its output
+	 * changes when DCE changes a superclass's members.
+	 *
+	 * Every class that reaches `compileClassImpl` gets a record, also one that
+	 * registers no module name (for example an Ecto migration or a Gettext
+	 * module built by its own builder).
 	 */
 	@:persistent static var keptClassBuilds:Null<ClassResultCache<KeptClassBuild>> = null;
 
@@ -158,8 +168,38 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 */
 	public static function registerClassModule(classType:ClassType, name:String):Void {
 		registerModule(name);
-		if (keptClassBuilds != null && name != null && name.length > 0)
-			keptClassBuilds.record(classType, {moduleName: name, members: PrivateMethodExports.memberNames(classType)});
+		if (name != null && name.length > 0)
+			recordClassBuild(classType, name);
+	}
+
+	/**
+	 * Keeps, for warm requests, what `classType` is built from in this request.
+	 * `compileClassImpl` calls it for every class with no module name;
+	 * `registerClassModule` calls it again with the name when the class
+	 * registers one, and that record replaces the first one.
+	 */
+	static function recordClassBuild(classType:ClassType, moduleName:Null<String>):Void {
+		if (keptClassBuilds != null)
+			keptClassBuilds.record(classType, {moduleName: moduleName, members: builtMembers(classType)});
+	}
+
+	/**
+	 * Returns the member lists that the output of `classType` depends on: its
+	 * own (`PrivateMethodExports.memberNames`), then the list of each superclass,
+	 * nearest first. Two calls give the same text exactly when Haxe kept the
+	 * same members in the whole chain.
+	 */
+	static function builtMembers(classType:ClassType):String {
+		var members = new StringBuf();
+		members.add(PrivateMethodExports.memberNames(classType));
+		var parent = classType.superClass;
+		while (parent != null) {
+			var parentType = parent.t.get();
+			members.add(" ^ ");
+			members.add(PrivateMethodExports.memberNames(parentType));
+			parent = parentType.superClass;
+		}
+		return members.toString();
 	}
 
 	/**
@@ -184,7 +224,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				case TClassDecl(classRef):
 					var classType = classRef.get();
 					var build = builds.reuse(classType);
-					if (build != null && build.members == PrivateMethodExports.memberNames(classType))
+					if (build != null && build.moduleName != null && build.members == builtMembers(classType))
 						registerModule(build.moduleName);
 				case _:
 			}
@@ -193,14 +233,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 	/**
 	 * Returns true when dead-code elimination changed the members of
-	 * `classType` since its output was last published (see `keptClassBuilds`).
+	 * `classType` or of one of its superclasses since its output was last
+	 * published (see `keptClassBuilds`).
 	 * Returns false for a class without a build record; such a class was not
 	 * built by an earlier successful request of this server, and a new live
 	 * class makes Reflaxe build every class anyway.
 	 */
 	static function membersChangedSinceBuild(classType:ClassType):Bool {
 		var build = keptClassBuilds != null ? keptClassBuilds.previous(classType) : null;
-		return build != null && build.members != PrivateMethodExports.memberNames(classType);
+		return build != null && build.members != builtMembers(classType);
 	}
 
 	public static function isModuleKnown(name:String):Bool {
@@ -1277,6 +1318,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * @return ElixirAST representing the compiled module
 	 */
 	public function compileClassImpl(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<reflaxe.elixir.ast.ElixirAST> {
+		if (classType != null)
+			recordClassBuild(classType, null);
 		if (!phaseTimings.enabled)
 			return compileClassBody(classType, varFields, funcFields);
 		var started = phaseTimings.start();

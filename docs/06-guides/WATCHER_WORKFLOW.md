@@ -507,11 +507,16 @@ a fresh build writes `def format(s)` in `helper.ex`. The edit back removes it
 again.
 
 For each class that it builds, Reflaxe.Elixir records the members that Haxe
-kept. A warm request builds a class again when its current members differ from
-that record, in both directions. The record changes only after the build output
-was published, so a failed request does not lose it. Private methods that only a
-removed member called are removed from their own class too, and that class is
-built again for the same reason.
+kept, for the class and for each of its superclasses. A warm request builds a
+class again when these members differ from that record, in both directions. The
+record changes only after the build output was published, so a failed request
+does not lose it. Private methods that only a removed member called are removed
+from their own class too, and that class is built again for the same reason.
+
+Inherited members count because a subclass module repeats them. When `Kid`
+extends `Base`, `kid.ex` gets `def hello(struct), do: Base.hello(struct)` for
+each public instance method of `Base`. If an edit elsewhere makes `Base.hello`
+live, `Kid` is built again too, although neither class was edited.
 
 A module-level function can name its module with `@:native`. A fresh build reads
 that name from all module-level functions of the file, also from the ones that
