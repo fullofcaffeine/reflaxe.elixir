@@ -99,47 +99,71 @@ until an equivalent upstream cache hook is reviewed, adopted, and verified.
 
 ### Types That Haxe Typed Again Carry The Request That Typed Them
 
-On a compilation server, Reflaxe keeps only the types that Haxe typed again in
-the current request. Upstream Reflaxe finds them with a global build macro,
-`addToBuildCache`, that its initialization macro registers. A build macro runs
-only for a type that Haxe types after the macro was registered. A type that
-Haxe typed earlier in the request was never recorded.
+On a compilation server, Reflaxe keeps only the types that Haxe typed again
+since the server last published output. Upstream Reflaxe finds them with a
+global build macro, `addToBuildCache`, that its initialization macro registers.
+That misses three kinds of type:
 
-Observed failure shape: a project HXML had a line
-`--macro haxe.macro.Context.getType("CacheNative")` in front of
-`-lib reflaxe.elixir`. After an ordinary edit of `CacheNative`, Haxe typed the
-class again, before Reflaxe started. The cache filter left the class out, the
-old `cache_web/native_label.ex` stayed on disk, and the build exited 0. The
-same happened to an enum in the request after a same-second edit (see below).
+- A type that Haxe typed before the macro was registered. Observed: a project
+  HXML had `--macro haxe.macro.Context.getType("CacheNative")` in front of
+  `-lib reflaxe.elixir`. After an ordinary edit of `CacheNative`, Haxe typed
+  the class again before Reflaxe started. The cache filter left it out, the
+  old `cache_web/native_label.ex` stayed on disk, and the build exited 0. The
+  same happened to an enum in the request after a same-second edit.
+- An instance of a `@:generic` class, such as `EarlyBox_String`. Haxe runs no
+  global build macro for it, so an edit of `EarlyBox` kept the old instance
+  output.
+- A type that an editor's JSON-RPC `display/diagnostics` request typed. That
+  request types every module, has no `display` define, runs Reflaxe's typing
+  hooks, generates nothing, and Haxe keeps its modules. After an edit, a
+  diagnostics request, and a build, the build built no class and kept the old
+  output.
 
-Local fix: `ReflectCompiler.onAfterTyping` adds
-`@:reflaxe.typedIn("<request token>")` to each type that has no such metadata
-yet. A request token is the request's start time and a request count. A type
-that Haxe reused from the server cache keeps the token of the request that
-typed it; a type that Haxe typed again is a new object without metadata and
-gets the current token. `wasTypedThisRequest(type)` returns true when the type
-has no token or the current one. This does not depend on when Haxe typed the
-type.
+Local fix:
 
-Why it is exact on Haxe 4.3:
+- `ReflectCompiler.onAfterTyping` adds `@:reflaxe.typedIn(token, owner)` to
+  each type that has no such metadata for itself. The token names the request
+  (start time and request count). The owner is the source module and the Haxe
+  path (`@:realPath` when Haxe renamed the type). A type that Haxe reused from
+  the server cache keeps its metadata; a type that Haxe typed again is a new
+  object and gets the current token.
+- After output publication, `commitSuccessfulModuleIds` keeps the tokens of
+  all live types (`publishedTokens`). At that point each live type is
+  published: Reflaxe built it, or the cache filter left it out because it was
+  published before.
+- `wasTypedSinceLastPublication(type)` returns true when the type has no
+  metadata for itself or its token is not published. The cache filter uses it
+  for classes and enums, and Reflaxe.Elixir's `ClassResultCache` uses it for
+  per-class results.
+- `wasTypedThisRequest(type)` returns true only for the current token.
+  Reflaxe.Elixir's `ServerSourceFreshness.refuseStaleReuse` uses it (see
+  below).
+
+Why each part is needed (checked in the Haxe 4.3.7 sources and in the tests):
 
 - Haxe saves the metadata of a class after typing and puts it back when a later
   request reuses the class. `onAfterTyping` runs before that save, so the token
-  is part of the saved state. Metadata added later, for example after output
-  publication, is removed again on reuse; a first version of this fix did that
-  and built every class again in each request.
-- Haxe adds the typed modules of a request to its cache only when the request
-  had no error. A type with an older token therefore comes from a request that
-  published its output.
-- The metadata has a position outside every source file. With the type's own
-  position, an editor request on a cached module found the metadata at the
-  cursor and failed with "No completion point was found".
+  is part of the saved state. A first version of this fix added the metadata
+  after output publication; Haxe removed it on reuse, and every class was built
+  again in each request.
+- Haxe keeps the typed modules of each request without an error, also a
+  request that generated nothing (the diagnostics request). A token alone
+  therefore does not prove publication; the published set does.
+- A macro can copy the metadata of a reused type onto a type that it defines
+  (`Context.defineType` with `meta: base.meta.get()`). The copy carries an old,
+  published token. The owner tells the copy apart, and `onAfterTyping`
+  replaces such metadata. Without the owner, the defined class kept its old
+  output.
+- The metadata has a position outside every source file, because an editor
+  request reads the metadata of cached modules (`check_display_module`). One
+  early run with the type's own position failed a display request with "No
+  completion point was found"; two later runs with that position passed, so
+  the failure is not proven to come from the position.
 
-The token lives on the type object, so a class that Haxe renamed with
-`@:native("MyAppWeb.ErrorJSON")` is found without a path comparison. The
-earlier patch compared the source module and the Haxe path (`@:realPath`),
-because the build macro saw the Haxe path and the target saw the native one;
-that comparison is no longer needed and was removed.
+The metadata lives on the type object, so a class that Haxe renamed with
+`@:native("MyAppWeb.ErrorJSON")` is found without the earlier path comparison
+of the build-macro record with the target's class; that comparison was
+removed.
 
 The cache filter uses the same query for enums. Upstream Reflaxe generates each
 enum again on each warm request; this patch drops an enum that Haxe reused.
@@ -151,34 +175,41 @@ no module for them. Measured on a consumer backend with 80 enum modules: the
 pass pipeline of a one-class warm edit ran for 81 modules (about 3.2 s) before,
 and for 1 module (about 0.06 s) after.
 
-Reflaxe.Elixir also uses `wasTypedThisRequest` to keep per-class results
-between server requests: private-method export uses, clean reference-semantics
-scans, and the module name and member list that each class was built with
-(`ClassResultCache`). Before, each warm request scanned every class body two
-times (about 0.6 s on the todo-app under load), and the printer's module
-registry missed the classes that the request did not build, so a one-class
-edit printed `FlashTypeTools` where a fresh build printed
-`TodoApp.FlashTypeTools`.
+Per-class results (`ClassResultCache`): private-method export uses, clean
+reference-semantics scans, and the module name and member list that each class
+was built with. Before, each warm request scanned every class body two times
+(about 0.6 s on the todo-app under load), and the printer's module registry
+missed the classes that the request did not build, so a one-class edit printed
+`FlashTypeTools` where a fresh build printed `TodoApp.FlashTypeTools`.
 
-Reflaxe.Elixir's `ServerSourceFreshness.refuseStaleReuse` uses the same query
-for the last gap: a same-second edit of a file whose module Haxe loaded before
-the target started. Haxe then holds the old type in that request, and no
-filter can produce the new output. The build stops with an error that names
-the module, and writes nothing; Haxe types the module again in the next build.
+The last gap, in Reflaxe.Elixir's `ServerSourceFreshness.refuseStaleReuse`: a
+same-second edit of a known file whose module Haxe loaded before the target
+started. Haxe then holds the old type in that request, and no filter can
+produce the new output. The build stops with an error that names each such
+module once, and writes nothing; Haxe types the module again in the next
+build.
 
-Tests in `test:reflaxe-server-cache`: `early-typed` (an ordinary class edit, an
-unchanged request that must build no class module, an ordinary enum edit, and
-a same-second enum edit that must refuse once and then equal a fresh build),
-`native-class` (a `@:native` class body edit), `private-exports` (a one-class
-edit scans fewer classes than a full scan), and every variant's comparison of
-warm output with a fresh build. This patch stays local until upstream Reflaxe
-has an equivalent query.
+Tests in `test:reflaxe-server-cache`:
+
+- `early-typed`: ordinary edits of an early-typed class, enum, generic class,
+  and of the class and the abstract of a module with several types; an
+  unchanged request that must build no class module; same-second edits of an
+  enum and of the multi-type module that must refuse once, name the module
+  once, write nothing, and then equal a fresh build.
+- `generic`: an edit of a `@:generic` class without early typing.
+- `copied-metadata`: the `Context.defineType` copy described above.
+- `diagnostics-then-build`: an edit, a `display/diagnostics` request, a build.
+- `native-class`, `private-exports`, and every variant's comparison of warm
+  output with a fresh build.
+
+This patch stays local until upstream Reflaxe has an equivalent query.
 
 Limits: the exactness argument rests on the Haxe 4.3 server rules above. A
-Haxe version that rebuilds cached type objects from a binary cache without the
-metadata would build more types again, not fewer. A type that Haxe types only
-after `onAfterTyping`, for example from a target callback, has no token and is
-built again in the next request.
+Haxe version that rebuilds cached type objects without the metadata would
+build more types again, not fewer. Haxe calls `onAfterTyping` again for types
+that a callback adds, so these get a token too. A macro that copies the
+metadata onto a type with the same module and Haxe path as the source type is
+not told apart; Haxe allows no two such types.
 
 ### 1. `Run.hx`: Build Root File Copy
 

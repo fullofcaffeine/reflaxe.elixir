@@ -450,16 +450,25 @@ an error in macro code can happen on any server.
 
 ### Which modules a warm build builds again
 
-Reflaxe marks each type when Haxe types it: the type gets the name of the build
-request that typed it. A type that the server reuses keeps the mark of an
-earlier build, and a warm build leaves it out. A type that Haxe typed again
-gets the mark of the current build and is built again. This does not depend on
-when Haxe typed the module. For example, a `--macro` line in front of
-`-lib reflaxe.elixir` can make Haxe type `CacheNative` before Reflaxe.Elixir
-starts; an edit of `CacheNative.hx` still writes the new Elixir. Before this
-mark existed, Reflaxe found the typed-again types with a build macro that it
-registers when it starts, so it missed such a module, and the warm build kept
-the old file and exited 0.
+Reflaxe marks each type when Haxe types it: the type gets the name of the
+request that typed it. After a build writes its output, Reflaxe remembers the
+names that all live types carry. A warm build leaves out a type whose name is
+remembered: the server reused the type, and its output is already on disk.
+Every other type is built again. This does not depend on when or how Haxe typed
+the module:
+
+- A `--macro` line in front of `-lib reflaxe.elixir` can make Haxe type
+  `CacheNative` before Reflaxe.Elixir starts. An edit of `CacheNative.hx`
+  still writes the new Elixir.
+- An edit of a `@:generic` class writes each generic instance again, for
+  example the class for `Box<String>`.
+- An editor that sends `display/diagnostics` requests to the same server makes
+  Haxe type the edited module in that request, and that request writes no
+  output. The next build still writes the new Elixir.
+
+Before these marks existed, Reflaxe found the typed-again types with a build
+macro that it registers when it starts. It missed each of these cases, and the
+warm build kept the old file and exited 0.
 
 Changing an enum, typedef, or abstract intentionally
 causes one full target regeneration. These declarations can affect otherwise

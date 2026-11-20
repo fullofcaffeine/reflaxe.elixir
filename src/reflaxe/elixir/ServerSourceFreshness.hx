@@ -198,9 +198,12 @@ class ServerSourceFreshness {
 	 *
 	 * HOW
 	 * - A type of a file that changed in this request (`changedThisRequest`)
-	 *   is old exactly when Haxe did not type it again:
-	 *   `ReflectCompiler.wasTypedThisRequest` returns false. Then this function
-	 *   reports an error, and the build writes nothing.
+	 *   is old exactly when Haxe did not type it in this request:
+	 *   `ReflectCompiler.wasTypedThisRequest` returns false. This is also true
+	 *   for a type that an earlier request typed and did not publish, for
+	 *   example an editor's diagnostics request: it holds the text of that
+	 *   earlier request. Then this function reports an error that names each
+	 *   such module once, and the build writes nothing.
 	 * - Haxe has already been told to forget the file, so the next request
 	 *   types the module again, and Reflaxe builds it again.
 	 *
@@ -213,6 +216,10 @@ class ServerSourceFreshness {
 		if (changed == null)
 			return;
 		final staleNames:Array<String> = [];
+		final reportedModules = new Map<String, Bool>();
+		// Full path of each source file, or null when it is not a changed file.
+		// One file system call per file, not per type.
+		final changedPaths = new Map<String, Null<String>>();
 		var firstPosition:Null<haxe.macro.Expr.Position> = null;
 		for (type in types) {
 			final baseType:BaseType = switch (type) {
@@ -224,9 +231,16 @@ class ServerSourceFreshness {
 			final file = Context.getPosInfos(baseType.pos).file;
 			if (file == null || file.length == 0)
 				continue;
-			final path = changed.exists(file) ? file : try FileSystem.fullPath(file) catch (_:haxe.Exception) null;
-			if (path == null || !changed.exists(path) || reflaxe.ReflectCompiler.wasTypedThisRequest(baseType))
+			if (!changedPaths.exists(file)) {
+				final path = changed.exists(file) ? file : try FileSystem.fullPath(file) catch (_:haxe.Exception) null;
+				changedPaths.set(file, path != null && changed.exists(path) ? path : null);
+			}
+			if (changedPaths.get(file) == null || reflaxe.ReflectCompiler.wasTypedThisRequest(baseType))
 				continue;
+			// An abstract and its implementation class share one module: name it once.
+			if (reportedModules.exists(baseType.module))
+				continue;
+			reportedModules.set(baseType.module, true);
 			staleNames.push(baseType.module + " (" + file + ")");
 			if (firstPosition == null)
 				firstPosition = baseType.pos;
