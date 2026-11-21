@@ -159,6 +159,12 @@ class ReflectCompiler {
 		See `wasTypedSinceLastPublication`.
 	**/
 	@:persistent static var publishedTokens: Null<Map<String, Bool>> = null;
+
+	/**
+		The `typeKey` of each type that the cache filter left out of this
+		request, or null when it left out none. See `wasLeftOutByCacheFilter`.
+	**/
+	static var leftOutTypeKeys: Null<Map<String, Bool>> = null;
 	#end
 
 	/**
@@ -284,12 +290,35 @@ class ReflectCompiler {
 	#end
 
 	/**
+		Returns true when the cache filter left the type with this `typeKey`
+		out of this request: the type is live, and its published output from the
+		last publication stays as it is. Returns false for every other type: a
+		type that Reflaxe builds in this request, a type that is not live, and
+		every type of a request that is not a cached rebuild.
+
+		A target uses it to find the old output that no type of this request
+		owns any more. Example: a class that became `extern` is built again and
+		writes nothing, so its old file belongs to no left-out type, and the
+		target deletes the file as a fresh build would not write it.
+	**/
+	public static function wasLeftOutByCacheFilter(key: String): Bool {
+		#if !reflaxe.disallow_build_cache_check
+		final keys = leftOutTypeKeys;
+		return keys != null && keys.exists(key);
+		#else
+		return false;
+		#end
+	}
+
+	/**
 		Returns a key for a type that is the same before and after Haxe applies
 		an `@:native` name: the source module, then the dotted path that the
 		Haxe source gives to the type. Haxe stores that path in `@:realPath`
 		when it renames the type, and renames it after `onAfterTyping`.
+		A target can use it to remember which type wrote an output file; see
+		`wasLeftOutByCacheFilter`.
 	**/
-	static function typeKey(type: BaseType): String {
+	public static function typeKey(type: BaseType): String {
 		final realPath = type.meta.extractStringFromFirstMeta(":realPath");
 		return type.module + "\u0000" + (realPath != null ? realPath : type.pack.concat([type.name]).join("."));
 	}
@@ -527,6 +556,7 @@ class ReflectCompiler {
 
 	static function applyBuildCacheCheckFilter(compiler: BaseCompiler, moduleTypes: Array<ModuleType>) {
 		#if !reflaxe.disallow_build_cache_check
+		leftOutTypeKeys = null;
 		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
 		currentModuleIds.sort(Reflect.compare);
 		currentNonClassSourceTexts = collectNonClassSourceTexts(moduleTypes);
@@ -553,6 +583,18 @@ class ReflectCompiler {
 			// If anything is filtered out, we ARE doing a cache rebuild.
 			if(result.length != moduleTypes.length) {
 				isCachedRebuild = true;
+				final kept = new Map<String, Bool>();
+				for(moduleType in result) {
+					kept.set(typeKey(moduleType.getCommonData()), true);
+				}
+				final leftOut = new Map<String, Bool>();
+				for(moduleType in moduleTypes) {
+					final key = typeKey(moduleType.getCommonData());
+					if(!kept.exists(key)) {
+						leftOut.set(key, true);
+					}
+				}
+				leftOutTypeKeys = leftOut;
 			}
 
 			return result;

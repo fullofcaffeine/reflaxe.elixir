@@ -7,6 +7,7 @@ import haxe.io.Bytes;
 import haxe.io.Path;
 import haxe.macro.Context;
 import reflaxe.BaseCompiler;
+import reflaxe.ReflectCompiler;
 import reflaxe.output.StringOrBytes;
 import sys.FileSystem;
 import sys.io.File;
@@ -17,6 +18,14 @@ using StringTools;
 typedef GeneratedOutputCandidate = {
 	var path:String;
 	var content:StringOrBytes;
+
+	/**
+	 * The types that wrote this file, as `ReflectCompiler.typeKey` gives them,
+	 * for example `["TodoApp.Users\u0000TodoApp.Users"]`. Empty when no type is
+	 * known, as for an extra file; such a file is never treated as dropped.
+	 * See `keptOwnedPaths`.
+	 */
+	var owners:Array<String>;
 }
 
 private typedef OwnedFileRecord = {
@@ -31,6 +40,14 @@ private typedef OwnershipState = {
 	var paths:Array<String>;
 	var digests:Map<String, String>;
 	var generation:Null<String>;
+
+	/**
+	 * For each owned path, the types that wrote it (see
+	 * `GeneratedOutputCandidate.owners`). Known only in this process, for the
+	 * manifest that this process wrote last; never written to the manifest.
+	 * A path without an entry has unknown owners.
+	 */
+	var owners:Map<String, Array<String>>;
 }
 
 /** Manifest bytes that this compiler process already validated, and the result. */
@@ -194,6 +211,7 @@ class GeneratedOutputOwnership {
 				phaseTimings.record("output_manifest_reused", 0.0);
 			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;
 			var pending = new Map<String, StringOrBytes>();
+			var pendingOwners = new Map<String, Array<String>>();
 			var pendingOrder:Array<String> = [];
 
 			for (candidate in candidates) {
@@ -203,12 +221,20 @@ class GeneratedOutputOwnership {
 				if (pending.exists(path))
 					fail('The compiler produced the same generated path more than once: $path');
 				pending.set(path, candidate.content);
+				if (candidate.owners != null && candidate.owners.length > 0)
+					pendingOwners.set(path, candidate.owners.copy());
 				pendingOrder.push(path);
 			}
 
+			// A cached rebuild keeps the owned files of the types that it did not
+			// build, and drops the files that no type of this request owns now.
+			var keptPaths = cachedRebuild ? keptOwnedPaths(previous, pending) : [];
+			var keptSet = stringSet(keptPaths);
+			var droppedPaths = cachedRebuild ? previous.paths.filter(path -> !keptSet.exists(path) && !pending.exists(path)) : [];
+
 			// The owned files that this request may write, replace, delete, or copy.
 			// See `verifiedOwnedPaths` for why a cached rebuild checks fewer files.
-			var verifiedPaths = verifiedOwnedPaths(previous, pendingOrder, usePartialStaging);
+			var verifiedPaths = verifiedOwnedPaths(previous, pendingOrder.concat(droppedPaths), usePartialStaging);
 			verifyOwnedFiles(root, previous, verifiedPaths);
 			var oldSet = stringSet(previous.paths);
 			var legacySourceMaps = new Map<String, String>();
@@ -222,7 +248,7 @@ class GeneratedOutputOwnership {
 				}
 			}
 
-			var nextPaths = cachedRebuild ? previous.paths.copy() : [];
+			var nextPaths = keptPaths.copy();
 			var nextSet = stringSet(nextPaths);
 			for (path in pendingOrder) {
 				if (!nextSet.exists(path)) {
@@ -231,11 +257,9 @@ class GeneratedOutputOwnership {
 				}
 			}
 
-			if (cachedRebuild) {
-				for (path in previous.paths) {
-					if (!pending.exists(path) && !FileSystem.exists(targetPath(root, path)))
-						fail('Cached rebuild cannot preserve missing owned output `$path`; run a full Haxe rebuild.');
-				}
+			for (path in keptPaths) {
+				if (!pending.exists(path) && !FileSystem.exists(targetPath(root, path)))
+					fail('Cached rebuild cannot preserve missing owned output `$path`; run a full Haxe rebuild.');
 			}
 
 			// Claim the fixed prepare path only after every fail-closed ownership
@@ -490,6 +514,12 @@ class GeneratedOutputOwnership {
 			// one just written: it holds exactly these paths, digests, generation,
 			// and id. The next request then reuses this state when the live
 			// manifest still has these bytes, instead of parsing and hashing it.
+			var nextOwners = new Map<String, Array<String>>();
+			for (path in nextPaths) {
+				var owners = pending.exists(path) ? writtenPathOwners(pendingOwners.get(path), previous.owners.get(path)) : previous.owners.get(path);
+				if (owners != null)
+					nextOwners.set(path, owners);
+			}
 			rememberedManifest = {
 				path: manifestPath,
 				bytes: haxe.io.Bytes.ofString(nextManifest),
@@ -499,7 +529,8 @@ class GeneratedOutputOwnership {
 					id: nextId,
 					paths: nextPaths.copy(),
 					digests: newDigests.copy(),
-					generation: generation
+					generation: generation,
+					owners: nextOwners
 				}
 			};
 
@@ -535,7 +566,8 @@ class GeneratedOutputOwnership {
 				id: 0,
 				paths: [],
 				digests: [],
-				generation: null
+				generation: null,
+				owners: []
 			};
 		}
 		if (FileSystem.isDirectory(manifestPath))
@@ -548,18 +580,87 @@ class GeneratedOutputOwnership {
 		var bytes = File.getBytes(manifestPath);
 		var remembered = rememberedManifest;
 		lastManifestReused = false;
-		#if !reflaxe_elixir_full_ownership_check
-		if (remembered != null
+		var sameBytes = remembered != null
 			&& remembered.path == manifestPath
 			&& remembered.bytes.length == bytes.length
-			&& remembered.bytes.compare(bytes) == 0) {
+			&& remembered.bytes.compare(bytes) == 0;
+		#if !reflaxe_elixir_full_ownership_check
+		if (sameBytes) {
 			lastManifestReused = true;
 			return copyOwnershipState(remembered.state);
 		}
 		#end
 		var state = parseOwnership(manifestPath, bytes);
+		// The owners are not in the manifest. They stay known while the manifest
+		// is the one that this process wrote.
+		if (sameBytes)
+			state.owners = remembered.state.owners.copy();
 		rememberedManifest = {path: manifestPath, bytes: bytes, state: copyOwnershipState(state)};
 		return state;
+	}
+
+	/**
+	 * Returns the owned paths that a cached rebuild keeps although it does not
+	 * write them: the files of the types that the cache filter left out
+	 * (`ReflectCompiler.wasLeftOutByCacheFilter`), and the files whose owners
+	 * this process does not know.
+	 *
+	 * WHY
+	 * - A cached rebuild builds only some types and writes only their files. A
+	 *   file that it does not write was kept before, because the type that wrote
+	 *   it was usually left out. But a type can also stop writing a file while
+	 *   it stays in the program, and a fresh build then writes no such file:
+	 *   - Under `-dce full`, an edit in `User` removes the last live member of
+	 *     `Dead`. `Dead` stays in Reflaxe's module list, which is taken before
+	 *     dead-code elimination, while any typed code refers to it (also an
+	 *     unused function). Reflaxe builds it again, and its module is empty,
+	 *     so no `dead.ex` is written.
+	 *   - A class becomes `extern`. Haxe types it again, and it has no module.
+	 *   - A class gets `@:application`. Its file moves from `starter.ex` to
+	 *     `my_app/application.ex`.
+	 *   The old file and its `.ex.map` then belong to no left-out type and are
+	 *   dropped, as in a fresh build.
+	 *
+	 * A file with unknown owners is kept, as before: for example an extra file,
+	 * or every file when the manifest on disk is not the one this process wrote.
+	 */
+	/**
+	 * Returns the owners of a file that this request writes: the types that
+	 * wrote it now, and each earlier owner that the cache filter left out.
+	 * Returns null (owners unknown) when the writers are unknown.
+	 *
+	 * Why the earlier owners stay: two classes can write the same file, for
+	 * example `A` and `B` with `@:native("Dup.Mod")` both write `dup/mod.ex`.
+	 * An edit of `A` alone builds only `A`, but `B` still writes that file in a
+	 * fresh build. Without `B` in the list, a later edit that makes `A` extern
+	 * would delete `dup/mod.ex`, although a fresh build writes it for `B`.
+	 */
+	static function writtenPathOwners(writers:Null<Array<String>>, earlier:Null<Array<String>>):Null<Array<String>> {
+		if (writers == null)
+			return null;
+		var owners = writers.copy();
+		if (earlier != null) {
+			for (owner in earlier) {
+				if (!owners.contains(owner) && ReflectCompiler.wasLeftOutByCacheFilter(owner))
+					owners.push(owner);
+			}
+		}
+		return owners;
+	}
+
+	static function keptOwnedPaths(previous:OwnershipState, pending:Map<String, StringOrBytes>):Array<String> {
+		return previous.paths.filter(path -> {
+			if (pending.exists(path))
+				return true;
+			var owners = previous.owners.get(path);
+			if (owners == null || owners.length == 0)
+				return true;
+			for (owner in owners) {
+				if (ReflectCompiler.wasLeftOutByCacheFilter(owner))
+					return true;
+			}
+			return false;
+		});
 	}
 
 	/** Returns a copy that a caller can change without changing the remembered state. */
@@ -570,7 +671,8 @@ class GeneratedOutputOwnership {
 			id: state.id,
 			paths: state.paths.copy(),
 			digests: state.digests.copy(),
-			generation: state.generation
+			generation: state.generation,
+			owners: state.owners.copy()
 		};
 	}
 
@@ -593,7 +695,8 @@ class GeneratedOutputOwnership {
 				id: id,
 				paths: paths,
 				digests: [],
-				generation: null
+				generation: null,
+				owners: []
 			};
 		}
 		if (version != MANIFEST_VERSION)
@@ -635,7 +738,8 @@ class GeneratedOutputOwnership {
 			id: id,
 			paths: paths,
 			digests: digests,
-			generation: expectedGeneration
+			generation: expectedGeneration,
+			owners: []
 		};
 	}
 

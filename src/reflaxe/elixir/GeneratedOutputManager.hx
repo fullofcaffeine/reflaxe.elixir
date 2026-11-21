@@ -101,16 +101,37 @@ class GeneratedOutputManager extends OutputManager {
 		}
 		elixirCompiler.pendingSourceMapWriters = [];
 
+		// A source map belongs to the types that wrote the file that it maps.
+		var ownersByPath = new Map<String, Array<String>>();
+		for (candidate in candidates)
+			ownersByPath.set(candidate.path, candidate.owners);
 		for (path in paths) {
 			var content = contents.get(path);
+			var mapped = ownersByPath.get(path.substr(0, path.length - ".map".length));
 			if (content != null)
-				saveFile(path, content);
+				queue(path, content, mapped != null ? mapped : []);
 		}
 	}
 
 	/** Queues one candidate; live output is never changed from this method. */
 	public override function saveFile(path:String, content:StringOrBytes):Void {
-		candidates.push({path: path, content: content});
+		queue(path, content, []);
+	}
+
+	/**
+	 * Queues one candidate with the types that wrote it (`ReflectCompiler.typeKey`).
+	 * An empty `owners` list means "not known"; such a file is never treated as
+	 * dropped. See `GeneratedOutputCandidate.owners`.
+	 */
+	function queue(path:String, content:StringOrBytes, owners:Array<String>):Void {
+		candidates.push({path: path, content: content, owners: owners});
+	}
+
+	/** Adds the type key of `baseType` to `owners`, once. */
+	static function addOwner(owners:Array<String>, baseType:haxe.macro.Type.BaseType):Void {
+		var key = ReflectCompiler.typeKey(baseType);
+		if (!owners.contains(key))
+			owners.push(key);
 	}
 
 	function generateSingleFileCandidate():Void {
@@ -134,24 +155,34 @@ class GeneratedOutputManager extends OutputManager {
 
 	function generateModuleCandidates():Void {
 		var files:Map<String, Array<StringOrBytes>> = [];
+		var owners = new Map<String, Array<String>>();
 		for (output in compiler.generateOutputIterator()) {
 			var moduleId = output.baseType.moduleId();
 			var filename = overrideFilename(moduleId, output.overrideFileName, output.overrideDirectory);
-			if (!files.exists(filename))
+			if (!files.exists(filename)) {
 				files.set(filename, []);
+				owners.set(filename, []);
+			}
 			var values = files.get(filename);
 			if (values != null)
 				values.push(output.data);
+			var fileOwners = owners.get(filename);
+			if (fileOwners != null)
+				addOwner(fileOwners, output.baseType);
 		}
 
-		for (filename => values in files)
-			saveFile(filename + compiler.options.fileOutputExtension, joinStringOrBytes(values));
+		for (filename => values in files) {
+			var fileOwners = owners.get(filename);
+			queue(filename + compiler.options.fileOutputExtension, joinStringOrBytes(values), fileOwners != null ? fileOwners : []);
+		}
 	}
 
 	function generateClassCandidates():Void {
 		for (output in compiler.generateOutputIterator()) {
 			var filename = overrideFilename(output.baseType.globalName(), output.overrideFileName, output.overrideDirectory);
-			saveFile(filename + compiler.options.fileOutputExtension, output.data);
+			var fileOwners:Array<String> = [];
+			addOwner(fileOwners, output.baseType);
+			queue(filename + compiler.options.fileOutputExtension, output.data, fileOwners);
 		}
 	}
 
