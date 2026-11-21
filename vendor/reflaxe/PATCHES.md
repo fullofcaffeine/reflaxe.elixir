@@ -210,10 +210,13 @@ public. Reflaxe.Elixir's output transaction remembers which types wrote each
 published file. It keeps an old file that the request did not write only when
 one of these types was left out. Why: a type can stay live and stop writing
 its file, and upstream's cached rebuild keeps every old file. Observed: under
-`-dce full`, a class kept as a class value lost its last live member, was built
-again with an empty module, and its old `.ex` and `.ex.map` stayed. A class
-that became `extern` kept its old files the same way. A fresh build wrote
-neither. Test: `dropped-output` in `test:reflaxe-server-cache`.
+`-dce full`, a class that only unused code still referred to lost its last
+live member. It stayed in the module list, which Reflaxe takes before
+dead-code elimination, was built again with an empty module, and its old `.ex`
+and `.ex.map` stayed. A class that became `extern` kept its old files the same
+way, and a class that got `@:application` kept its old `starter.ex`. A fresh
+build wrote none of them. Test: `dropped-output` in
+`test:reflaxe-server-cache`.
 
 Limits: the exactness argument rests on the Haxe 4.3 server rules above. A
 Haxe version that rebuilds cached type objects without the metadata would

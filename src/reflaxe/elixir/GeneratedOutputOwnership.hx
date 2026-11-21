@@ -516,7 +516,7 @@ class GeneratedOutputOwnership {
 			// manifest still has these bytes, instead of parsing and hashing it.
 			var nextOwners = new Map<String, Array<String>>();
 			for (path in nextPaths) {
-				var owners = pending.exists(path) ? pendingOwners.get(path) : previous.owners.get(path);
+				var owners = pending.exists(path) ? writtenPathOwners(pendingOwners.get(path), previous.owners.get(path)) : previous.owners.get(path);
 				if (owners != null)
 					nextOwners.set(path, owners);
 			}
@@ -611,15 +611,43 @@ class GeneratedOutputOwnership {
 	 *   it was usually left out. But a type can also stop writing a file while
 	 *   it stays in the program, and a fresh build then writes no such file:
 	 *   - Under `-dce full`, an edit in `User` removes the last live member of
-	 *     `Dead`. The class stays (for example as a class value), Reflaxe builds
-	 *     it again, and its module is empty, so no `dead.ex` is written.
+	 *     `Dead`. `Dead` stays in Reflaxe's module list, which is taken before
+	 *     dead-code elimination, while any typed code refers to it (also an
+	 *     unused function). Reflaxe builds it again, and its module is empty,
+	 *     so no `dead.ex` is written.
 	 *   - A class becomes `extern`. Haxe types it again, and it has no module.
-	 *   The old `dead.ex` and its `.ex.map` then belong to no left-out type and
-	 *   are dropped, as in a fresh build.
+	 *   - A class gets `@:application`. Its file moves from `starter.ex` to
+	 *     `my_app/application.ex`.
+	 *   The old file and its `.ex.map` then belong to no left-out type and are
+	 *   dropped, as in a fresh build.
 	 *
 	 * A file with unknown owners is kept, as before: for example an extra file,
 	 * or every file when the manifest on disk is not the one this process wrote.
 	 */
+	/**
+	 * Returns the owners of a file that this request writes: the types that
+	 * wrote it now, and each earlier owner that the cache filter left out.
+	 * Returns null (owners unknown) when the writers are unknown.
+	 *
+	 * Why the earlier owners stay: two classes can write the same file, for
+	 * example `A` and `B` with `@:native("Dup.Mod")` both write `dup/mod.ex`.
+	 * An edit of `A` alone builds only `A`, but `B` still writes that file in a
+	 * fresh build. Without `B` in the list, a later edit that makes `A` extern
+	 * would delete `dup/mod.ex`, although a fresh build writes it for `B`.
+	 */
+	static function writtenPathOwners(writers:Null<Array<String>>, earlier:Null<Array<String>>):Null<Array<String>> {
+		if (writers == null)
+			return null;
+		var owners = writers.copy();
+		if (earlier != null) {
+			for (owner in earlier) {
+				if (!owners.contains(owner) && ReflectCompiler.wasLeftOutByCacheFilter(owner))
+					owners.push(owner);
+			}
+		}
+		return owners;
+	}
+
 	static function keptOwnedPaths(previous:OwnershipState, pending:Map<String, StringOrBytes>):Array<String> {
 		return previous.paths.filter(path -> {
 			if (pending.exists(path))

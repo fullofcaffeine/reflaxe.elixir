@@ -569,18 +569,24 @@ writing its file. A fresh build then writes no such file, so the warm build
 must delete it. Two examples:
 
 - Under `-dce full`, an edit in `User` removes the last live member of `Dead`.
-  Something still keeps the class itself, for example `final c:Class<Dynamic> =
-  Dead;`. Reflaxe builds `Dead` again (its members changed), the module is
-  empty, and no `dead.ex` is written.
+  Reflaxe takes its module list before dead-code elimination runs, so `Dead`
+  stays in that list while any typed code refers to it, also unused code such
+  as a `Live.viaDead()` that nothing calls. Reflaxe builds `Dead` again (its
+  members changed), the module is empty, and no `dead.ex` is written.
 - An edit turns `class Base` into `@:native("Base") extern class Base`. An
   extern class has no module of its own.
+- An edit adds `@:application` to `class Starter`. Its file moves from
+  `starter.ex` to `my_app/application.ex`, and back when the edit is undone.
 
 The output transaction remembers, for each file that it published, the types
 that wrote it. A warm build keeps an old file only when one of these types was
 left out of the build. It deletes the old file, its `.ex.map`, and its manifest
 entry when every type that wrote it was built again and wrote no such file.
-Before, a warm build kept `dead.ex` and `base.ex`, with their source maps,
-until the next full build, and still exited 0.
+When a warm build writes a file again, the types that it left out stay owners
+of that file too. Two classes with the same `@:native` module name write one
+file, and an edit of one of them must not make the file belong to that class
+alone. Before, a warm build kept `dead.ex`, `base.ex`, and `starter.ex`, with
+their source maps, until the next full build, and still exited 0.
 
 The record lives in the server's memory, beside the manifest that the server
 wrote last. When the manifest on disk is not that one (another process wrote
@@ -589,9 +595,9 @@ the old files as before. The first request of a server always builds every
 type and deletes every file that it does not write. A file without a known
 type, such as an extra file that the compiler adds, is also kept.
 
-The `dropped-output` case of `npm run test:reflaxe-server-cache` checks both
-examples, a request without an edit after each step (no class is built and no
-file changes), and the edit back.
+The `dropped-output` case of `npm run test:reflaxe-server-cache` checks these
+three examples, a request without an edit after the first two (no class is
+built and no file changes), and each edit back.
 
 This is real compiler-state reuse, but not a universal module-artifact cache:
 

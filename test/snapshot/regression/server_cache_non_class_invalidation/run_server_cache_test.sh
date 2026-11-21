@@ -1710,10 +1710,14 @@ run_dce_members_variant() {
 # When a class stops producing output in a warm build, its old module, source
 # map, and manifest entry must go, as in a fresh build. Two ways are checked:
 # - dead: under `-dce full`, DeadTarget.m becomes live through an edit of
-#   DeadUser and dead again through a second edit. Haxe then removes the whole
-#   class, and does not type it again for either edit.
+#   DeadUser and dead again through a second edit. The unused
+#   DeadLive.viaDead() still calls it, so DeadTarget stays in the module list
+#   that Reflaxe gets before dead-code elimination, with no members and an
+#   empty module. Haxe does not type DeadTarget again for either edit.
 # - extern: DceBase, which DceKid extends, becomes an `extern` class. Haxe
 #   types it again, but an extern class has no module of its own.
+# - application: Starter gets `@:application`, so its file moves from
+#   `starter.ex` to `my_app/application.ex`, and back when the edit is undone.
 # A request without an edit after each step must build no class and keep the
 # output as it is.
 run_dropped_output_variant() {
@@ -1722,6 +1726,7 @@ run_dropped_output_variant() {
 	local log="$TMP_ROOT/dropped-output-unchanged.log"
 	local step user count
 	cp "$variants/MainDead.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/DeadLive.hx" "$PROJECT_DIR/src/DeadLive.hx"
 	cp "$variants/DeadTarget.hx" "$PROJECT_DIR/src/DeadTarget.hx"
 	cp "$variants/DeadUserNone.hx" "$PROJECT_DIR/src/DeadUser.hx"
 	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
@@ -1749,7 +1754,7 @@ run_dropped_output_variant() {
 		echo "SERVER_CACHE_REUSE:dropped-dead-unchanged built $count class modules again without an edit" >&2
 		return 1
 	fi
-	rm -f "$PROJECT_DIR/src/DeadTarget.hx" "$PROJECT_DIR/src/DeadUser.hx"
+	rm -f "$PROJECT_DIR/src/DeadLive.hx" "$PROJECT_DIR/src/DeadTarget.hx" "$PROJECT_DIR/src/DeadUser.hx"
 
 	cp "$FIXTURE_DIR/variants/dce-members/MainKid.hx" "$PROJECT_DIR/src/Main.hx"
 	cp "$FIXTURE_DIR/variants/dce-members/DceBase.hx" "$PROJECT_DIR/src/DceBase.hx"
@@ -1778,6 +1783,31 @@ run_dropped_output_variant() {
 	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
 	compare_generated_output "$TMP_ROOT/direct-dropped-extern-start" "$SERVER_OUTPUT" "dropped-extern-restored"
 	rm -f "$PROJECT_DIR/src/DceBase.hx" "$PROJECT_DIR/src/DceKid.hx" "$PROJECT_DIR/src/DceKidUser.hx"
+
+	cp "$variants/MainStarter.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/StarterPlain.hx" "$PROJECT_DIR/src/Starter.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-dropped-application-start"
+	compare_generated_output "$TMP_ROOT/direct-dropped-application-start" "$SERVER_OUTPUT" "dropped-application-start"
+	[[ -f "$SERVER_OUTPUT/starter.ex" ]]
+	cp "$variants/StarterApplication.hx" "$PROJECT_DIR/src/Starter.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-dropped-application"
+	compare_generated_output "$TMP_ROOT/direct-dropped-application" "$SERVER_OUTPUT" "dropped-application"
+	# Guard the fixture: the module must move to its application path.
+	[[ -f "$SERVER_OUTPUT/my_app/application.ex" ]]
+	if [[ -e "$SERVER_OUTPUT/starter.ex" || -e "$SERVER_OUTPUT/starter.ex.map" ]]; then
+		echo "SERVER_CACHE_PARITY:dropped-application kept starter.ex or its source map" >&2
+		return 1
+	fi
+	cp "$variants/StarterPlain.hx" "$PROJECT_DIR/src/Starter.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$TMP_ROOT/direct-dropped-application-start" "$SERVER_OUTPUT" "dropped-application-restored"
+	if [[ -e "$SERVER_OUTPUT/my_app/application.ex" ]]; then
+		echo "SERVER_CACHE_PARITY:dropped-application-restored kept my_app/application.ex" >&2
+		return 1
+	fi
+	rm -f "$PROJECT_DIR/src/Starter.hx"
 
 	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"
