@@ -126,8 +126,13 @@ class ReflectCompiler {
 	// =======================================================
 	#if !reflaxe.disallow_build_cache_check
 	public static var isCachedRebuild = false;
-	static var rebuiltClasses: Null<Array<ClassType>> = null;
-	static var rebuiltEnumKeys: Null<Array<String>> = null;
+
+	/**
+		True in the second and each later build request of one compilation
+		server, the requests in which the cache filter may leave out a type.
+		A new request starts with false, because the value is not persistent.
+	**/
+	static var isWarmRequest = false;
 	#end
 
 	#if !reflaxe.disallow_build_cache_check
@@ -138,80 +143,210 @@ class ReflectCompiler {
 	static var currentNonClassSourceTexts: Null<Array<String>> = null;
 	#end
 
+	#if !reflaxe.disallow_build_cache_check
+	/** Counts the requests of this macro interpreter. See `requestToken`. **/
+	@:persistent static var requestCount = 0;
+
+	/**
+		A text that names this request and no other request of this server:
+		the start time and the request count. See `wasTypedSinceLastPublication`.
+	**/
+	static var requestToken: Null<String> = null;
+
+	/**
+		The request tokens of the types whose output this server published
+		last. `commitSuccessfulModuleIds` replaces it after each publication.
+		See `wasTypedSinceLastPublication`.
+	**/
+	@:persistent static var publishedTokens: Null<Map<String, Bool>> = null;
+	#end
+
+	/**
+		The metadata `@:reflaxe.typedIn(token, owner)`: the request in which
+		Haxe typed a class, enum, typedef or abstract, and the type that the
+		metadata was made for. See `wasTypedSinceLastPublication`.
+	**/
+	static inline final TYPED_IN_META = ":reflaxe.typedIn";
+
 	public static function checkServerCache() {
 		#if !reflaxe.disallow_build_cache_check
 		if(#if eval !Context.defined("display") #else true #end) {
+			requestCount++;
+			requestToken = Std.string(Sys.time()) + "/" + requestCount;
 			if(!isCachedRun) {
 				isCachedRun = true;
 			} else {
-				rebuiltClasses = [];
-				rebuiltEnumKeys = [];
-				#if eval
-				Compiler.addGlobalMetadata("", "@:build(reflaxe.ReflectCompiler.addToBuildCache())");
-				#end
+				isWarmRequest = true;
 			}
 		}
 		#end
 	}
 
-	#if !reflaxe.disallow_build_cache_check
-	static var rebuiltClassKeys: Null<Map<String, Bool>> = null;
-	static var rebuiltClassKeyCount = 0;
-	#end
-
 	/**
-		Returns true when Haxe typed `cls` in this compilation request, or when
-		this request cannot tell: the first request of a compilation server, a
-		build without a server, or a build with
-		`-D reflaxe.disallow_build_cache_check`.
+		Returns true when this server has not published output for the typed
+		`type` as it is now: Haxe typed it in this request, or in a request that
+		published nothing. Also returns true when the request cannot tell: the
+		first request of a compilation server, a build without a server, or a
+		build with `-D reflaxe.disallow_build_cache_check`.
 
-		A target can keep a result that it computed from one class's typed body
-		between server requests and compute it again only when this returns true.
-		Haxe types a module again when its source file or a module that it
-		depends on changed, and the global build macro records each class that
-		Haxe types. Call it after typing, for example from `Context.onAfterTyping`
-		or from `BaseCompiler.filterTypes`.
+		The cache filter builds such a type again. A target can keep a result
+		that it computed from one type's typed body between server requests and
+		compute it again only when this returns true. Call it after typing, for
+		example from `BaseCompiler.filterTypes`.
 
-		Classes are matched with `sourceTypeKey`, so a class with `@:native` is
-		found under its Haxe path as well.
+		HOW
+		- `onAfterTyping` adds `@:reflaxe.typedIn(token, owner)` to each type
+		  that has no such metadata for itself. `owner` is `typeKey(type)`. A
+		  type that Haxe reused from the server cache keeps the metadata of the
+		  request that typed it. A type that Haxe typed again is a new object
+		  and gets this request's token.
+		- `commitSuccessfulModuleIds` keeps the tokens of all types of a request
+		  that published its output (`publishedTokens`). A type whose token is
+		  not in that set was typed after that publication.
+
+		WHY each part is needed
+		- Haxe saves a class's metadata after typing ("save state", which comes
+		  after `onAfterTyping`) and puts it back when a later request reuses
+		  the class. The metadata is part of that saved state. Metadata added
+		  after output publication would be removed again on reuse.
+		- Haxe keeps the typed modules of a request whenever the request had no
+		  error, also when nothing was generated. An editor's JSON-RPC
+		  `display/diagnostics` request types every module, has no `display`
+		  define, runs Reflaxe's typing hooks, and generates nothing. A type
+		  that it typed again must still count as new in the next build, so a
+		  token alone is not enough: the token must also be published.
+		- A macro can copy the metadata of a reused type onto a type that it
+		  defines, for example `Context.defineType` with
+		  `meta: base.meta.get()`. The copy carries an old, published token.
+		  The owner tells the copy apart; such metadata is replaced.
+		- A type without the metadata counts as new: for example a type that
+		  an editor request with the `display` define typed, where Reflaxe does
+		  not run.
+
+		WHY not a build macro: Reflaxe used to record each type that its global
+		build macro saw. That macro exists only after Reflaxe's initialization
+		macro registered it, so it missed a type that Haxe typed earlier in the
+		request, for example for a project line
+		`--macro haxe.macro.Context.getType("Status")` in front of
+		`-lib reflaxe.elixir`. The cache filter then left out an edited type,
+		and the warm build kept its old output and reported success. Haxe also
+		runs no global build macro for an instance of a `@:generic` class, such
+		as `Box_String`. The metadata does not depend on when or how Haxe typed
+		the type.
 	**/
-	public static function wasTypedThisRequest(cls: ClassType): Bool {
+	public static function wasTypedSinceLastPublication(type: BaseType): Bool {
 		#if !reflaxe.disallow_build_cache_check
-		final rebuilt = rebuiltClasses;
-		if(rebuilt == null) {
+		if(!isWarmRequest) {
 			return true;
 		}
-		var keys = rebuiltClassKeys;
-		if(keys == null || rebuiltClassKeyCount != rebuilt.length) {
-			keys = [for(c in rebuilt) sourceTypeKey(c) => true];
-			rebuiltClassKeys = keys;
-			rebuiltClassKeyCount = rebuilt.length;
+		final token = ownTypedInToken(type);
+		final published = publishedTokens;
+		return token == null || published == null || !published.exists(token);
+		#else
+		return true;
+		#end
+	}
+
+	/**
+		Returns true when Haxe typed `type` in this request, or when the request
+		cannot tell (see `wasTypedSinceLastPublication`). Unlike that function,
+		this returns false for a type that an earlier request typed and did not
+		publish.
+
+		Use it to find a type that Haxe did not type again although its source
+		changed: Reflaxe.Elixir's `ServerSourceFreshness.refuseStaleReuse`.
+	**/
+	public static function wasTypedThisRequest(type: BaseType): Bool {
+		#if !reflaxe.disallow_build_cache_check
+		if(!isWarmRequest) {
+			return true;
 		}
-		return keys.exists(sourceTypeKey(cls));
+		final token = ownTypedInToken(type);
+		return token == null || token == requestToken;
 		#else
 		return true;
 		#end
 	}
 
 	#if !reflaxe.disallow_build_cache_check
-	static function addToBuildCache(): Null<Array<Field>> {
-		final cls = #if eval Context.getLocalClass() #else null #end;
-		if(cls != null && rebuiltClasses != null) {
-			rebuiltClasses.push(cls.get());
+	/**
+		Returns the token of the `@:reflaxe.typedIn` metadata of `type`, or null
+		when the type has none, or only one that a macro copied from another
+		type.
+	**/
+	static function ownTypedInToken(type: BaseType): Null<String> {
+		final owner = type.meta.extractStringFromFirstMeta(TYPED_IN_META, 1);
+		if(owner != typeKey(type)) {
+			return null;
 		}
-		#if eval
-		// Haxe also runs a build macro when it types an enum. Record it, so an
-		// enum that Haxe reused from the server cache is not generated again.
-		if(rebuiltEnumKeys != null) {
-			switch(Context.getLocalType()) {
-				case TEnum(_.get() => enm, _): rebuiltEnumKeys.push(sourceTypeKey(enm));
-				case _:
-			}
-		}
-		#end
-		return null;
+		return type.meta.extractStringFromFirstMeta(TYPED_IN_META, 0);
 	}
 	#end
+
+	/**
+		Returns a key for a type that is the same before and after Haxe applies
+		an `@:native` name: the source module, then the dotted path that the
+		Haxe source gives to the type. Haxe stores that path in `@:realPath`
+		when it renames the type, and renames it after `onAfterTyping`.
+	**/
+	static function typeKey(type: BaseType): String {
+		final realPath = type.meta.extractStringFromFirstMeta(":realPath");
+		return type.module + "\u0000" + (realPath != null ? realPath : type.pack.concat([type.name]).join("."));
+	}
+
+	/**
+		Adds this request's token to each type that has no
+		`@:reflaxe.typedIn` metadata for itself, and replaces metadata that a
+		macro copied from another type. See `wasTypedSinceLastPublication`.
+	**/
+	static function markTypedTypes(moduleTypes: Array<ModuleType>) {
+		#if (eval && !reflaxe.disallow_build_cache_check)
+		final token = requestToken;
+		if(token == null) {
+			return;
+		}
+		// A position outside every source file. An editor request reads the
+		// metadata of cached modules (`check_display_module` in Haxe), so the
+		// metadata stays away from positions that a cursor can point at.
+		final nowhere = Context.makePosition({ min: 0, max: 0, file: "" });
+		for(moduleType in moduleTypes) {
+			final type = moduleType.getCommonData();
+			if(type.meta.has(TYPED_IN_META)) {
+				if(ownTypedInToken(type) != null) {
+					continue;
+				}
+				type.meta.remove(TYPED_IN_META);
+			}
+			final key = typeKey(type);
+			type.meta.add(TYPED_IN_META, [
+				{ expr: EConst(CString(token)), pos: nowhere },
+				{ expr: EConst(CString(key)), pos: nowhere }
+			], nowhere);
+		}
+		#end
+	}
+
+	/**
+		Remembers the tokens of all types of this request, after its output was
+		published. Every live type is then published: Reflaxe built it in this
+		request, or it was published before and the cache filter left it out.
+	**/
+	static function commitPublishedTokens() {
+		#if (eval && !reflaxe.disallow_build_cache_check)
+		final types = haxeProvidedModuleTypes;
+		if(types == null) {
+			return;
+		}
+		final tokens = new Map<String, Bool>();
+		for(moduleType in types) {
+			final token = ownTypedInToken(moduleType.getCommonData());
+			if(token != null) {
+				tokens.set(token, true);
+			}
+		}
+		publishedTokens = tokens;
+		#end
+	}
 
 	// =======================================================
 	// * Plugin System
@@ -242,6 +377,7 @@ class ReflectCompiler {
 
 	static function onAfterTyping(moduleTypes: Array<ModuleType>) {
 		haxeProvidedModuleTypes = moduleTypes;
+		markTypedTypes(moduleTypes);
 	}
 
 	static function onAfterGenerate() {
@@ -399,27 +535,19 @@ class ReflectCompiler {
 		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
 			&& !previousSuccessfulNonClassSourceTexts.equals(currentNonClassSourceTexts);
 
-		if(rebuiltClasses != null && !liveModuleSetChanged && !nonClassSourceChanged) {
+		if(isWarmRequest && !liveModuleSetChanged && !nonClassSourceChanged) {
 			final result = moduleTypes.filter(mt -> {
 				switch(mt) {
 					case TClassDecl(_.get() => c): {
-						if(compiler.shouldRecompileClass(c)) {
-							return true;
-						}
-						for(cls in rebuiltClasses) {
-							if(isSameSourceClass(cls, c)) {
-								return true;
-							}
-						}
+						return compiler.shouldRecompileClass(c) || wasTypedSinceLastPublication(c);
 					}
 					case TEnumDecl(_.get() => enm): {
 						// Haxe types an enum again when its file or a module that it
 						// uses changed. An enum that Haxe reused has the same output.
-						return rebuiltEnumKeys != null && rebuiltEnumKeys.contains(sourceTypeKey(enm));
+						return wasTypedSinceLastPublication(enm);
 					}
-					case _: return true; // Typedefs and abstracts have no build macro, so always build them.
+					case _: return true; // Typedefs and abstracts produce no module of their own; always pass them on.
 				}
-				return false;
 			});
 
 			// If anything is filtered out, we ARE doing a cache rebuild.
@@ -434,43 +562,12 @@ class ReflectCompiler {
 	}
 
 	/**
-		Returns true when a class that Haxe typed again in this server request
-		(`rebuilt`) is the same source class as `current`, a class in the list
-		that Haxe gives to the target after typing.
-
-		The two records cannot be compared by `pack` and `name`. The build macro
-		sees a class with its Haxe path, for example
-		`my_app.server.ErrorJSON`. Before the target runs, Haxe renames a class
-		that has `@:native("MyAppWeb.ErrorJSON")` to that native path and keeps
-		the Haxe path in `@:realPath`. A comparison of the paths then never
-		matches. The cache filter dropped the edited class, and a warm build
-		kept the old target file while it reported success.
-
-		This compares the source module and the Haxe path, which do not change.
-	**/
-	static function isSameSourceClass(rebuilt: ClassType, current: ClassType): Bool {
-		return sourceTypeKey(rebuilt) == sourceTypeKey(current);
-	}
-
-	/**
-		Returns a key for a class or enum that is the same before and after Haxe
-		applies an `@:native` name: the source module, then the dotted path that
-		the Haxe source gives to the type. Haxe stores that path in `@:realPath`
-		when it renames the type.
-	**/
-	static function sourceTypeKey(type: BaseType): String {
-		final realPath = type.meta.extractStringFromFirstMeta(":realPath");
-		return type.module + "\u0000" + (realPath != null ? realPath : type.pack.concat([type.name]).join("."));
-	}
-
-	/**
 		Returns, for each source file that defines an enum, typedef, or abstract
 		visible to this target build, the file path and the file text without
 		its classes and module-level fields.
 
-		Haxe build macros can tell Reflaxe which classes were rebuilt, but build
-		macros do not run on non-class declarations. Rebuilding only a changed enum
-		or abstract is unsafe because it can provide facts used by otherwise
+		Reflaxe can tell which types Haxe typed again (`wasTypedSinceLastPublication`),
+		but rebuilding only a changed enum or abstract is unsafe because it can provide facts used by otherwise
 		unchanged classes. For example, changing an unreferenced `@:phxHookNames`
 		abstract must revalidate every HXX template that uses the global hook
 		registry. Without this comparison, a warm build can accept a hook that a
@@ -685,8 +782,8 @@ class ReflectCompiler {
 		Remembers the live Haxe modules only after target output was published.
 
 		A normal compiler-server edit can safely regenerate only the classes Haxe
-		retyped. A deleted class is different: there is no class left for Haxe to put
-		in that rebuilt list. Comparing the complete live module set with the last
+		retyped. A deleted class is different: there is no class left that Haxe could
+		type again. Comparing the complete live module set with the last
 		successful request lets `applyBuildCacheCheckFilter` detect additions,
 		deletions, and renames and perform one full target rebuild. Without that full
 		rebuild, a deleted Haxe module can leave its old generated target file on disk.
@@ -702,6 +799,7 @@ class ReflectCompiler {
 		if(currentNonClassSourceTexts != null) {
 			previousSuccessfulNonClassSourceTexts = currentNonClassSourceTexts.copy();
 		}
+		commitPublishedTokens();
 		#end
 	}
 

@@ -405,6 +405,323 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "same-second-after-display-removed"
 }
 
+# Writes the project HXML with one `--macro` line for each argument, in front
+# of `-lib reflaxe.elixir`. Haxe runs initialization macros in HXML order, so
+# such a line can ask Haxe for a project type before Reflaxe.Elixir starts.
+write_early_macro_project_hxml() {
+	{
+		printf '%s\n' "-cp src"
+		local early_macro
+		for early_macro in "$@"; do
+			printf '%s\n' "--macro $early_macro"
+		done
+		cat <<'HXML'
+-lib reflaxe
+-lib reflaxe.elixir
+-D reflaxe_runtime
+-D source-map
+--no-output
+Main
+HXML
+	} >"$PROJECT_DIR/compile.hxml"
+}
+
+# Copies a source over a project file and makes sure that the file time moves
+# forward by at least two seconds: an ordinary save, which Haxe sees by itself.
+copy_with_new_file_time() {
+	python3 - "$1" "$2" <<'PY'
+import os
+import shutil
+import sys
+import time
+
+source, target = sys.argv[1], sys.argv[2]
+old = os.stat(target).st_mtime
+shutil.copyfile(source, target)
+stamp = max(time.time(), old + 2)
+os.utime(target, (stamp, stamp))
+PY
+}
+
+# Replaces one text in a source file and moves its file time forward by at
+# least two seconds: an ordinary save, which Haxe sees by itself.
+edit_with_new_file_time() {
+	python3 - "$1" "$2" "$3" <<'PY'
+import os
+import sys
+import time
+
+path, old, new = sys.argv[1], sys.argv[2].encode(), sys.argv[3].encode()
+before = os.stat(path).st_mtime
+data = open(path, "rb").read()
+changed = data.replace(old, new, 1)
+if changed == data:
+    raise SystemExit(f"edit fixture could not find {sys.argv[2]!r} in {path}")
+open(path, "wb").write(changed)
+stamp = max(time.time(), before + 2)
+os.utime(path, (stamp, stamp))
+PY
+}
+
+# Prints one digest of every file below a directory: paths, bytes and file
+# times. Two equal digests mean that nothing was written there.
+output_tree_digest() {
+	python3 - "$1" <<'PY'
+import hashlib
+import os
+import sys
+
+root = sys.argv[1]
+digest = hashlib.sha256()
+for directory, _dirs, files in sorted(os.walk(root)):
+    for name in sorted(files):
+        path = os.path.join(directory, name)
+        digest.update(os.path.relpath(path, root).encode() + b"\0")
+        digest.update(str(os.stat(path).st_mtime_ns).encode() + b"\0")
+        digest.update(open(path, "rb").read() + b"\0")
+print(digest.hexdigest())
+PY
+}
+
+# Runs one warm build that must refuse because Haxe holds an old copy of
+# `module`. The refusal must name the module once and write nothing.
+expect_stale_copy_refusal() {
+	local module="$1"
+	local label="$2"
+	local log="$TMP_ROOT/$label.log"
+	local before_digest after_digest mentions
+
+	before_digest="$(output_tree_digest "$SERVER_OUTPUT")"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:$label accepted an old copy of $module" >&2
+		return 1
+	fi
+	grep -Fq "used an old copy of $module (" "$log" || {
+		echo "SERVER_CACHE_PARITY:$label failed for the wrong reason" >&2
+		sed -n '1,80p' "$log" >&2
+		return 1
+	}
+	mentions="$(grep -o "$module (src/$module.hx)" "$log" | wc -l | tr -d ' ')"
+	if [[ "$mentions" != "1" ]]; then
+		echo "SERVER_CACHE_PARITY:$label named $module $mentions times" >&2
+		sed -n '1,20p' "$log" >&2
+		return 1
+	fi
+	after_digest="$(output_tree_digest "$SERVER_OUTPUT")"
+	if [[ "$before_digest" != "$after_digest" ]]; then
+		echo "SERVER_CACHE_PARITY:$label wrote output although it refused" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REFUSAL:$label:PASS"
+}
+
+# An "early-typed" module is one that Haxe types before Reflaxe.Elixir starts,
+# here because a project `--macro` line asks for it in front of
+# `-lib reflaxe.elixir`. Reflaxe once found the types that Haxe typed again
+# with a build macro that it registers when it starts, so it missed these
+# modules: an edited class kept its old Elixir and the build exited 0.
+run_early_typed_variant() {
+	local variants="$FIXTURE_DIR/variants"
+	local log="$TMP_ROOT/early-typed.log"
+	local unchanged_count
+
+	write_early_macro_project_hxml \
+		'haxe.macro.Context.getType("CacheStatus")' \
+		'haxe.macro.Context.getType("CacheNative")' \
+		'haxe.macro.Context.getModule("EarlyMulti")' \
+		'haxe.macro.Context.getModule("EarlyBox")'
+	cp "$variants/early-typed/MainEarly.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/native-class/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	cp "$variants/early-typed/EarlyMulti.hx" "$PROJECT_DIR/src/EarlyMulti.hx"
+	cp "$variants/early-typed/EarlyBox.hx" "$PROJECT_DIR/src/EarlyBox.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-before"
+	compare_generated_output "$TMP_ROOT/direct-early-before" "$SERVER_OUTPUT" "early-typed-before"
+
+	# An ordinary edit of an early-typed class.
+	copy_with_new_file_time "$variants/native-class/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-class"
+	compare_generated_output "$TMP_ROOT/direct-early-class" "$SERVER_OUTPUT" "early-typed-class"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:early-typed-class kept the stale class body" >&2
+		return 1
+	}
+
+	# Without an edit, the early-typed modules are reused, not built again.
+	compile_server "$SERVER_OUTPUT" >"$log"
+	unchanged_count="$(built_class_count "$log")"
+	if ((unchanged_count != 0)); then
+		echo "SERVER_CACHE_REUSE:early-typed-unchanged built $unchanged_count class modules again without an edit" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:early-typed-unchanged:PASS"
+
+	# An ordinary edit of an early-typed enum.
+	copy_with_new_file_time "$variants/enum/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-enum"
+	compare_generated_output "$TMP_ROOT/direct-early-enum" "$SERVER_OUTPUT" "early-typed-enum"
+
+	# Ordinary edits in an early-typed module with several types: first the
+	# class body (the class-only path), then the abstract (a full build).
+	edit_with_new_file_time "$PROJECT_DIR/src/EarlyMulti.hx" '"multi-before"' '"multi-after"'
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-multi-class"
+	compare_generated_output "$TMP_ROOT/direct-early-multi-class" "$SERVER_OUTPUT" "early-typed-multi-class"
+	grep -RFq '"multi-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:early-typed-multi-class kept the stale class body" >&2
+		return 1
+	}
+	edit_with_new_file_time "$PROJECT_DIR/src/EarlyMulti.hx" 'this + 1' 'this * 2'
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-multi-abstract"
+	compare_generated_output "$TMP_ROOT/direct-early-multi-abstract" "$SERVER_OUTPUT" "early-typed-multi-abstract"
+
+	# An ordinary edit of an early-typed generic class.
+	edit_with_new_file_time "$PROJECT_DIR/src/EarlyBox.hx" '"box-before"' '"box-after"'
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-generic"
+	compare_generated_output "$TMP_ROOT/direct-early-generic" "$SERVER_OUTPUT" "early-typed-generic"
+	grep -RFq '"box-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:early-typed-generic kept the stale generic class" >&2
+		return 1
+	}
+
+	# A same-second edit of an early-typed enum. Haxe loads the old enum before
+	# Reflaxe.Elixir can tell it to read the file again, so the first build must
+	# refuse instead of writing old Elixir. Haxe types the enum again in the
+	# next build, and that build must write the new enum.
+	edit_keeping_file_time "$PROJECT_DIR/src/CacheStatus.hx" "Archived;" "Archived; Paused;"
+	expect_stale_copy_refusal "CacheStatus" "early-typed-same-second-enum"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-same-second"
+	compare_generated_output "$TMP_ROOT/direct-early-same-second" "$SERVER_OUTPUT" "early-typed-same-second-enum"
+	grep -Fq 'def paused()' "$SERVER_OUTPUT/cache_status.ex" || {
+		echo "SERVER_CACHE_PARITY:early-typed-same-second-enum kept the stale enum" >&2
+		return 1
+	}
+
+	# The same for the module with several types. The abstract and its hidden
+	# implementation class are both old, and the module is named once.
+	edit_keeping_file_time "$PROJECT_DIR/src/EarlyMulti.hx" 'this * 2' 'this * 3'
+	expect_stale_copy_refusal "EarlyMulti" "early-typed-same-second-multi"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-early-same-second-multi"
+	compare_generated_output "$TMP_ROOT/direct-early-same-second-multi" "$SERVER_OUTPUT" "early-typed-same-second-multi"
+
+	write_project_hxml "$PROJECT_DIR"
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx" "$PROJECT_DIR/src/EarlyMulti.hx" "$PROJECT_DIR/src/EarlyBox.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "early-typed-removed"
+}
+
+# Haxe makes one class for each type argument of a `@:generic` class, here
+# `EarlyBox_String`, and runs no global build macro for it. Reflaxe once found
+# the types that Haxe typed again with such a build macro, so an edit of the
+# generic class kept the old `early_box_string.ex`.
+run_generic_variant() {
+	cp "$FIXTURE_DIR/variants/generic/MainGeneric.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/early-typed/EarlyBox.hx" "$PROJECT_DIR/src/EarlyBox.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	edit_with_new_file_time "$PROJECT_DIR/src/EarlyBox.hx" '"box-before"' '"box-after"'
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-generic"
+	compare_generated_output "$TMP_ROOT/direct-generic" "$SERVER_OUTPUT" "generic-edit"
+	grep -RFq '"box-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:generic-edit kept the stale generic class" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/EarlyBox.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "generic-removed"
+}
+
+# A build macro of `Host` defines `HostCompanion` with the metadata of `Base`.
+# When `Base` is reused from the server cache, that metadata includes the
+# `@:reflaxe.typedIn` mark of `Base`. The new companion must still count as
+# typed again, so an edit of `Host` must write the new companion.
+run_copied_metadata_variant() {
+	local variants="$FIXTURE_DIR/variants/copied-metadata"
+
+	cp "$variants/MainCopied.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/Base.hx" "$PROJECT_DIR/src/Base.hx"
+	cp "$variants/Host.hx" "$PROJECT_DIR/src/Host.hx"
+	cp "$variants/Gen.hx" "$PROJECT_DIR/src/Gen.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	edit_with_new_file_time "$PROJECT_DIR/src/Host.hx" '"host-before"' '"host-after"'
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-copied-metadata"
+	compare_generated_output "$TMP_ROOT/direct-copied-metadata" "$SERVER_OUTPUT" "copied-metadata"
+	grep -RFq 'host-after' "$SERVER_OUTPUT/host_companion.ex" || {
+		echo "SERVER_CACHE_PARITY:copied-metadata kept the stale companion class" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/Base.hx" "$PROJECT_DIR/src/Host.hx" "$PROJECT_DIR/src/Gen.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "copied-metadata-removed"
+}
+
+# An editor's JSON-RPC `display/diagnostics` request types every module on the
+# same server, has no `display` define, runs Reflaxe's typing hooks, and
+# generates nothing. Haxe keeps the modules that it typed. The next build must
+# still build the class that the diagnostics request typed again.
+run_diagnostics_request_variant() {
+	local variants="$FIXTURE_DIR/variants/native-class"
+	local log="$TMP_ROOT/diagnostics.log"
+	local request
+
+	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	copy_with_new_file_time "$variants/CacheNativeAfter.hx" "$PROJECT_DIR/src/CacheNative.hx"
+	request="$(python3 - "$PROJECT_DIR/src/CacheNative.hx" <<'PY'
+import json
+import os
+import sys
+
+print(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "display/diagnostics",
+                  "params": {"file": os.path.realpath(sys.argv[1])}}))
+PY
+)"
+	"$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		--display "$request" >"$log" 2>&1 || {
+		echo "SERVER_CACHE_PARITY:diagnostics request failed" >&2
+		sed -n '1,40p' "$log" >&2
+		return 1
+	}
+	grep -Fq '"result"' "$log" || {
+		echo "SERVER_CACHE_PARITY:diagnostics request gave no JSON-RPC result" >&2
+		sed -n '1,40p' "$log" >&2
+		return 1
+	}
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-diagnostics"
+	compare_generated_output "$TMP_ROOT/direct-diagnostics" "$SERVER_OUTPUT" "diagnostics-then-build"
+	grep -RFq '"native-after"' "$SERVER_OUTPUT" || {
+		echo "SERVER_CACHE_PARITY:diagnostics-then-build kept the stale class body" >&2
+		return 1
+	}
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheNative.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "diagnostics-removed"
+}
+
 run_module_rename_variant() {
 	local direct_legacy="$TMP_ROOT/direct-module-legacy"
 	local direct_renamed="$TMP_ROOT/direct-module-renamed"
@@ -1516,6 +1833,10 @@ BASELINE_FD_COUNT="$(open_fd_count "$SERVER_PID")"
 # First, because every later variant relies on the server seeing each edit.
 run_same_second_edit_variant
 run_same_second_first_time_file_variant
+run_early_typed_variant
+run_generic_variant
+run_copied_metadata_variant
+run_diagnostics_request_variant
 
 run_variant \
 	"enum" \

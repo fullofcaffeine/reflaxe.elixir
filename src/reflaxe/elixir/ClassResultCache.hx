@@ -25,7 +25,7 @@ import reflaxe.ReflectCompiler;
  * - The result may depend only on the typed body of the class and on
  *   declarations that its module depends on. Haxe types a module again when its
  *   source file, or a module that it depends on (also through an inlined call),
- *   changed. `ReflectCompiler.wasTypedThisRequest` reports these classes.
+ *   changed. `ReflectCompiler.wasTypedSinceLastPublication` reports these classes.
  * - Results come only from the last request, and only when that request
  *   published its output (`commit`). If a request fails, the next request
  *   computes every class again. Haxe also types the modules of a failed request
@@ -159,9 +159,9 @@ class ClassResultCache<T> {
 		#if reflaxe_elixir_no_kept_class_results
 		// Declaration results are not a scan; a compiler that builds only the
 		// re-typed classes still needs them.
-		return !declarationOnly || ReflectCompiler.wasTypedThisRequest(classType);
+		return !declarationOnly || ReflectCompiler.wasTypedSinceLastPublication(classType);
 		#else
-		return ReflectCompiler.wasTypedThisRequest(classType);
+		return ReflectCompiler.wasTypedSinceLastPublication(classType);
 		#end
 	}
 
