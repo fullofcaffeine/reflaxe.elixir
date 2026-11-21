@@ -560,6 +560,39 @@ The `dce-members` case of `npm run test:reflaxe-server-cache` makes members live
 and dead with edits in another class and compares each warm build with a fresh
 build.
 
+### A class that stops writing a file loses the file
+
+A warm build writes only the files of the types that it builds again. It keeps
+each other file that it wrote before, because the type that wrote it was left
+out and its output did not change. But a type can stay in the program and stop
+writing its file. A fresh build then writes no such file, so the warm build
+must delete it. Two examples:
+
+- Under `-dce full`, an edit in `User` removes the last live member of `Dead`.
+  Something still keeps the class itself, for example `final c:Class<Dynamic> =
+  Dead;`. Reflaxe builds `Dead` again (its members changed), the module is
+  empty, and no `dead.ex` is written.
+- An edit turns `class Base` into `@:native("Base") extern class Base`. An
+  extern class has no module of its own.
+
+The output transaction remembers, for each file that it published, the types
+that wrote it. A warm build keeps an old file only when one of these types was
+left out of the build. It deletes the old file, its `.ex.map`, and its manifest
+entry when every type that wrote it was built again and wrote no such file.
+Before, a warm build kept `dead.ex` and `base.ex`, with their source maps,
+until the next full build, and still exited 0.
+
+The record lives in the server's memory, beside the manifest that the server
+wrote last. When the manifest on disk is not that one (another process wrote
+it, or the server restarted), the owners are unknown, and the warm build keeps
+the old files as before. The first request of a server always builds every
+type and deletes every file that it does not write. A file without a known
+type, such as an extra file that the compiler adds, is also kept.
+
+The `dropped-output` case of `npm run test:reflaxe-server-cache` checks both
+examples, a request without an edit after each step (no class is built and no
+file changes), and the edit back.
+
 This is real compiler-state reuse, but not a universal module-artifact cache:
 
 - Reflaxe still performs required whole-program fact collection and output work.

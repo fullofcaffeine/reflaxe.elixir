@@ -96,9 +96,12 @@ def generated_files(root: Path):
         if path.is_absolute() or ".." in path.parts:
             raise SystemExit(f"{label}: unsafe generated path {relative!r}")
         result[path.as_posix()] = (root / path).read_bytes()
-    for source_map in root.rglob("*.ex.map"):
-        relative = source_map.relative_to(root).as_posix()
-        result[relative] = source_map.read_bytes()
+    # Also read every module and source map on disk. A stale file that the
+    # manifest no longer lists must still fail the comparison.
+    for pattern in ("*.ex", "*.ex.map"):
+        for generated in root.rglob(pattern):
+            relative = generated.relative_to(root).as_posix()
+            result[relative] = generated.read_bytes()
     return result
 
 expected = generated_files(expected_root)
@@ -1704,6 +1707,83 @@ run_dce_members_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "dce-members-baseline-restored"
 }
 
+# When a class stops producing output in a warm build, its old module, source
+# map, and manifest entry must go, as in a fresh build. Two ways are checked:
+# - dead: under `-dce full`, DeadTarget.m becomes live through an edit of
+#   DeadUser and dead again through a second edit. Haxe then removes the whole
+#   class, and does not type it again for either edit.
+# - extern: DceBase, which DceKid extends, becomes an `extern` class. Haxe
+#   types it again, but an extern class has no module of its own.
+# A request without an edit after each step must build no class and keep the
+# output as it is.
+run_dropped_output_variant() {
+	local variants="$FIXTURE_DIR/variants/dropped-output"
+	local dce_args=(-dce full -main Main)
+	local log="$TMP_ROOT/dropped-output-unchanged.log"
+	local step user count
+	cp "$variants/MainDead.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/DeadTarget.hx" "$PROJECT_DIR/src/DeadTarget.hx"
+	cp "$variants/DeadUserNone.hx" "$PROJECT_DIR/src/DeadUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-dropped-dead-start" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-dropped-dead-start" "$SERVER_OUTPUT" "dropped-dead-start"
+	for step in calls none; do
+		if [[ "$step" == calls ]]; then user=DeadUserCalls.hx; else user=DeadUserNone.hx; fi
+		cp "$variants/$user" "$PROJECT_DIR/src/DeadUser.hx"
+		compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+		compile_direct "$TMP_ROOT/direct-dropped-dead-$step" "${dce_args[@]}"
+		compare_generated_output "$TMP_ROOT/direct-dropped-dead-$step" "$SERVER_OUTPUT" "dropped-dead-$step"
+		# Guard the fixture: the step must add or remove the module.
+		if [[ "$step" == calls ]]; then
+			[[ -f "$SERVER_OUTPUT/dead_target.ex" ]]
+		elif [[ -e "$SERVER_OUTPUT/dead_target.ex" || -e "$SERVER_OUTPUT/dead_target.ex.map" ]]; then
+			echo "SERVER_CACHE_PARITY:dropped-dead-none kept dead_target.ex" >&2
+			return 1
+		fi
+	done
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}" >"$log"
+	compare_generated_output "$TMP_ROOT/direct-dropped-dead-none" "$SERVER_OUTPUT" "dropped-dead-unchanged"
+	count="$(built_class_count "$log")"
+	if ((count != 0)); then
+		echo "SERVER_CACHE_REUSE:dropped-dead-unchanged built $count class modules again without an edit" >&2
+		return 1
+	fi
+	rm -f "$PROJECT_DIR/src/DeadTarget.hx" "$PROJECT_DIR/src/DeadUser.hx"
+
+	cp "$FIXTURE_DIR/variants/dce-members/MainKid.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$FIXTURE_DIR/variants/dce-members/DceBase.hx" "$PROJECT_DIR/src/DceBase.hx"
+	cp "$FIXTURE_DIR/variants/dce-members/DceKid.hx" "$PROJECT_DIR/src/DceKid.hx"
+	cp "$FIXTURE_DIR/variants/dce-members/DceKidUserNone.hx" "$PROJECT_DIR/src/DceKidUser.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-dropped-extern-start" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-dropped-extern-start" "$SERVER_OUTPUT" "dropped-extern-start"
+	[[ -f "$SERVER_OUTPUT/dce_base.ex" && -f "$SERVER_OUTPUT/dce_base.ex.map" ]]
+	cp "$variants/DceBaseExtern.hx" "$PROJECT_DIR/src/DceBase.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compile_direct "$TMP_ROOT/direct-dropped-extern" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-dropped-extern" "$SERVER_OUTPUT" "dropped-extern"
+	if [[ -e "$SERVER_OUTPUT/dce_base.ex" || -e "$SERVER_OUTPUT/dce_base.ex.map" ]]; then
+		echo "SERVER_CACHE_PARITY:dropped-extern kept dce_base.ex or its source map" >&2
+		return 1
+	fi
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}" >"$log"
+	compare_generated_output "$TMP_ROOT/direct-dropped-extern" "$SERVER_OUTPUT" "dropped-extern-unchanged"
+	count="$(built_class_count "$log")"
+	if ((count != 0)); then
+		echo "SERVER_CACHE_REUSE:dropped-extern-unchanged built $count class modules again without an edit" >&2
+		return 1
+	fi
+	cp "$FIXTURE_DIR/variants/dce-members/DceBase.hx" "$PROJECT_DIR/src/DceBase.hx"
+	compile_server "$SERVER_OUTPUT" "${dce_args[@]}"
+	compare_generated_output "$TMP_ROOT/direct-dropped-extern-start" "$SERVER_OUTPUT" "dropped-extern-restored"
+	rm -f "$PROJECT_DIR/src/DceBase.hx" "$PROJECT_DIR/src/DceKid.hx" "$PROJECT_DIR/src/DceKidUser.hx"
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "dropped-output-baseline-restored"
+}
+
 # A request that fails after Reflaxe started must not lose what the next warm
 # request needs. With `-D app_name=Cache`, the printer writes a bare
 # `RegistryTools.run()` in the Web module `CacheWeb.RegistryPage` as
@@ -1866,6 +1946,7 @@ run_hxml_define_variant
 run_module_routes_variant
 run_private_exports_variant
 run_dce_members_variant
+run_dropped_output_variant
 run_failed_request_registry_variant
 run_native_class_variant
 run_tampered_output_variant
