@@ -666,7 +666,11 @@ Local fix:
   `paramsContract` by name; `RouterContractDependencies` loads it while Haxe
   types the router module, so Haxe records the dependency. Before that, a
   contract named by full path without an import (`Contracts.UserIdPathParams`)
-  could change without a warm build checking the router again. The new
+  could change without a warm build checking the router again. Limit: this
+  runs in the global build macro, before the router class's own build
+  macros, so it does not see routes that such a macro adds (for example
+  `@:build(Gen.addRoutes())` adding `@:routes(...)` with `cls.meta.add`). A
+  contract edit there can still miss the error on a warm build. The new
   `BaseCompiler.isReadWithoutDependency(moduleType)` lets the target name
   these types. The default is true for every type, which keeps the earlier
   rule for a target that does not override it. A file is compared only when

@@ -34,6 +34,16 @@ import haxe.macro.Type;
  *   makes Haxe type the router again, and a warm request builds it again.
  * - A path that does not resolve is left alone here; the compiler reports it
  *   with its usual diagnostic.
+ *
+ * LIMITS
+ * - `register` runs in the global build macro, before the router class's own
+ *   build macros. Routes that such a macro adds are not seen. Example:
+ *   `@:router @:build(Gen.addRoutes()) class Router {}`, where
+ *   `Gen.addRoutes` adds `@:routes([...{paramsContract: Contracts.Params}])`
+ *   with `cls.meta.add`. A later edit of that contract builds only the
+ *   contract's module, and a warm build can miss the error that a fresh build
+ *   reports. Routes written in the source, as `final routes = [...]` or
+ *   `@:routes([...])`, are seen.
  */
 private final CONTRACT_OPTION_NAMES = ["paramsContract", "params"];
 

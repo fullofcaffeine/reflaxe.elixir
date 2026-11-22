@@ -535,7 +535,13 @@ would not type the router again when only `Contracts.hx` changes, and a warm
 build could accept a route that a fresh build rejects. Reflaxe.Elixir loads each
 contract type while Haxe types the router module
 (`RouterContractDependencies`), so Haxe records the dependency and builds the
-router again after a contract edit.
+router again after a contract edit. This covers routes written in the source
+(`final routes = [...]` or `@:routes([...])`). It does not cover routes that the
+router class's own build macro adds, for example `@:router
+@:build(Gen.addRoutes()) class Router {}` where the macro adds `@:routes(...)`
+metadata. After an edit of such a contract, a warm build can miss the error
+that a fresh build reports; run a fresh build, or restart the server, after
+that edit.
 
 Any compiler path that reads a type by name, without a Haxe reference from the
 class being built, must do one of these two things: make Haxe record the

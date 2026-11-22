@@ -374,7 +374,11 @@ run_same_second_first_time_file_variant() {
 	# does, and Haxe keeps what it parsed. The file then changes with the same
 	# file time. The first build may still use the old text, because the server
 	# learns about the file only in that build. The second build must not.
-	cp "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
+	# Main.hx gets a new file time: a display request skips the freshness
+	# check, so a new Main.hx with the same whole-second time as the one the
+	# server typed would keep the old module, and the display position would
+	# point at nothing.
+	copy_with_new_file_time "$variants/MainNative.hx" "$PROJECT_DIR/src/Main.hx"
 	cp "$variants/CacheNativeBefore.hx" "$PROJECT_DIR/src/CacheNative.hx"
 	display_position="$(python3 - "$PROJECT_DIR/src/Main.hx" <<'PY'
 import sys
