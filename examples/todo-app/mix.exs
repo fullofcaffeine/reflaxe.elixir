@@ -50,7 +50,7 @@ defmodule TodoApp.MixProject do
 
       # Add parent project as dependency for Haxe compilation functionality
       {:reflaxe_elixir, path: "../..", only: [:dev, :test, :e2e]},
-      {:phoenix, "~> 1.7.24"},
+      {:phoenix, "~> 1.7.25"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.22.3"},
