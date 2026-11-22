@@ -1140,6 +1140,7 @@ run_missing_output_variant() {
 	cp "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
 	cp "$variants/CacheMixedFunctionsBefore.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
 	cp "$variants/CacheMixedBystander.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	cp "$variants/CacheMixedPayloadUser.hx" "$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 	compile_server "$SERVER_OUTPUT"
 	compile_server "$SERVER_OUTPUT"
 	if [[ ! -f "$main_output" || ! -f "$bystander_output" ]]; then
@@ -1199,7 +1200,8 @@ run_missing_output_variant() {
 	compare_generated_output "$direct_after" "$SERVER_OUTPUT" "missing-output-after-refusal"
 
 	restore_baseline_sources
-	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx" \
+		"$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "missing-output-removed"
 }
@@ -1223,6 +1225,21 @@ print(count)
 PY
 }
 
+# Fails when the warm request in `log` built as many class modules as a full
+# build (`full_count`), and prints the counts otherwise.
+expect_partial_build() {
+	local log="$1"
+	local label="$2"
+	local full_count="$3"
+	local partial_count
+	partial_count="$(built_class_count "$log")"
+	if ((partial_count >= full_count)); then
+		echo "SERVER_CACHE_REUSE:$label built $partial_count class modules, the same as a full build ($full_count)" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:$label:PASS built=$partial_count full=$full_count"
+}
+
 run_mixed_file_variant() {
 	local variants="$FIXTURE_DIR/variants/mixed-file"
 	local log="$TMP_ROOT/mixed-file.log"
@@ -1235,6 +1252,7 @@ run_mixed_file_variant() {
 	cp "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
 	cp "$variants/CacheMixedFunctionsBefore.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
 	cp "$variants/CacheMixedBystander.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	cp "$variants/CacheMixedPayloadUser.hx" "$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 	compile_server "$SERVER_OUTPUT" >"$log"
 	compile_direct "$TMP_ROOT/direct-mixed-before"
 	compare_generated_output "$TMP_ROOT/direct-mixed-before" "$SERVER_OUTPUT" "mixed-file-before"
@@ -1259,8 +1277,17 @@ run_mixed_file_variant() {
 	fi
 	echo "SERVER_CACHE_REUSE:mixed-file-class-edit:PASS built=$partial_count full=$full_count"
 
+	# Only comments change, between the class and the enum and after the last
+	# declaration. No declaration changes, so this must build the same
+	# classes as a class edit, not every module.
+	cp "$variants/CacheMixedCommentEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-mixed-comment-edit"
+	compare_generated_output "$TMP_ROOT/direct-mixed-comment-edit" "$SERVER_OUTPUT" "mixed-file-comment-edit"
+	expect_partial_build "$log" "mixed-file-comment-edit" "$full_count"
+
 	# Only the body of a module-level function changes, in a file that also
-	# declares a typedef.
+	# declares typedefs.
 	cp "$variants/CacheMixedFunctionsBodyEdit.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
 	compile_server "$SERVER_OUTPUT" >"$log"
 	compile_direct "$TMP_ROOT/direct-mixed-function-edit"
@@ -1269,39 +1296,46 @@ run_mixed_file_variant() {
 		echo "SERVER_CACHE_PARITY:mixed-file-function-edit kept the stale function body" >&2
 		return 1
 	}
-	partial_count="$(built_class_count "$log")"
-	if ((partial_count >= full_count)); then
-		echo "SERVER_CACHE_REUSE:mixed-file-function-edit built $partial_count class modules, the same as a full build ($full_count)" >&2
-		return 1
-	fi
-	echo "SERVER_CACHE_REUSE:mixed-file-function-edit:PASS built=$partial_count full=$full_count"
+	expect_partial_build "$log" "mixed-file-function-edit" "$full_count"
 
-	# The typedef beside the functions changes. This is a non-class edit, so the
-	# request must build every module, as before.
+	# A typedef beside the functions changes its field from String to Int.
+	# CacheMixedPayloadUser in another file reads the field, so Haxe types it
+	# again and it must be built again, but the bystander must not.
 	cp "$variants/CacheMixedFunctionsTypedefEdit.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
 	compile_server "$SERVER_OUTPUT" >"$log"
 	compile_direct "$TMP_ROOT/direct-mixed-typedef-edit"
 	compare_generated_output "$TMP_ROOT/direct-mixed-typedef-edit" "$SERVER_OUTPUT" "mixed-file-typedef-edit"
-	partial_count="$(built_class_count "$log")"
-	if ((partial_count < full_count)); then
-		echo "SERVER_CACHE_REUSE:mixed-file-typedef-edit built only $partial_count of $full_count class modules after a typedef edit" >&2
+	grep -Fq 'payload.value + payload.value' "$SERVER_OUTPUT/cache_mixed_payload_user.ex" || {
+		echo "SERVER_CACHE_PARITY:mixed-file-typedef-edit did not build the typedef's user again" >&2
 		return 1
-	fi
+	}
+	expect_partial_build "$log" "mixed-file-typedef-edit" "$full_count"
 
-	# The abstract beside the class changes: also a full build.
+	# The abstract beside the class changes. Main calls its method, so Haxe
+	# types Main again too.
 	cp "$variants/CacheMixedAbstractEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
 	compile_server "$SERVER_OUTPUT" >"$log"
 	compile_direct "$TMP_ROOT/direct-mixed-abstract-edit"
 	compare_generated_output "$TMP_ROOT/direct-mixed-abstract-edit" "$SERVER_OUTPUT" "mixed-file-abstract-edit"
-	partial_count="$(built_class_count "$log")"
-	if ((partial_count < full_count)); then
-		echo "SERVER_CACHE_REUSE:mixed-file-abstract-edit built only $partial_count of $full_count class modules after an abstract edit" >&2
-		return 1
-	fi
-	echo "SERVER_CACHE_REUSE:mixed-file-non-class-edits-build-everything:PASS"
+	expect_partial_build "$log" "mixed-file-abstract-edit" "$full_count"
+
+	# A typedef is added to the file, and then removed again. A typedef writes
+	# no Elixir file of its own, so neither request needs every module.
+	cp "$variants/CacheMixedTypedefAdded.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-mixed-typedef-added"
+	compare_generated_output "$TMP_ROOT/direct-mixed-typedef-added" "$SERVER_OUTPUT" "mixed-file-typedef-added"
+	expect_partial_build "$log" "mixed-file-typedef-added" "$full_count"
+
+	cp "$variants/CacheMixedAbstractEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-mixed-typedef-removed"
+	compare_generated_output "$TMP_ROOT/direct-mixed-typedef-removed" "$SERVER_OUTPUT" "mixed-file-typedef-removed"
+	expect_partial_build "$log" "mixed-file-typedef-removed" "$full_count"
 
 	restore_baseline_sources
-	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx" \
+		"$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "mixed-file-removed"
 }
@@ -1382,18 +1416,25 @@ PY
 run_mixed_file_non_ascii_variant() {
 	local variants="$FIXTURE_DIR/variants/mixed-file"
 	local log="$TMP_ROOT/mixed-file-non-ascii.log"
-	local kind full_count partial_count
+	local kind partial_count
+	local full_count=""
 
 	cp "$variants/MainMixed.hx" "$PROJECT_DIR/src/Main.hx"
 	cp "$variants/CacheMixedFunctionsBefore.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx"
 	cp "$variants/CacheMixedBystander.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	cp "$variants/CacheMixedPayloadUser.hx" "$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 
 	for kind in byte-order-mark e-acute emoji; do
 		write_with_non_ascii_prefix "$kind" "$variants/CacheMixedBefore.hx" "$PROJECT_DIR/src/CacheMixed.hx"
 		compile_server "$SERVER_OUTPUT" >"$log"
 		compile_direct "$TMP_ROOT/direct-mixed-$kind-before"
 		compare_generated_output "$TMP_ROOT/direct-mixed-$kind-before" "$SERVER_OUTPUT" "mixed-file-$kind-before"
-		full_count="$(built_class_count "$log")"
+		# Only the first request of this loop adds new files and builds every
+		# class. A later one follows an abstract edit, which no longer builds
+		# everything, so it is not a full build to compare with.
+		if [[ -z "$full_count" ]]; then
+			full_count="$(built_class_count "$log")"
+		fi
 
 		# Only the class body changes. The class-only path must still apply when
 		# non-ASCII text stands in front of the class.
@@ -1412,20 +1453,19 @@ run_mixed_file_non_ascii_variant() {
 		fi
 		echo "SERVER_CACHE_REUSE:mixed-file-$kind-class-edit:PASS built=$partial_count full=$full_count"
 
-		# The abstract behind the class changes: every module must be built.
+		# The abstract behind the class changes. No template check reads this
+		# file, so its text is not compared, and the output must still equal a
+		# fresh build. The decoy-registry case checks the character positions
+		# in a file whose text is compared.
 		write_with_non_ascii_prefix "$kind" "$variants/CacheMixedAbstractEdit.hx" "$PROJECT_DIR/src/CacheMixed.hx"
 		compile_server "$SERVER_OUTPUT" >"$log"
 		compile_direct "$TMP_ROOT/direct-mixed-$kind-abstract-edit"
 		compare_generated_output "$TMP_ROOT/direct-mixed-$kind-abstract-edit" "$SERVER_OUTPUT" "mixed-file-$kind-abstract-edit"
-		partial_count="$(built_class_count "$log")"
-		if ((partial_count < full_count)); then
-			echo "SERVER_CACHE_REUSE:mixed-file-$kind-abstract-edit built only $partial_count of $full_count class modules after an abstract edit" >&2
-			return 1
-		fi
 	done
 
 	restore_baseline_sources
-	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx"
+	rm -f "$PROJECT_DIR/src/CacheMixed.hx" "$PROJECT_DIR/src/CacheMixedFunctions.hx" "$PROJECT_DIR/src/CacheMixedBystander.hx" \
+		"$PROJECT_DIR/src/CacheMixedPayloadUser.hx"
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "mixed-file-non-ascii-removed"
 }
@@ -1477,6 +1517,76 @@ run_decoy_registry_variant() {
 	restore_baseline_sources
 	compile_server "$SERVER_OUTPUT"
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "decoy-registry-removed"
+}
+
+run_component_props_variant() {
+	local variants="$FIXTURE_DIR/variants/component-props"
+	local direct_failure_log="$TMP_ROOT/direct-component-props-required.log"
+	local server_failure_log="$TMP_ROOT/server-component-props-required.log"
+
+	# CacheCardPage uses <.cache_card> by tag name only. The component's props
+	# typedef is in CacheCardProps.hx, a file without any metadata.
+	cp "$variants/MainCard.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/CacheCardPage.hx" "$PROJECT_DIR/src/CacheCardPage.hx"
+	cp "$variants/CacheCardComponents.hx" "$PROJECT_DIR/src/CacheCardComponents.hx"
+	cp "$variants/CacheCardPropsKnown.hx" "$PROJECT_DIR/src/CacheCardProps.hx"
+	# Files that the server sees for the first time are read once more when
+	# they are younger than two seconds (ServerSourceFreshness), and that
+	# second read types the page again by itself. Old file times make the
+	# props edit below an ordinary edit of a known file, as in a real project.
+	python3 - "$PROJECT_DIR/src" <<'PY'
+import os
+import sys
+import time
+
+stamp = time.time() - 30
+for name in ("Main.hx", "CacheCardPage.hx", "CacheCardComponents.hx", "CacheCardProps.hx"):
+    os.utime(os.path.join(sys.argv[1], name), (stamp, stamp))
+PY
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-component-props-known"
+	compare_generated_output "$TMP_ROOT/direct-component-props-known" "$SERVER_OUTPUT" "component-props-known"
+	# One request without an edit, as on a server that waits for the next save.
+	compile_server "$SERVER_OUTPUT"
+
+	# The props get a required field. Haxe types the component again but not
+	# the page, so the warm request must still check the page again.
+	copy_with_new_file_time "$variants/CacheCardPropsRequired.hx" "$PROJECT_DIR/src/CacheCardProps.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-component-props-required" \
+		>"$direct_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:component-props-required direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq 'is missing required attribute "subtitle"' "$direct_failure_log" || {
+		echo "SERVER_CACHE_PARITY:component-props-required direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_failure_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:component-props-required warm build accepted a template against stale component props" >&2
+		return 1
+	fi
+	grep -Fq 'is missing required attribute "subtitle"' "$server_failure_log" || {
+		echo "SERVER_CACHE_PARITY:component-props-required warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_failure_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:component-props-required:PASS"
+
+	copy_with_new_file_time "$variants/CacheCardPropsKnown.hx" "$PROJECT_DIR/src/CacheCardProps.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-component-props-restored"
+	compare_generated_output "$TMP_ROOT/direct-component-props-restored" "$SERVER_OUTPUT" "component-props-restored"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheCardPage.hx" "$PROJECT_DIR/src/CacheCardComponents.hx" "$PROJECT_DIR/src/CacheCardProps.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "component-props-removed"
 }
 
 run_discovery_variant() {
@@ -1985,6 +2095,7 @@ run_mixed_file_variant
 run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant
 run_decoy_registry_variant
+run_component_props_variant
 run_discovery_variant
 run_cross_project_variant
 

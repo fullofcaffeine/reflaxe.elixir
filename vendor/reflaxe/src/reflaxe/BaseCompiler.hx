@@ -332,6 +332,41 @@ abstract class BaseCompiler {
 	}
 
 	/**
+		Returns true when this compiler can read `moduleType` while it builds
+		another type that does not depend on `moduleType` in Haxe's module
+		graph. Called after `filterTypes`, for each typed module, in each
+		request of a compilation server.
+
+		WHY a warm request needs to know
+		- When a source file changes, Haxe types its module again, together
+		  with every module that refers to a type of it. Reflaxe builds exactly
+		  these types again (`ReflectCompiler.wasTypedSinceLastPublication`).
+		- A compiler can also read a type that the built type never names. For
+		  example, Reflaxe.Elixir checks `phx-hook="Ping"` in a template against
+		  every enum abstract with `@:phxHookNames`. The template's class does
+		  not refer to that abstract, so Haxe does not type it again when the
+		  abstract changes, and a warm build would check the template against
+		  the old names.
+
+		WHAT changes with the result
+		- true: an edit of an enum, typedef or abstract in this type's source
+		  file builds every type again, and so does adding or removing this
+		  type. This is the safe default for a compiler that does not say.
+		- false: such an edit builds only the types that Haxe typed again: the
+		  types of the edited file and the types that depend on it. Adding or
+		  removing a typedef or an abstract does the same. Return false only
+		  for a typedef or an abstract that writes no output file of its own,
+		  because a removed type cannot delete its old file.
+
+		Classes are built again by the ordinary rule. For a class, the result
+		only decides whether the enums, typedefs and abstracts in its file
+		count as read without a dependency.
+	**/
+	public function isReadWithoutDependency(moduleType: ModuleType): Bool {
+		return true;
+	}
+
+	/**
 		A function intended to be overriden by your compiler class.
 
 		This is called at the start of compilation for each class.

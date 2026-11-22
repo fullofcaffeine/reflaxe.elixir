@@ -576,6 +576,7 @@ Status: local patch, not upstreamed.
 Files:
 
 - `src/reflaxe/ReflectCompiler.hx`
+- `src/reflaxe/BaseCompiler.hx` (`isReadWithoutDependency`)
 
 Why it exists:
 
@@ -654,6 +655,28 @@ Local fix:
   edits that no longer force a full regeneration are edits inside a class or
   inside a module-level field. Those are the edits that already took the
   class-only path when the class had a file of its own.
+- Compare only the files that the target names. Haxe types a module again
+  when its file changes, and also each module that refers to one of its
+  types. So inline code, representations and metadata reach their users
+  without help: the users are typed again and built again. What Haxe cannot
+  see is a target that reads a type by name while it builds a class that
+  never refers to it, as the hook registry above. The new
+  `BaseCompiler.isReadWithoutDependency(moduleType)` lets the target name
+  these types. The default is true for every type, which keeps the earlier
+  rule for a target that does not override it. A file is compared only when
+  it declares an enum, typedef or abstract and the target names one of its
+  types. Reflaxe.Elixir names template registries, component classes, and the
+  types that a component function's type reaches (`TemplateFactSources`).
+
+  Measured on the todo-app (`AuditLogLive.hx` has three typedefs in front of
+  its class): a comment after the class built all 141 classes in 12.7 to
+  14.1 s (load about 7.5). It now builds the same 3 classes as an edit
+  inside the class, in 1.2 to 1.4 s (load about 10).
+- The live module set counts a typedef or an abstract only when the target
+  names it. Such a type writes no file of its own in Reflaxe.Elixir, so
+  adding or removing a typedef builds only the types that Haxe typed again.
+  Classes and enums always count, so a removed one cannot leave its file. A
+  target that writes a file for a typedef must keep the default answer.
 
 Current decision:
 
@@ -669,10 +692,14 @@ Good upstream candidate after the warm-server regression is also reproduced in
 Reflaxe's own target-neutral test suite. Do not open a PR without explicit user
 authorization.
 
-The `mixed-file` cases in `test:reflaxe-server-cache` edit a class body, a
-module-level function body, a typedef and an abstract in mixed files. They
-require a partial build for the first two and a full build for the last two,
-and compare each warm output with a fresh build. The `mixed-registry` case
+The `mixed-file` cases in `test:reflaxe-server-cache` edit a class body,
+comments outside the class, a module-level function body, a typedef whose
+field another file's class reads, and an abstract in mixed files, and add and
+remove a typedef. Each request must build fewer classes than a full build, the
+typedef's user must be built again, and each warm output must equal a fresh
+build. The `component-props` case changes a component's props typedef in a
+file of its own; the warm build must reject the unchanged template that a
+fresh build rejects. The `mixed-registry` case
 keeps a `@:phxHookNames` registry beside a class: a class edit must pass, and a
 registry edit must still make the warm build reject the removed hook name.
 The `byte-order-mark`, `e-acute` and `emoji` cases repeat the class edit and
@@ -681,9 +708,13 @@ the abstract edit with non-ASCII text in front of the class. The
 disagree so that a byte cut would cover the registry; the warm build must
 reject the renamed hook.
 
-Not done (`haxe.elixir.codex-c0o.4`): an edit to the enum, typedef or abstract
-itself still regenerates every module. A class edit in a module that many
-modules import still builds each module that Haxe typed again.
+Not done (`haxe.elixir.codex-c0o.4`): in a compared file (a template
+registry, a component file, or a file that component props reach), an edit to
+an enum, typedef or abstract, or a comment between declarations, still
+regenerates every module. A class edit in a module that many modules import
+still builds each module that Haxe typed again. An edit inside a registry or
+component class builds only what Haxe typed again; this is older than the
+template list and not changed by it.
 
 Validation before removal:
 
