@@ -13,6 +13,7 @@ import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
 import haxe.macro.ExprTools;
 import reflaxe.GenericCompiler;
+import reflaxe.ReflectCompiler;
 import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
 import reflaxe.data.ClassVarData;
@@ -503,6 +504,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		privateMethodExports = PrivateMethodExports.collect(result, keptPrivateMethodExports,
 			durationMs -> phaseTimings.record("private_method_exports_class_scan", durationMs));
 		phaseTimings.finish("private_method_exports", exportsStarted);
+		var factSourcesStarted = phaseTimings.start();
+		templateFactSources = TemplateFactSources.collect(result);
+		phaseTimings.finish("template_fact_sources", factSourcesStarted);
 		// ReflectCompiler applies its define/server-cache filters and initialization
 		// callbacks after this method returns and before onCompileStart().
 		reflaxeFiltersStarted = phaseTimings.start();
@@ -556,6 +560,29 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	public override function shouldRecompileClass(classType:ClassType):Bool {
 		return PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports)
 			|| membersChangedSinceBuild(classType);
+	}
+
+	/**
+	 * The `ReflectCompiler.typeKey` of each type of this request that a template
+	 * check reads without a Haxe dependency, or null before `filterTypes` ran.
+	 * See `TemplateFactSources`.
+	 */
+	var templateFactSources:Null<Map<String, Bool>> = null;
+
+	/**
+	 * Returns true for a template registry, a component class, and the types that
+	 * the props of a component reach (`TemplateFactSources`). An edit of an enum,
+	 * typedef or abstract in their files builds every type again, because an
+	 * unchanged template can depend on them. For every other type, Reflaxe builds
+	 * only what Haxe typed again: an edit after the class in a LiveView file with
+	 * typedefs builds that file's types and their users, not every module. Every
+	 * typedef and abstract writes no Elixir file of its own, which this answer
+	 * requires (see `BaseCompiler.isReadWithoutDependency`). Returns true before
+	 * `filterTypes` ran, the safe answer.
+	 */
+	public override function isReadWithoutDependency(moduleType:haxe.macro.Type.ModuleType):Bool {
+		var sources = templateFactSources;
+		return sources == null || sources.exists(ReflectCompiler.typeKey(moduleType.getCommonData()));
 	}
 
 	public override function onCompileEnd():Void {

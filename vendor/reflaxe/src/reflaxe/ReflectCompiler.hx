@@ -557,9 +557,12 @@ class ReflectCompiler {
 	static function applyBuildCacheCheckFilter(compiler: BaseCompiler, moduleTypes: Array<ModuleType>) {
 		#if !reflaxe.disallow_build_cache_check
 		leftOutTypeKeys = null;
-		currentModuleIds = moduleTypes.map(moduleType -> moduleType.getUniqueId());
+		currentModuleIds = [
+			for(moduleType in moduleTypes)
+				if(countsForLiveModuleSet(compiler, moduleType)) moduleType.getUniqueId()
+		];
 		currentModuleIds.sort(Reflect.compare);
-		currentNonClassSourceTexts = collectNonClassSourceTexts(moduleTypes);
+		currentNonClassSourceTexts = collectNonClassSourceTexts(compiler, moduleTypes);
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
 		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
@@ -604,16 +607,46 @@ class ReflectCompiler {
 	}
 
 	/**
-		Returns, for each source file that defines an enum, typedef, or abstract
-		visible to this target build, the file path and the file text without
-		its classes and module-level fields.
+		Returns true when `moduleType` counts in the live module set that
+		`applyBuildCacheCheckFilter` compares between requests. A change of
+		that set builds every type again.
 
-		Reflaxe can tell which types Haxe typed again (`wasTypedSinceLastPublication`),
-		but rebuilding only a changed enum or abstract is unsafe because it can provide facts used by otherwise
-		unchanged classes. For example, changing an unreferenced `@:phxHookNames`
-		abstract must revalidate every HXX template that uses the global hook
-		registry. Without this comparison, a warm build can accept a hook that a
-		clean build correctly rejects.
+		Classes and enums always count: they write output files, and a removed
+		one must not leave its old file behind. A typedef or an abstract counts
+		only when the compiler can read it without a dependency
+		(`BaseCompiler.isReadWithoutDependency`). Otherwise it writes no file of
+		its own, and the types that use it are typed again by Haxe. Example: a
+		new `typedef RowView = {...}` in a LiveView file builds that file's
+		types and their users, not every module. The hidden class that holds
+		the methods of an abstract is a class, so it still counts.
+	**/
+	static function countsForLiveModuleSet(compiler:BaseCompiler, moduleType:ModuleType):Bool {
+		return switch(moduleType) {
+			case TClassDecl(_) | TEnumDecl(_): true;
+			case TTypeDecl(_) | TAbstract(_): compiler.isReadWithoutDependency(moduleType);
+		}
+	}
+
+	/**
+		Returns, for each source file that defines an enum, typedef, or abstract
+		that the compiler can read without a dependency
+		(`BaseCompiler.isReadWithoutDependency`), the file path and the file
+		text without its classes and module-level fields.
+
+		Reflaxe can tell which types Haxe typed again (`wasTypedSinceLastPublication`):
+		the types of an edited file and every type that refers to one of them.
+		A compiler can also read a type that no built type refers to. For
+		example, changing an unreferenced `@:phxHookNames` abstract must
+		revalidate every HXX template that uses the global hook registry.
+		Without this comparison, a warm build can accept a hook that a clean
+		build correctly rejects.
+
+		Only these files are compared. In any other file, an edit outside the
+		classes (a comment, a typedef field, a new typedef) builds the file's
+		types and the types that Haxe typed again with them. Example: in a
+		LiveView file with three typedefs, a comment after the class built all
+		141 classes of the todo-app (about 14 s) before this rule, and builds
+		the same 3 classes as an edit inside the class now.
 
 		When one of these texts changes, `applyBuildCacheCheckFilter` performs one
 		full target regeneration. Reading exact bytes avoids trusting timestamps;
@@ -633,7 +666,7 @@ class ReflectCompiler {
 		Reflaxe builds it again. `nonClassSourceText` explains what is cut and
 		what stays.
 	**/
-	static function collectNonClassSourceTexts(moduleTypes:Array<ModuleType>):Array<String> {
+	static function collectNonClassSourceTexts(compiler:BaseCompiler, moduleTypes:Array<ModuleType>):Array<String> {
 		#if eval
 		final fullPaths = new Map<String, String>();
 		function fullPath(sourceFile:String):String {
@@ -646,18 +679,39 @@ class ReflectCompiler {
 			return resolved;
 		}
 
-		final sourceFiles = new Map<String, Bool>();
+		// A file is compared when it declares an enum, typedef or abstract and
+		// the compiler can read one of its types without a dependency.
+		final nonClassFiles = new Map<String, Bool>();
+		final readFiles = new Map<String, Bool>();
 		final classTypes:Array<ClassType> = [];
 		for(moduleType in moduleTypes) {
-			switch(moduleType) {
+			final isClass = switch(moduleType) {
 				case TClassDecl(_.get() => classType):
 					classTypes.push(classType);
+					true;
 				case _:
-					final sourceFile = Context.getPosInfos(moduleType.getCommonData().pos).file;
-					if(sourceFile == null || sourceFile.length == 0) {
-						continue;
-					}
-					sourceFiles.set(fullPath(sourceFile), true);
+					false;
+			}
+			final readWithoutDependency = compiler.isReadWithoutDependency(moduleType);
+			if(isClass && !readWithoutDependency) {
+				continue;
+			}
+			final sourceFile = Context.getPosInfos(moduleType.getCommonData().pos).file;
+			if(sourceFile == null || sourceFile.length == 0) {
+				continue;
+			}
+			final resolved = fullPath(sourceFile);
+			if(!isClass) {
+				nonClassFiles.set(resolved, true);
+			}
+			if(readWithoutDependency) {
+				readFiles.set(resolved, true);
+			}
+		}
+		final sourceFiles = new Map<String, Bool>();
+		for(sourceFile in nonClassFiles.keys()) {
+			if(readFiles.exists(sourceFile)) {
+				sourceFiles.set(sourceFile, true);
 			}
 		}
 
@@ -746,7 +800,8 @@ class ReflectCompiler {
 		What stays: every enum, typedef and abstract; imports; text between
 		declarations; and the metadata, documentation and modifiers in front of
 		a class, because Haxe does not include them in the class position. An
-		edit in any of these still causes a full regeneration.
+		edit in any of these still causes a full regeneration. This function
+		runs only for the files that `collectNonClassSourceTexts` compares.
 
 		Units: a Haxe position counts characters, not bytes. A byte order mark
 		is one character, and so is `é` or an emoji. `text` is the decoded file,

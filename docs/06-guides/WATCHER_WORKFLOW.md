@@ -470,26 +470,55 @@ Before these marks existed, Reflaxe found the typed-again types with a build
 macro that it registers when it starts. It missed each of these cases, and the
 warm build kept the old file and exited 0.
 
-Changing an enum, typedef, or abstract intentionally
-causes one full target regeneration. These declarations can affect otherwise
-unchanged classes through constructor sets, inline abstract code, representation
-choices, or shared metadata. A concrete example is an unreferenced
-`@:phxHookNames` abstract: renaming one registered hook must revalidate every HXX
-template that relies on that global registry. Rebuilding only the abstract could
-leave an unchanged template validated against the old hook list. Reflaxe detects
-the exact source-content change and regenerates the complete current target once;
-ordinary class-only edits retain the narrower cached path.
+### An edit outside a class
 
-A file can declare a class or module-level functions beside an enum, typedef, or
-abstract. In such a file, only an edit outside the classes and module-level
+An edit of an enum, typedef, or abstract builds the types that Haxe types
+again: the types of the edited file, and each type that refers to one of them.
+This relies on Haxe's module dependencies, so it holds only when the compiler
+reads a type through a Haxe reference. The exceptions follow below. For example,
+the todo-app's `AuditLogLive.hx` declares three typedefs in front of its
+class. A comment after the class, a new field in `AuditLogRowView`, or a
+new typedef builds `AuditLogLive` and the modules that use it: 3 of 141 classes,
+in about the time of an edit inside the class. A class in another file that
+reads a changed typedef is typed again by Haxe, so it is built again too.
+
+Raw Phoenix has the same shape: after an edit of one `.ex` file, `mix compile`
+recompiles that module and the modules that depend on it at compile time.
+
+Some declarations are read by a template that does not refer to them, so Haxe
+does not type the template's class again when they change:
+
+- `phx-hook="Ping"` is checked against every enum abstract with
+  `@:phxHookNames`. Event names (`@:phxEventNames`) and custom HTML tags
+  (`@:hxxHtmlTags`) work the same way.
+- `<.card title="Hello">` is checked against the props of the `@:component`
+  function `card`, for example `card(assigns:Assigns<CardAssigns>)`.
+
+For these files, an edit of an enum, typedef, or abstract still builds every
+module once:
+
+- a file with a type that has `@:phxHookNames`, `@:phxEventNames`, or
+  `@:hxxHtmlTags`;
+- a file with a class that has `@:component` or `@:phoenix.components`;
+- a file with an enum, typedef, or abstract that the type of a `@:component`
+  function reaches, for example a `CardAssigns` typedef in a `Types.hx` file.
+
+A concrete example is an unreferenced `@:phxHookNames` abstract: renaming one
+registered hook must revalidate every HXX template that relies on that global
+registry. Rebuilding only the abstract could leave an unchanged template
+validated against the old hook list. Reflaxe detects the exact source-content
+change of such a file and regenerates the complete current target once.
+
+In a file of this list, only an edit outside the classes and module-level
 functions causes the full regeneration. Reflaxe compares the file text without
 `class Name { ... }`, `interface Name { ... }`, and each module-level function or
-variable. An edit inside one of these takes the class-only path. For example, a
-file holds `typedef Options = {...}` and `function render(options:Options)`. A
-change in the body of `render` builds that module and the modules that Haxe typed
-again with it. A change in `Options` builds everything. Metadata and documentation
-in front of a class are outside the class text that Haxe reports, so an edit there
-also builds everything.
+variable. An edit inside one of these takes the class-only path. For example,
+`CoreComponents.hx` holds `typedef ButtonAssigns = {...}` and the class with the
+component functions. A change in the body of `button` builds that module and the
+modules that Haxe typed again with it. A change in `ButtonAssigns`, or a comment
+between two typedefs, builds everything. Metadata and documentation in front of
+a class are outside the class text that Haxe reports, so an edit there also
+builds everything.
 
 Reflaxe checks each class position against the file before it leaves the class
 out. If a check fails, the whole file is compared and every edit in it builds
@@ -498,6 +527,27 @@ module-level function whose text contains something that looks like the start of
 a type declaration, for example a comment with the words `enum Status` or
 `typedef Options`. Non-ASCII text, a byte order mark, and CRLF line ends do not
 cause this.
+
+A router reads one more type by name: the `paramsContract` of a route, as in
+`get("/users/:id", UserController, UserController.show, {paramsContract:
+Contracts.UserIdPathParams})`. Haxe never types the routes, so without help it
+would not type the router again when only `Contracts.hx` changes, and a warm
+build could accept a route that a fresh build rejects. Reflaxe.Elixir loads each
+contract type while Haxe types the router module
+(`RouterContractDependencies`), so Haxe records the dependency and builds the
+router again after a contract edit. This covers routes written in the source
+(`final routes = [...]` or `@:routes([...])`). It does not cover routes that the
+router class's own build macro adds, for example `@:router
+@:build(Gen.addRoutes()) class Router {}` where the macro adds `@:routes(...)`
+metadata. After an edit of such a contract, a warm build can miss the error
+that a fresh build reports; run a fresh build, or restart the server, after
+that edit.
+
+Any compiler path that reads a type by name, without a Haxe reference from the
+class being built, must do one of these two things: make Haxe record the
+dependency while it types that class, as for the router contract, or add the
+type to `TemplateFactSources`. Otherwise a warm build can keep old output or old
+diagnostics.
 
 Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
@@ -513,6 +563,12 @@ in Haxe's list of modules that changed—it no longer exists. Comparing the
 complete live module set with the last successful request lets Reflaxe detect
 the deletion safely. This is a correctness fallback for uncommon project-shape
 changes, not a second incremental cache.
+
+The live module set counts classes and enums, because each one can write an
+Elixir file. A typedef writes no file, so adding or removing one builds only the
+types that Haxe types again, as any other edit in its file; in a file of the
+template list above, it builds everything. An abstract usually brings a hidden
+class for its methods and values, so adding or removing it builds everything.
 
 ### Dead-code elimination can change a class that you did not edit
 
