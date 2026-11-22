@@ -77,6 +77,9 @@ class AnnotatedModuleEnumerator {
 
 		final fields = Context.getBuildFields();
 		ModuleFieldMetadataRegistry.capture(cls, fields);
+		// Before the routes initializer is replaced: Haxe must record the
+		// router's dependency on each paramsContract type.
+		RouterContractDependencies.register(cls, fields);
 		neutralizeModuleLevelRoutesFieldInitializer(cls, fields);
 		final isSchema = meta.has(":schema");
 		final isLiveView = meta.has(":liveview");

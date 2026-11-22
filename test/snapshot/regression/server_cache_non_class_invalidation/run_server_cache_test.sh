@@ -1589,6 +1589,71 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "component-props-removed"
 }
 
+run_router_contract_variant() {
+	local variants="$FIXTURE_DIR/variants/router-contract"
+	local direct_failure_log="$TMP_ROOT/direct-router-contract-renamed.log"
+	local server_failure_log="$TMP_ROOT/server-router-contract-renamed.log"
+
+	# The router names Contracts.UserIdPathParams by full path, without an
+	# import, and its routes are never typed. Old file times and one request
+	# without an edit make the contract edit below an ordinary edit of a
+	# known file (see run_component_props_variant).
+	cp "$variants/MainRouter.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/ContractsKnown.hx" "$PROJECT_DIR/src/Contracts.hx"
+	python3 - "$PROJECT_DIR/src" <<'PY'
+import os
+import sys
+import time
+
+stamp = time.time() - 30
+for name in ("Main.hx", "Contracts.hx"):
+    os.utime(os.path.join(sys.argv[1], name), (stamp, stamp))
+PY
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-router-contract-known"
+	compare_generated_output "$TMP_ROOT/direct-router-contract-known" "$SERVER_OUTPUT" "router-contract-known"
+	compile_server "$SERVER_OUTPUT"
+
+	# The contract loses the field `id`. Haxe must type the router again, so
+	# the warm request checks the route again and fails as a fresh build.
+	copy_with_new_file_time "$variants/ContractsRenamed.hx" "$PROJECT_DIR/src/Contracts.hx"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-router-contract-renamed" \
+		>"$direct_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:router-contract-renamed direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq 'is missing field for path param "id"' "$direct_failure_log" || {
+		echo "SERVER_CACHE_PARITY:router-contract-renamed direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_failure_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:router-contract-renamed warm build accepted a route against a stale params contract" >&2
+		return 1
+	fi
+	grep -Fq 'is missing field for path param "id"' "$server_failure_log" || {
+		echo "SERVER_CACHE_PARITY:router-contract-renamed warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_failure_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:router-contract-renamed:PASS"
+
+	copy_with_new_file_time "$variants/ContractsKnown.hx" "$PROJECT_DIR/src/Contracts.hx"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-router-contract-restored"
+	compare_generated_output "$TMP_ROOT/direct-router-contract-restored" "$SERVER_OUTPUT" "router-contract-restored"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/Contracts.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "router-contract-removed"
+}
+
 run_discovery_variant() {
 	local variants="$FIXTURE_DIR/variants/discovery"
 	local phase source expected
@@ -2096,6 +2161,7 @@ run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant
 run_decoy_registry_variant
 run_component_props_variant
+run_router_contract_variant
 run_discovery_variant
 run_cross_project_variant
 

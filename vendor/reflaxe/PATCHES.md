@@ -660,7 +660,13 @@ Local fix:
   types. So inline code, representations and metadata reach their users
   without help: the users are typed again and built again. What Haxe cannot
   see is a target that reads a type by name while it builds a class that
-  never refers to it, as the hook registry above. The new
+  never refers to it, as the hook registry above. Each such read needs one
+  of two things: Haxe records the dependency while it types the class, or
+  the target names the type here. Reflaxe.Elixir's router reads a route's
+  `paramsContract` by name; `RouterContractDependencies` loads it while Haxe
+  types the router module, so Haxe records the dependency. Before that, a
+  contract named by full path without an import (`Contracts.UserIdPathParams`)
+  could change without a warm build checking the router again. The new
   `BaseCompiler.isReadWithoutDependency(moduleType)` lets the target name
   these types. The default is true for every type, which keeps the earlier
   rule for a target that does not override it. A file is compared only when
@@ -699,7 +705,9 @@ remove a typedef. Each request must build fewer classes than a full build, the
 typedef's user must be built again, and each warm output must equal a fresh
 build. The `component-props` case changes a component's props typedef in a
 file of its own; the warm build must reject the unchanged template that a
-fresh build rejects. The `mixed-registry` case
+fresh build rejects. The `router-contract` case removes the path param's
+field from a `paramsContract` named by full path; the warm build must reject
+the unchanged router. The `mixed-registry` case
 keeps a `@:phxHookNames` registry beside a class: a class edit must pass, and a
 registry edit must still make the warm build reject the removed hook name.
 The `byte-order-mark`, `e-acute` and `emoji` cases repeat the class edit and

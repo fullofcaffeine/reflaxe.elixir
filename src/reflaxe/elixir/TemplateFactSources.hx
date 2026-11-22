@@ -51,9 +51,11 @@ private final COMPONENT_FUNCTION_META = ":component";
  *   `Types.hx` one of these files.
  *
  * LIMITS
- * - Keep these lists equal to what the template checks read. A new check
- *   that reads a type by name must add that type here, or a warm build can
- *   keep old diagnostics.
+ * - Any compiler path that reads a type by name, without a Haxe reference
+ *   from the class being built, needs one of two things. Either Haxe records
+ *   the dependency while it types that class, as `RouterContractDependencies`
+ *   does for a router's `paramsContract`, or the type is added here.
+ *   Otherwise a warm build can keep old output or old diagnostics.
  * - An edit inside a registry class or a component class builds only the
  *   types that Haxe typed again, as any class edit does. This is older than
  *   this file and not changed by it.

@@ -474,8 +474,10 @@ warm build kept the old file and exited 0.
 
 An edit of an enum, typedef, or abstract builds the types that Haxe types
 again: the types of the edited file, and each type that refers to one of them.
-For example, the todo-app's `AuditLogLive.hx` declares three typedefs in front
-of its class. A comment after the class, a new field in `AuditLogRowView`, or a
+This relies on Haxe's module dependencies, so it holds only when the compiler
+reads a type through a Haxe reference. The exceptions follow below. For example,
+the todo-app's `AuditLogLive.hx` declares three typedefs in front of its
+class. A comment after the class, a new field in `AuditLogRowView`, or a
 new typedef builds `AuditLogLive` and the modules that use it: 3 of 141 classes,
 in about the time of an edit inside the class. A class in another file that
 reads a changed typedef is typed again by Haxe, so it is built again too.
@@ -526,9 +528,20 @@ a type declaration, for example a comment with the words `enum Status` or
 `typedef Options`. Non-ASCII text, a byte order mark, and CRLF line ends do not
 cause this.
 
-The list follows what the template checks read today. A new check that reads a
-type by name, and not through a Haxe reference, must add that type to
-`TemplateFactSources`; otherwise a warm build can keep old diagnostics.
+A router reads one more type by name: the `paramsContract` of a route, as in
+`get("/users/:id", UserController, UserController.show, {paramsContract:
+Contracts.UserIdPathParams})`. Haxe never types the routes, so without help it
+would not type the router again when only `Contracts.hx` changes, and a warm
+build could accept a route that a fresh build rejects. Reflaxe.Elixir loads each
+contract type while Haxe types the router module
+(`RouterContractDependencies`), so Haxe records the dependency and builds the
+router again after a contract edit.
+
+Any compiler path that reads a type by name, without a Haxe reference from the
+class being built, must do one of these two things: make Haxe record the
+dependency while it types that class, as for the router contract, or add the
+type to `TemplateFactSources`. Otherwise a warm build can keep old output or old
+diagnostics.
 
 Adding, deleting, or renaming a Haxe module intentionally causes one full target
 regeneration. For example, if `CacheLegacy.hx` previously generated
