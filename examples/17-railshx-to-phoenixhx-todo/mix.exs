@@ -41,7 +41,7 @@ defmodule PhoenixHxTodo.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:phoenix, "~> 1.7.24"},
+      {:phoenix, "~> 1.7.25"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.22.3"},

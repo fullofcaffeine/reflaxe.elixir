@@ -53,7 +53,7 @@ defmodule PhoenixhxLiveReact.MixProject do
       # Repository example: use the exact source checkout under test.
       # Installed-package parity is verified separately by the package smoke gate.
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:phoenix, "~> 1.8.9"},
+      {:phoenix, "~> 1.8.17"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.9"},
