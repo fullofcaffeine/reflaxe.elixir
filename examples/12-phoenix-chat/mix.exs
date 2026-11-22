@@ -40,7 +40,7 @@ defmodule PhoenixChat.MixProject do
   defp deps do
     [
       {:reflaxe_elixir, path: "../..", runtime: false},
-      {:phoenix, "~> 1.7.24"},
+      {:phoenix, "~> 1.7.25"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.9"},

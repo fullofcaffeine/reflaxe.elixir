@@ -39,7 +39,7 @@
         "elixir": "1.18.3",
         "otp": "27.2"
       },
-      "phoenix": "1.7.24",
+      "phoenix": "1.7.25",
       "phoenixHtml": "4.4.0",
       "phoenixLiveView": "1.2.14",
       "liveReact": {
@@ -90,7 +90,7 @@
         "elixir": "1.18.3",
         "otp": "27.2"
       },
-      "phoenix": "1.8.10",
+      "phoenix": "1.8.17",
       "phoenixHtml": "4.4.0",
       "phoenixLiveView": "1.2.14",
       "liveReact": {
@@ -141,7 +141,7 @@
         "elixir": "1.18.3",
         "otp": "27.2"
       },
-      "phoenix": "1.7.24",
+      "phoenix": "1.7.25",
       "phoenixHtml": "3.3.5",
       "phoenixLiveView": "1.2.14",
       "liveReact": {
