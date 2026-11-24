@@ -666,11 +666,17 @@ transaction, checks each file that it built again against the manifest
 exists. Then it stops. It writes no prepare folder, no journal, and no new
 `_GeneratedFiles.json`, and it prints `No files updated.`
 
-The manifest keeps its bytes and its file time. Its `id` field counts the
-publications that changed something; nothing reads it for a decision. A full
-build always runs the transaction, so it still deletes each owned file that it
-does not write. A file that is missing on disk is a change: the request runs
-the transaction and writes the file again.
+The manifest keeps its bytes and its file time. Its `id` field grows with each
+transaction, also with a full build that changes no file, so it is a counter
+of transactions, not of changes; nothing reads it for a decision. A full build
+always runs the transaction, so it still deletes each owned file that it does
+not write.
+
+A missing file is different for a built file and for a kept file. A file that
+the request builds again and that is missing on disk is a change: the request
+runs the transaction and writes the file again. A missing file of a type that
+the request leaves out (a kept file) stops the build with "Cached rebuild
+cannot preserve missing owned output", as before; run a full build.
 
 Before, each such request wrote a new manifest and hashed it with SHA-256 in
 Haxe's macro interpreter: about 85 ms of a 0.36 s todo-app request on a loaded

@@ -1903,6 +1903,40 @@ run_unchanged_output_variant() {
 		return 1
 	fi
 
+	# 2a. A hand edit of a file that the request builds again. The Elixir of
+	# the request equals the published file, but the live file does not: the
+	# ownership check must refuse before the skip, as it refuses a publication.
+	local main_copy="$TMP_ROOT/unchanged-main.ex"
+	local failure_log="$TMP_ROOT/unchanged-output-hand-edit.log"
+	command cp "$SERVER_OUTPUT/main.ex" "$main_copy"
+	replace_once "$PROJECT_DIR/src/Main.hx" "// same output" "// same output, hand edit"
+	printf '# hand edit\n' >>"$SERVER_OUTPUT/main.ex"
+	if compile_server "$SERVER_OUTPUT" >"$failure_log" 2>&1; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-hand-edit accepted a hand-edited built file" >&2
+		return 1
+	fi
+	grep -Fq 'Owned generated output was modified outside the compiler' "$failure_log" || {
+		echo "SERVER_CACHE_REUSE:unchanged-output-hand-edit failed for the wrong reason" >&2
+		sed -n '1,160p' "$failure_log" >&2
+		return 1
+	}
+	command cp "$main_copy" "$SERVER_OUTPUT/main.ex"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compare_generated_output "$direct_comment" "$SERVER_OUTPUT" "unchanged-output-hand-edit-restored"
+
+	# 2b. A deleted file that the request builds again. The Elixir equals the
+	# manifest digest, but the file is missing, so the transaction runs and
+	# writes it again, as a fresh build does.
+	replace_once "$PROJECT_DIR/src/Main.hx" "// same output, hand edit" "// same output, deleted file"
+	rm -f "$SERVER_OUTPUT/main.ex"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	if [[ ! -f "$SERVER_OUTPUT/main.ex" ]] || [[ "$(phase_count "$log" output_transaction_skipped)" != "0" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-deleted-file skipped the transaction of a missing built file" >&2
+		return 1
+	fi
+	compare_generated_output "$direct_comment" "$SERVER_OUTPUT" "unchanged-output-deleted-file"
+	before="$(manifest_stamp "$SERVER_OUTPUT")"
+
 	# 3. A real class-body edit changes main.ex, so the transaction runs.
 	replace_once "$PROJECT_DIR/src/Main.hx" "return payload.value + payload.value;" \
 		"return payload.value + payload.value + payload.value;"
