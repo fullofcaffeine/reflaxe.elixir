@@ -57,8 +57,11 @@ using reflaxe.helpers.ModuleTypeHelper;
  *   changed fact, and the warm build would keep a template check that a fresh
  *   build rejects.
  * - A type without a record counts as a reader of every fact. A read that
- *   no build owns (`note` outside `beginBuild`/`endBuild`) drops every record,
- *   so the next change of a fact builds every type again, as before.
+ *   no build owns (`note` outside `beginBuild`/`endBuild`) drops every record.
+ *   Because Reflaxe asks on every warm request, the next warm request then
+ *   builds every type, whether or not a fact changed, and records again. If
+ *   such a read happens in every request, every request is a full build:
+ *   safe, but slow.
  *
  * WHAT IS NOT COVERED
  * - A fact whose declaration changes without Haxe typing it again, and

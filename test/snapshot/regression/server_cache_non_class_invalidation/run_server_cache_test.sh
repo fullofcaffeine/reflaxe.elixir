@@ -1816,6 +1816,10 @@ enum CacheSharedTone {"
 	# 11. The base of an extended props typedef gets a required field, in a
 	# file that holds no template fact of its own. The page that uses
 	# `<.shared_panel>` does not set it, so a fresh build rejects the page.
+	# Haxe types CacheShared.hx again, and the fingerprint of the extended
+	# typedef holds the merged fields, so the check on every warm request
+	# already catches this change. Following the extended type into the
+	# base's file (the AExtend walk in TemplateFactSources) is a second layer.
 	local panel_base="$PROJECT_DIR/src/CacheSharedPanelBase.hx"
 	local direct_base_log="$TMP_ROOT/direct-shared-type-extended-base.log"
 	local server_base_log="$TMP_ROOT/server-shared-type-extended-base.log"

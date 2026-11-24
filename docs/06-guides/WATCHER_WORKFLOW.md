@@ -555,9 +555,10 @@ The record is kept only in the server's memory and changes only after a build
 writes its output, so a failed build does not change it. A fact counts as
 checked only in a request that compared it, which every warm request does. A
 type without a record counts as a reader of every fact. If a template check
-reads a fact outside the build of a type (a tool, for example), the next change
-of a fact builds every type once: the rule that applied to every such change
-before.
+reads a fact outside the build of a type (a tool, for example), every record is
+dropped, and the next warm request builds every type, whether or not a fact
+changed. If such a read happens in every request, every request is a full
+build: safe, but slow.
 
 `typedef Props = Base & {...}` and `{> Base, ...}` count `Base` as a fact of the
 component too, so its file is compared although it holds no component.
