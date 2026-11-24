@@ -817,8 +817,18 @@ Local fix:
   both overrides before they call the target's `compile*Impl`
   (`clearFilePlacementOverrides`). Each type's file now depends only on that
   type.
-- A fresh todo-app build writes the same 124 files with the same bytes before
-  and after this patch.
+- Fresh output paths can move for one shape: a type without a package that
+  the compiler builds right after a packaged type with no output. Before,
+  it went to that package's folder; now it goes to the top output folder.
+  Example: in four Phoenix snapshots (`live_event_protocol_*`), the enum
+  `ProfileHookEvent` came after `haxe.StackItem`, which sets the folder
+  `haxe` and produces no file, so `haxe/profile_hook_event.ex` became
+  `profile_hook_event.ex`. The module name and the file bytes are the same,
+  and the next build removes the old file.
+- Where no type has that shape, nothing moves: a fresh todo-app build writes
+  the same 124 files with the same bytes before and after this patch, and so
+  do the tracked outputs of the other examples and a consumer backend of 200
+  files (checked in review of #106).
 
 Current decision:
 
