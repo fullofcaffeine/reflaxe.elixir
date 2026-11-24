@@ -599,9 +599,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 	/**
 	 * Returns the types that a warm request must build again, besides the ones
-	 * that Haxe typed again, after an edit outside the classes of a file with a
-	 * template fact: each type whose last published build read a template fact
-	 * that changed, and each type without such a record (`TemplateFactReads`).
+	 * that Haxe typed again: each type whose last published build read a
+	 * template fact that changed, and each type without such a record
+	 * (`TemplateFactReads`). Reflaxe asks on every warm request, also when no
+	 * compared file changed, because a class edit can change a fact: a prop
+	 * type written in a component function's signature.
 	 *
 	 * Example: an edit of an unread typedef in the todo-app's `TodoTypes.hx`
 	 * changes no template fact, so no template is built again; a new field in

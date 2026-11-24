@@ -596,12 +596,17 @@ class ReflectCompiler {
 		final previousTexts = previousSuccessfulNonClassSourceTexts;
 		final nonClassSourceChanged = previousTexts != null
 			&& !previousTexts.equals(currentNonClassSourceTexts);
-		// The types to build because a compared file changed, or null to build
-		// every type (see `typesToBuildForChangedSources`).
-		final changedSourceBuilds: Null<Map<String, Bool>> = if(!nonClassSourceChanged || previousTexts == null) {
-			new Map();
-		} else if(!isWarmRequest || liveModuleSetChanged) {
+		// The types that the target asks to build besides the ones that Haxe
+		// typed again, or null to build every type (see
+		// `typesToBuildForChangedSources`). Asked on every warm request: a fact
+		// that a target reads by name can also change in a class edit, which
+		// changes no compared text, and the target must compare each fact
+		// before it can publish the fact as checked.
+		final changedSourceBuilds: Null<Map<String, Bool>> = if(!isWarmRequest || liveModuleSetChanged) {
 			null;
+		} else if(!nonClassSourceChanged || previousTexts == null) {
+			final extra = compiler.typesToBuildForChangedSources([], [for(type in types) type.key]);
+			extra != null ? extra : new Map<String, Bool>();
 		} else {
 			typesToBuildForChangedSources(compiler, types, previousTexts, nonClassSources);
 		}

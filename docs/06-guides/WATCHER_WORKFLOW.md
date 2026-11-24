@@ -540,24 +540,34 @@ high: two rounds that took turns between the old and the new code, median of
 
 A change of a component's props builds each template that looks up that
 component, also when Haxe does not type the template again. A change of a hook
-registry builds each template that checks a hook name.
+registry builds each template that checks a hook name. This also holds for an
+edit inside a class, which changes no compared file text: Reflaxe checks the
+facts on every warm request. For example, `card(assigns:Assigns<{title:String}>)`
+changed to `{title:Int}` in `CoreComponents.hx` builds each template that uses
+`<.card>`. Before this rule, such a class edit built only what Haxe typed again,
+and the template kept its old check until the next full build.
 
 Raw Phoenix does the same for a compile-time dependency: `mix compile`
 recompiles a module whose `use`, `import`, or `require` target changed, and
 leaves a module that only calls a function of it at run time.
 
 The record is kept only in the server's memory and changes only after a build
-writes its output, so a failed build does not change it. A type without a record
-counts as a reader of every fact. If a template check reads a fact outside the
-build of a type (a tool, for example), the next change of a fact builds every
-type once, as before.
+writes its output, so a failed build does not change it. A fact counts as
+checked only in a request that compared it, which every warm request does. A
+type without a record counts as a reader of every fact. If a template check
+reads a fact outside the build of a type (a tool, for example), the next change
+of a fact builds every type once: the rule that applied to every such change
+before.
+
+`typedef Props = Base & {...}` and `{> Base, ...}` count `Base` as a fact of the
+component too, so its file is compared although it holds no component.
 
 What is still outside this rule:
 
-- An edit inside a registry class or a component class, for example a new prop
-  in `card(assigns:{title:String})`, builds only what Haxe types again. This is
-  older than this rule and not changed by it; a template that uses `<.card>` in
-  another file can keep its old check until it is built again.
+- Std and framework types that a template check reads by name, such as
+  `phoenix.Phoenix.Form` and `phoenix.Phoenix.FormField` for a `:let` binding of
+  a form, are not facts. They change only with the compiler's library; restart
+  the watcher after such a change.
 - An importer that Haxe types again is built again, also when it does not read
   the changed declaration. In the todo-app, `TodoLive` imports `TodoTypes`, so
   each edit of `TodoTypes.hx` builds it. Comparing what each importer reads from

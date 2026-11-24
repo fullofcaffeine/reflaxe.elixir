@@ -82,9 +82,14 @@ typedef TemplateFact = {
  *   the dependency while it types that class, as `RouterContractDependencies`
  *   does for a router's `paramsContract`, or the type is added here.
  *   Otherwise a warm build can keep old output or old diagnostics.
- * - An edit inside a registry class or a component class builds only the
- *   types that Haxe typed again, as any class edit does. This is older than
- *   this file and not changed by it.
+ * - An edit inside a registry class or a component class is class text, so
+ *   its file text does not change. `TemplateFactReads` still finds a changed
+ *   fact there, because Reflaxe asks it on every warm request and Haxe types
+ *   the edited class again, which gives it a new fingerprint.
+ * - Std and framework types that a template check reads by name, such as
+ *   `phoenix.Phoenix.Form` and `phoenix.Phoenix.FormField` for a `:let`
+ *   binding of a form, are not listed here. They change only with the
+ *   compiler's library; restart the watcher after such a change.
  */
 function collect(moduleTypes:Array<ModuleType>):Map<String, TemplateFact> {
 	var facts = new Map<String, TemplateFact>();
@@ -171,7 +176,17 @@ private function addReachedDeclarations(type:Type, read:String, add:(ModuleType,
 					visit(arg.t);
 				visit(result);
 			case TAnonymous(anonymous):
-				for (field in anonymous.get().fields)
+				var anonType = anonymous.get();
+				// `Base & {...}` and `{> Base, ...}` copy the fields of `Base`,
+				// but an edit of `Base` is in Base's file: enter it too, so that
+				// its file is compared and its fingerprint checked.
+				switch (anonType.status) {
+					case AExtend(extended):
+						for (extendedType in extended.get())
+							visit(extendedType);
+					case _:
+				}
+				for (field in anonType.fields)
 					visit(field.type);
 			case TInst(_, params):
 				for (param in params)

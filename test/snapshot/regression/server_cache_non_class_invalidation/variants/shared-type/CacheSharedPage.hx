@@ -10,6 +10,6 @@ import HXX;
 @:hxx_mode("balanced")
 class CacheSharedPage {
 	public static function render(assigns:{ready:Bool}):String {
-		return HXX.hxx('<.shared_badge label="Hello"></.shared_badge>');
+		return HXX.hxx('<.shared_badge label="Hello"></.shared_badge><.shared_panel heading="Hi" title="Panel"></.shared_panel>');
 	}
 }

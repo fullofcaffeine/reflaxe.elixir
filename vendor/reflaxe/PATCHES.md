@@ -701,8 +701,20 @@ Local fix:
   and asks `BaseCompiler.typesToBuildForChangedSources(changedTypeKeys,
   liveTypeKeys)`. It builds the types of the changed files, the types that
   Haxe typed again, and the types that the target names. The default answer
-  is null, which builds every type, as before. A changed file that declares
-  no live type also builds every type.
+  is null, which builds every type: the rule for every such change before this
+  function existed. A changed file that declares no live type also builds
+  every type.
+
+  Reflaxe asks the target on every warm request, also when no compared file
+  changed (`changedTypeKeys` is then empty, and null builds nothing more). A
+  fact can change in a class edit, for example a prop type in a component
+  function's signature, and a target that publishes its facts must have
+  compared them first. Review found the failure that asking only after a
+  compared change caused: a prop type change inside a component class
+  published the new fingerprint unchecked, so a later comment edit in the
+  shared types file found no changed fact, and the warm build kept accepting a
+  template that a fresh build rejects. Before this function existed, that
+  comment edit built every type and repaired the check.
 
   Reflaxe.Elixir answers with `TemplateFactReads`: each build records the
   template facts that its template checks read (the hook, event and HTML-tag
@@ -755,13 +767,17 @@ props reach beside typedefs that only Haxe code reads, as the todo-app's
 through Haxe, an inline function body, and a comment must not build the
 template that looks up the component; a new prop, a new enum constructor, and
 metadata on the enum must build it; a prop type change must make the warm build
-reject the unchanged template. Each warm output must equal a fresh build.
+reject the unchanged template. A prop type change inside a component class,
+followed by a comment edit in the shared file, must make the warm build reject
+the template both times. A new required field in the base of an extended
+props typedef, in a file without a template fact, must make the warm build
+reject the template. Each warm output must equal a fresh build.
 
 Not done (`haxe.elixir.codex-c0o.4`): a class that Haxe typed again is still
 built again, also when it does not read the changed declaration. A class edit
 in a module that many modules import still builds each module that Haxe typed
-again. An edit inside a registry or component class builds only what Haxe
-typed again; this is older than the template list and not changed by it.
+again. Std and framework types that a template check reads by name (for
+example `phoenix.Phoenix.Form` for a `:let` binding) are not facts.
 
 Validation before removal:
 

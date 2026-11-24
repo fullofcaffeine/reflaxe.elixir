@@ -374,10 +374,15 @@ abstract class BaseCompiler {
 
 	/**
 		Returns the types that a warm request must build in addition to the
-		types that Haxe typed again, after an edit outside the classes of a
-		file that `isReadWithoutDependency` names. Returns null to build every
-		type again, which is the default and the rule before this function
-		existed.
+		types that Haxe typed again. Reflaxe asks on every warm request.
+
+		- After an edit outside the classes of a file that
+		  `isReadWithoutDependency` names, `changedTypeKeys` holds the types
+		  of the changed files, and null builds every type again: the default,
+		  and the rule before this function existed.
+		- In any other warm request, `changedTypeKeys` is empty, and null
+		  builds nothing more: also the rule before. A target can still name
+		  types, for example the users of a fact that a class edit changed.
 
 		WHY
 		- Such a file holds a type that the target reads while it builds
@@ -391,6 +396,8 @@ abstract class BaseCompiler {
 
 		`changedTypeKeys` holds the `ReflectCompiler.typeKey` of each type
 		declared in a changed file; Reflaxe builds them again in any case.
+		Because Reflaxe asks on every warm request, a target can publish what
+		it compared as checked, at the end of each published request.
 		`liveTypeKeys` holds the key of every type of this request. A type
 		that the result names is built again; the result must name each type
 		whose output can change, and each type that the target knows nothing

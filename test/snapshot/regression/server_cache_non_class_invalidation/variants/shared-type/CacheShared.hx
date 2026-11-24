@@ -26,6 +26,14 @@ enum CacheSharedTone {
 typedef CacheSharedBadgeProps = {
 	var label:String;
 	@:optional var tone:CacheSharedTone;
+
+	/** Makes the props reach `Int` from the start, so row 4 adds no new fact. **/
+	@:optional var count:Int;
+}
+
+/** The props of `CacheSharedComponents.sharedPanel`: an extension of a typedef in another file. **/
+typedef CacheSharedPanelProps = CacheSharedPanelBase & {
+	var heading:String;
 }
 
 class CacheShared {

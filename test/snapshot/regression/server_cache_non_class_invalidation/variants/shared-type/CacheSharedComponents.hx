@@ -1,6 +1,7 @@
 package;
 
 import CacheShared.CacheSharedBadgeProps;
+import CacheShared.CacheSharedPanelProps;
 import HXX;
 import phoenix.types.Assigns;
 
@@ -14,5 +15,10 @@ class CacheSharedComponents {
 	@:component
 	public static function sharedBadge(assigns:Assigns<CacheSharedBadgeProps>):String {
 		return HXX.hxx('<span class="badge">${assigns.label}</span>');
+	}
+
+	@:component
+	public static function sharedPanel(assigns:Assigns<CacheSharedPanelProps>):String {
+		return HXX.hxx('<section><h3>${assigns.heading}</h3>${assigns.title}</section>');
 	}
 }

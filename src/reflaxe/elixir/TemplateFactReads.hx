@@ -48,16 +48,26 @@ using reflaxe.helpers.ModuleTypeHelper;
  *   publication, so its fingerprint is reused instead of computed again.
  * - Records and fingerprints change only after the output was published
  *   (`commit`), so a failed request compares with the last published state.
+ * - A fingerprint is published as checked only when the request compared it.
+ *   Reflaxe asks `buildsForChangedFacts` on every warm request, and a request
+ *   that is not warm builds every type. Example of the failure this prevents:
+ *   a prop type changes inside a component class (a class edit, so no compared
+ *   text changes); if that request published the new fingerprint without
+ *   comparing it, a later comment edit in the shared types file would find no
+ *   changed fact, and the warm build would keep a template check that a fresh
+ *   build rejects.
  * - A type without a record counts as a reader of every fact. A read that
  *   no build owns (`note` outside `beginBuild`/`endBuild`) drops every record,
  *   so the next change of a fact builds every type again, as before.
  *
  * WHAT IS NOT COVERED
- * - Only a change that the vendored Reflaxe cache filter reports calls
- *   `buildsForChangedFacts`: an edit outside the classes of a file that
- *   declares an enum, typedef or abstract with a template fact. An edit inside
- *   a registry class or a component class builds only what Haxe typed again,
- *   as before this file existed.
+ * - A fact whose declaration changes without Haxe typing it again, and
+ *   without a change of a compared file text, keeps its old fingerprint.
+ *   Haxe types a type again when its file or a module that it uses changes,
+ *   so this needs an undeclared macro input (see the watcher guide).
+ * - Std and framework types that a template check reads by name, such as
+ *   `phoenix.Phoenix.Form` for a `:let` binding, are not facts; they change
+ *   only with the compiler's library.
  * - Any other read of a type by name must still be a Haxe dependency of the
  *   class being built, or a template fact (see `TemplateFactSources`).
  */
