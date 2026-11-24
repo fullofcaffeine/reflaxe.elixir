@@ -30,6 +30,21 @@ class TestCompilerPhaseTimings {
 		expectFailure(() -> timings.record("", 1.0), "must not be empty");
 		expectFailure(() -> timings.record("bad", -1.0), "negative duration");
 
+		// An early phase runs before the compiler's request starts (for example
+		// in an initialization macro). The next request report takes it once.
+		Sys.putEnv("REFLAXE_ELIXIR_TIMINGS", "1");
+		var earlyStarted = CompilerPhaseTimings.startEarly();
+		CompilerPhaseTimings.finishEarly("source_freshness_check", earlyStarted, 3);
+		var request = new CompilerPhaseTimings(true);
+		request.addEarlyPhases();
+		var early = request.snapshot();
+		assertEquals(1, early.length, "early phase count");
+		assertEquals("source_freshness_check", early[0].name, "early phase name");
+		assertEquals(3, early[0].count, "early phase count of files");
+		request.reset();
+		request.addEarlyPhases();
+		assertEquals(0, request.snapshot().length, "an early phase is reported once");
+
 		Sys.println("Compiler phase timing contract passed");
 		return macro null;
 	}

@@ -47,6 +47,17 @@ using reflaxe.helpers.TypeHelper;
 	`start` must match the text at `min`. See
 	`ReflectCompiler.nonClassSourceText`.
 **/
+/**
+	The facts of one type that `applyBuildCacheCheckFilter` reads, computed
+	once per request (see `describeTypes`).
+**/
+private typedef DescribedType = {
+	final moduleType: ModuleType;
+	final data: BaseType;
+	final key: String;
+	final readWithoutDependency: Bool;
+}
+
 private typedef ClassSourceSpan = {
 	final min: Int;
 	final max: Int;
@@ -557,44 +568,49 @@ class ReflectCompiler {
 	static function applyBuildCacheCheckFilter(compiler: BaseCompiler, moduleTypes: Array<ModuleType>) {
 		#if !reflaxe.disallow_build_cache_check
 		leftOutTypeKeys = null;
+		// Each step below reads the same facts of each type. In the macro
+		// interpreter, `getCommonData`, `typeKey` and the compiler's
+		// `isReadWithoutDependency` each cost a few milliseconds for a program
+		// of 500 types, so they are read once here for the whole request.
+		final types = describeTypes(compiler, moduleTypes);
 		currentModuleIds = [
-			for(moduleType in moduleTypes)
-				if(countsForLiveModuleSet(compiler, moduleType)) moduleType.getUniqueId()
+			for(type in types)
+				if(countsForLiveModuleSet(type)) type.moduleType.getUniqueId()
 		];
 		currentModuleIds.sort(Reflect.compare);
-		currentNonClassSourceTexts = collectNonClassSourceTexts(compiler, moduleTypes);
+		currentNonClassSourceTexts = collectNonClassSourceTexts(types);
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
 		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
 			&& !previousSuccessfulNonClassSourceTexts.equals(currentNonClassSourceTexts);
 
 		if(isWarmRequest && !liveModuleSetChanged && !nonClassSourceChanged) {
-			final result = moduleTypes.filter(mt -> {
-				switch(mt) {
-					case TClassDecl(_.get() => c): {
-						return compiler.shouldRecompileClass(c) || wasTypedSinceLastPublication(c);
-					}
-					case TEnumDecl(_.get() => enm): {
+			final result = [];
+			final keptKeys = new Map<String, Bool>();
+			for(type in types) {
+				final build = switch(type.moduleType) {
+					case TClassDecl(_.get() => c):
+						compiler.shouldRecompileClass(c) || wasTypedSinceLastPublication(c);
+					case TEnumDecl(_):
 						// Haxe types an enum again when its file or a module that it
 						// uses changed. An enum that Haxe reused has the same output.
-						return wasTypedSinceLastPublication(enm);
-					}
-					case _: return true; // Typedefs and abstracts produce no module of their own; always pass them on.
+						wasTypedSinceLastPublication(type.data);
+					case _:
+						true; // Typedefs and abstracts produce no module of their own; always pass them on.
 				}
-			});
+				if(build) {
+					result.push(type.moduleType);
+					keptKeys.set(type.key, true);
+				}
+			}
 
 			// If anything is filtered out, we ARE doing a cache rebuild.
 			if(result.length != moduleTypes.length) {
 				isCachedRebuild = true;
-				final kept = new Map<String, Bool>();
-				for(moduleType in result) {
-					kept.set(typeKey(moduleType.getCommonData()), true);
-				}
 				final leftOut = new Map<String, Bool>();
-				for(moduleType in moduleTypes) {
-					final key = typeKey(moduleType.getCommonData());
-					if(!kept.exists(key)) {
-						leftOut.set(key, true);
+				for(type in types) {
+					if(!keptKeys.exists(type.key)) {
+						leftOut.set(type.key, true);
 					}
 				}
 				leftOutTypeKeys = leftOut;
@@ -620,11 +636,31 @@ class ReflectCompiler {
 		types and their users, not every module. The hidden class that holds
 		the methods of an abstract is a class, so it still counts.
 	**/
-	static function countsForLiveModuleSet(compiler:BaseCompiler, moduleType:ModuleType):Bool {
-		return switch(moduleType) {
+	static function countsForLiveModuleSet(type:DescribedType):Bool {
+		return switch(type.moduleType) {
 			case TClassDecl(_) | TEnumDecl(_): true;
-			case TTypeDecl(_) | TAbstract(_): compiler.isReadWithoutDependency(moduleType);
+			case TTypeDecl(_) | TAbstract(_): type.readWithoutDependency;
 		}
+	}
+
+	/**
+		Returns, for each type of this request, the facts that the cache
+		filter reads: the common data, the `typeKey`, and the compiler's
+		`isReadWithoutDependency` answer. Each is read once per request.
+	**/
+	static function describeTypes(compiler:BaseCompiler, moduleTypes:Array<ModuleType>):Array<DescribedType> {
+		return [
+			for(moduleType in moduleTypes) {
+				final data = moduleType.getCommonData();
+				final key = typeKey(data);
+				{
+					moduleType: moduleType,
+					data: data,
+					key: key,
+					readWithoutDependency: compiler.isReadWithoutDependency(moduleType, key)
+				};
+			}
+		];
 	}
 
 	/**
@@ -666,7 +702,7 @@ class ReflectCompiler {
 		Reflaxe builds it again. `nonClassSourceText` explains what is cut and
 		what stays.
 	**/
-	static function collectNonClassSourceTexts(compiler:BaseCompiler, moduleTypes:Array<ModuleType>):Array<String> {
+	static function collectNonClassSourceTexts(types:Array<DescribedType>):Array<String> {
 		#if eval
 		final fullPaths = new Map<String, String>();
 		function fullPath(sourceFile:String):String {
@@ -684,19 +720,19 @@ class ReflectCompiler {
 		final nonClassFiles = new Map<String, Bool>();
 		final readFiles = new Map<String, Bool>();
 		final classTypes:Array<ClassType> = [];
-		for(moduleType in moduleTypes) {
-			final isClass = switch(moduleType) {
+		for(type in types) {
+			final isClass = switch(type.moduleType) {
 				case TClassDecl(_.get() => classType):
 					classTypes.push(classType);
 					true;
 				case _:
 					false;
 			}
-			final readWithoutDependency = compiler.isReadWithoutDependency(moduleType);
+			final readWithoutDependency = type.readWithoutDependency;
 			if(isClass && !readWithoutDependency) {
 				continue;
 			}
-			final sourceFile = Context.getPosInfos(moduleType.getCommonData().pos).file;
+			final sourceFile = Context.getPosInfos(type.data.pos).file;
 			if(sourceFile == null || sourceFile.length == 0) {
 				continue;
 			}

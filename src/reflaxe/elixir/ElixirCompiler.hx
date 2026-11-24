@@ -487,6 +487,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// A Haxe compilation server may reuse this compiler instance. Reset at the
 		// request boundary so phase totals never leak into the next edit sample.
 		phaseTimings.reset();
+		phaseTimings.addEarlyPhases();
 		// Before any work: a warm request that holds an old copy of a changed
 		// type must write nothing (see ServerSourceFreshness.refuseStaleReuse).
 		if (moduleTypes != null)
@@ -497,7 +498,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			phaseTimings.record("reference_semantics_class_scan", ReferenceSemanticsDiagnostics.lastScanDurationMs,
 				ReferenceSemanticsDiagnostics.lastScannedClassCount);
 		var result = filterTypesBody(moduleTypes);
+		var keptBuildsStarted = phaseTimings.start();
 		registerKeptClassBuilds(result);
+		phaseTimings.finish("kept_class_builds_registration", keptBuildsStarted);
 		var exportsStarted = phaseTimings.start();
 		if (keptPrivateMethodExports == null)
 			keptPrivateMethodExports = new ClassResultCache();
@@ -536,7 +539,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 			return migrations;
 		}
-		if (moduleTypesNeedStringToolsRuntime(result)) {
+		var scanStarted = phaseTimings.start();
+		var needsStringTools = moduleTypesNeedStringToolsRuntime(result);
+		phaseTimings.finish("string_tools_runtime_scan", scanStarted);
+		if (needsStringTools) {
 			addStringToolsModuleIfMissing(result);
 		}
 		return result;
@@ -558,8 +564,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * removed shows up as a changed member list.
 	 */
 	public override function shouldRecompileClass(classType:ClassType):Bool {
-		return PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports)
+		var started = phaseTimings.start();
+		var result = PrivateMethodExports.changedForClass(classType, privateMethodExports, previousPrivateMethodExports)
 			|| membersChangedSinceBuild(classType);
+		phaseTimings.finish("cache_filter_should_recompile_class", started);
+		return result;
 	}
 
 	/**
@@ -580,9 +589,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * requires (see `BaseCompiler.isReadWithoutDependency`). Returns true before
 	 * `filterTypes` ran, the safe answer.
 	 */
-	public override function isReadWithoutDependency(moduleType:haxe.macro.Type.ModuleType):Bool {
+	public override function isReadWithoutDependency(moduleType:haxe.macro.Type.ModuleType, typeKey:String):Bool {
 		var sources = templateFactSources;
-		return sources == null || sources.exists(ReflectCompiler.typeKey(moduleType.getCommonData()));
+		return sources == null || sources.exists(typeKey);
 	}
 
 	public override function onCompileEnd():Void {
@@ -6757,7 +6766,9 @@ left_name == right_name and left_params == right_params';
 
 	/** Called after the ownership transaction has committed Elixir and source maps. */
 	public override function onOutputComplete() {
+		var pruneStarted = phaseTimings.start();
 		pruneEmptyOutputDirectories();
+		phaseTimings.finish("output_empty_directory_prune", pruneStarted);
 		previousPrivateMethodExports = privateMethodExports;
 		// Results computed in this request become the kept results only now,
 		// after the output that used them was published.
@@ -6766,6 +6777,8 @@ left_name == right_name and left_params == right_params';
 		if (keptClassBuilds != null)
 			keptClassBuilds.commit();
 		ReferenceSemanticsDiagnostics.commitRequest();
+		// Last, so that the report covers the pruning and the commits above.
+		phaseTimings.report();
 	}
 
 	function pruneEmptyOutputDirectories():Void {

@@ -552,7 +552,7 @@ class RouterBuildMacro {
 			return;
 		afterTypingRegistered = true;
 
-		Context.onAfterTyping(function(_) {
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("router_build_checks", function(_) {
 			// Validate controllers
 			for (entry in pendingControllerChecks) {
 				validateControllerExists(entry.controller, entry.route, entry.path, entry.pos);

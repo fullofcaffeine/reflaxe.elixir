@@ -62,7 +62,7 @@ class EctoSchemaAssociationValidator {
 			return;
 		afterTypingRegistered = true;
 
-		Context.onAfterTyping(validateAllTypedModules);
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("ecto_schema_associations", validateAllTypedModules);
 	}
 
 	static function validateAllTypedModules(modules:Array<ModuleType>):Void {

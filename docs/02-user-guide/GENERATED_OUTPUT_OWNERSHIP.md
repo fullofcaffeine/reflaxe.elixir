@@ -58,7 +58,12 @@ The compiler applies these rules before publication:
    whose generated digest differs from the verified live digest, or whose owned file is missing on
    disk.
 5. Back up changed/stale owned files, activate a recovery journal, publish files, and atomically
-   replace the manifest last.
+   replace the manifest last. On a compilation server, a version 2 cached rebuild whose candidates
+   all equal their live files, and that drops no owned file, stops after the checks above: it
+   writes no journal and no new manifest, and the manifest keeps its bytes and its `id`.
+   `generation` is the SHA-256 of the UTF-8 bytes of the sorted `path\ndigest\n` lines, as Mix
+   computes it; an older manifest with a non-ASCII owned path (hashed by character count before)
+   therefore stops with "generation digest does not match its owned files".
 
 Unchanged generated files are not rewritten. Removed Haxe modules and namespace moves delete only
 stale owned paths. With `-D source-map`, each `.ex.map` sidecar enters the same transaction as its

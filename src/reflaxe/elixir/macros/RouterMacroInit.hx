@@ -35,7 +35,7 @@ class RouterMacroInit {
 	static function setupRouterMacros():Void {
 		// We'll use a different approach - check all types being compiled
 		// and apply build macro retroactively if needed
-		Context.onAfterTyping(function(types) {
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("router_macro_init", function(types) {
 			applyRouterMacrosToTypes(types);
 		});
 	}

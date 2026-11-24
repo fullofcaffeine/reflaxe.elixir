@@ -27,7 +27,7 @@ class LiveViewPreserver {
 	 */
 	public static function init():Void {
 		// Register callback for after typing phase but before DCE
-		Context.onAfterTyping(preserveLiveViewMethods);
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("liveview_preserver", preserveLiveViewMethods);
 	}
 
 	/**

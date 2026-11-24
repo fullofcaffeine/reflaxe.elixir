@@ -155,6 +155,7 @@ class ServerSourceFreshness {
 
 		final known = snapshots;
 		if (known != null) {
+			final checkStarted = reflaxe.elixir.debug.CompilerPhaseTimings.startEarly();
 			final changed:Array<String> = [];
 			for (path in [for (knownPath in known.keys()) knownPath]) {
 				final previous = known.get(path);
@@ -179,9 +180,10 @@ class ServerSourceFreshness {
 			}
 			if (changed.length > 0)
 				haxe.macro.CompilationServer.invalidateFiles(changed);
+			reflaxe.elixir.debug.CompilerPhaseTimings.finishEarly("source_freshness_check", checkStarted, Lambda.count(known));
 		}
 
-		Context.onAfterTyping(recordTypedSources);
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("source_freshness_record", recordTypedSources);
 		#end
 	}
 

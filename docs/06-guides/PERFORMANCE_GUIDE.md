@@ -421,6 +421,13 @@ Use this loop when a compile feels slow or a CI budget starts drifting.
    haxe build-server.hxml -D macro-times --times
    ```
 
+   On a compilation server, `--times` reports only a small part of a warm request. Start the server
+   with `REFLAXE_ELIXIR_TIMINGS=1` instead: each request prints one `REFLAXE_ELIXIR_TIMINGS` JSON line
+   with the compiler's phases, also the ones that run before the compiler's request starts (source
+   freshness, module discovery, after-typing checks). The
+   [watcher guide](WATCHER_WORKFLOW.md#work-that-a-warm-request-still-does-for-the-whole-program)
+   lists the phases that cost time for the whole program.
+
    For HXX/HEEx macro hotspots, enable the repo's opt-in macro instrumentation:
 
    ```bash
