@@ -69,7 +69,8 @@ class GeneratedOutputManager extends OutputManager {
 		var publicationStarted = elixirCompiler.phaseTimings.start();
 		GeneratedOutputOwnership.publish(compiler, outputDir, candidates, cachedRebuild(), GeneratedOutputFormatter.requiresCompletePreparedOutput());
 		elixirCompiler.phaseTimings.finish("output_transaction_including_formatting", publicationStarted);
-		elixirCompiler.phaseTimings.report();
+		// `ElixirCompiler.onOutputComplete` prints the report after the
+		// directory pruning and the warm-cache commits.
 	}
 
 	/**

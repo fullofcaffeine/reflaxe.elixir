@@ -213,7 +213,7 @@ class MigrationRegistry {
 		}
 
 		afterTypingHookRegistered = true;
-		Context.onAfterTyping(function(_modules:Array<ModuleType>) {
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("migration_registry", function(_modules:Array<ModuleType>) {
 			flushDeferredValidations();
 		});
 	}

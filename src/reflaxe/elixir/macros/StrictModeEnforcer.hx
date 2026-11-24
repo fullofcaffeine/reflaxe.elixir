@@ -58,7 +58,7 @@ class StrictModeEnforcer {
 		}
 
 		var projectRoot = normalizePath(Sys.getCwd());
-		Context.onAfterTyping(types -> enforce(types, projectRoot));
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("strict_mode", types -> enforce(types, projectRoot));
 	}
 
 	static function enforce(types:Array<ModuleType>, projectRoot:String):Void {

@@ -2,7 +2,7 @@ package reflaxe.elixir;
 
 #if (macro || reflaxe_runtime)
 import haxe.Json;
-import haxe.crypto.Sha256;
+import reflaxe.elixir.Sha256Hex.sha256Hex;
 import haxe.io.Bytes;
 import haxe.io.Path;
 import haxe.macro.Context;
@@ -202,6 +202,9 @@ class GeneratedOutputOwnership {
 		var prepare = Path.join([root, PREPARE_DIRECTORY]);
 		if (directoryEntryExists(root, PREPARE_DIRECTORY))
 			fail('Reserved generated-output prepare path is already in use: $prepare');
+		// The loops below check one path for each owned file. Each check resolves
+		// the root again unless it gets the resolved root; see `ensureCanonicalWithin`.
+		var liveRoot = canonicalDirectory(root);
 
 		var activated = false;
 		try {
@@ -258,8 +261,19 @@ class GeneratedOutputOwnership {
 			}
 
 			for (path in keptPaths) {
-				if (!pending.exists(path) && !FileSystem.exists(targetPath(root, path)))
+				if (!pending.exists(path) && !FileSystem.exists(targetPath(root, path, liveRoot)))
 					fail('Cached rebuild cannot preserve missing owned output `$path`; run a full Haxe rebuild.');
+			}
+
+			// Every check above ran as for a publication. When the request would
+			// publish the same files, the transaction is skipped; see
+			// `publishesSameOutput`.
+			if (usePartialStaging && publishesSameOutput(root, previous, pendingOrder, pending, droppedPaths, legacySourceMaps)) {
+				rememberSkippedPublicationOwners(root, previous, pending, pendingOwners);
+				phaseTimings.finish("output_ownership_preflight", preflightStarted);
+				phaseTimings.record("output_transaction_skipped", 0.0);
+				Sys.println("No files updated.");
+				return previous.paths.copy();
 			}
 
 			// Claim the fixed prepare path only after every fail-closed ownership
@@ -283,14 +297,16 @@ class GeneratedOutputOwnership {
 			ensureDirectory(stagedRoot);
 			var candidateDigests = new Map<String, String>();
 			var stagedPaths = new Map<String, Bool>();
+			// A staged path is checked only when this request writes it. Partial
+			// staging leaves most paths alone, and each check costs several file
+			// system calls in the macro interpreter.
 			for (path in nextPaths) {
-				var staged = targetPath(stagedRoot, path);
 				if (pending.exists(path)) {
 					var content = pending.get(path);
 					if (content == null)
 						fail('Missing pending output contents for `$path`.');
 					if (usePartialStaging) {
-						var liveTarget = targetPath(root, path);
+						var liveTarget = targetPath(root, path, liveRoot);
 						var candidateHashStarted = phaseTimings.start();
 						var candidateDigest = digestFor(liveTarget, contentBytes(content));
 						phaseTimings.finish("output_candidate_content_hashing", candidateHashStarted);
@@ -303,12 +319,14 @@ class GeneratedOutputOwnership {
 						if (oldSet.exists(path) && previous.digests.get(path) == candidateDigest && FileSystem.exists(liveTarget))
 							continue;
 					}
+					var staged = targetPath(stagedRoot, path);
 					ensureDirectory(Path.directory(staged));
 					var candidateWriteStarted = phaseTimings.start();
 					content.save(staged);
 					phaseTimings.finish("output_staging_candidate_write", candidateWriteStarted);
 					stagedPaths.set(path, true);
 				} else if (!usePartialStaging) {
+					var staged = targetPath(stagedRoot, path);
 					ensureDirectory(Path.directory(staged));
 					var retainedCopyStarted = phaseTimings.start();
 					File.copy(targetPath(root, path), staged);
@@ -341,28 +359,29 @@ class GeneratedOutputOwnership {
 			var owned:Array<OwnedFileRecord> = [];
 			var newDigests = new Map<String, String>();
 			for (path in nextPaths) {
-				var staged = targetPath(stagedRoot, path);
 				var digest:Null<String> = null;
 				if (usePartialStaging) {
 					digest = pending.exists(path) ? candidateDigests.get(path) : previous.digests.get(path);
 					if (digest == null)
 						fail('Cannot reuse a verified generated-output digest for `$path`.');
 					if (stagedPaths.exists(path)) {
+						var staged = targetPath(stagedRoot, path);
 						if (!FileSystem.exists(staged) || FileSystem.isDirectory(staged))
 							fail('Prepared output is missing changed candidate `$path`.');
 						ensureCanonicalWithin(stagedRoot, staged, "prepared output");
 						var stagedHashStarted = phaseTimings.start();
-						var stagedDigest = digestFor(targetPath(root, path), File.getBytes(staged));
+						var stagedDigest = digestFor(targetPath(root, path, liveRoot), File.getBytes(staged));
 						phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
 						if (stagedDigest != digest)
 							fail('Prepared output bytes do not match the generated candidate for `$path`.');
 					}
 				} else {
+					var staged = targetPath(stagedRoot, path);
 					if (!FileSystem.exists(staged) || FileSystem.isDirectory(staged))
 						fail('Prepared output hook removed or replaced generated file `$path`.');
 					ensureCanonicalWithin(stagedRoot, staged, "prepared output");
 					var stagedHashStarted = phaseTimings.start();
-					digest = digestFor(targetPath(root, path), File.getBytes(staged));
+					digest = digestFor(targetPath(root, path, liveRoot), File.getBytes(staged));
 					phaseTimings.finish("output_staged_file_hashing", stagedHashStarted);
 				}
 				newDigests.set(path, digest);
@@ -510,8 +529,8 @@ class GeneratedOutputOwnership {
 			var manifestTemp = Path.join([root, MANIFEST_TEMP_FILENAME]);
 			File.copy(Path.join([active, NEXT_MANIFEST_FILENAME]), manifestTemp);
 			replaceFile(manifestTemp, manifestPath);
-			// Each request writes a new manifest (its `id` grows), so remember the
-			// one just written: it holds exactly these paths, digests, generation,
+			// Each publication writes a new manifest (its `id` grows), so remember
+			// the one just written: it holds exactly these paths, digests, generation,
 			// and id. The next request then reuses this state when the live
 			// manifest still has these bytes, instead of parsing and hashing it.
 			var nextOwners = new Map<String, Array<String>>();
@@ -557,6 +576,71 @@ class GeneratedOutputOwnership {
 	}
 
 	#if sys
+	/**
+	 * Returns true when a cached rebuild would publish exactly the output that is
+	 * on disk: it drops no owned file, adopts no old source map, and each
+	 * candidate is an owned file whose live bytes exist and have the candidate's
+	 * digest. The published manifest then lists the same paths, in the same
+	 * order, with the same digests and generation. A transaction would change
+	 * only the manifest's `id` and `wasCached` fields.
+	 *
+	 * WHY
+	 * - On a warm server, a request without an edit, or with an edit that does
+	 *   not change the Elixir (for example a comment in a method), wrote a
+	 *   prepare folder, a journal, and a new manifest, and hashed that manifest
+	 *   with SHA-256 in the macro interpreter. On the todo-app that was about
+	 *   85 ms of a 360 ms request, and the manifest got a new file time.
+	 *
+	 * WHAT STAYS THE SAME
+	 * - The caller runs every check of a publication first: recovery of an
+	 *   interrupted transaction, the hand-edit check of each candidate's live
+	 *   file, the unowned-collision check, and the check that each kept file
+	 *   still exists. A hand-edited candidate still stops the build.
+	 * - Only partial staging (a cached rebuild without a whole-tree formatter)
+	 *   is skipped. A full build always runs the transaction, so it still
+	 *   deletes each owned file that it does not write.
+	 * - A missing live file is a change: the transaction runs and writes it.
+	 *
+	 * The live manifest keeps its `id`, which counts publications that changed
+	 * something. Nothing reads the `id` for a decision.
+	 */
+	static function publishesSameOutput(root:String, previous:OwnershipState, pendingOrder:Array<String>, pending:Map<String, StringOrBytes>,
+			droppedPaths:Array<String>, legacySourceMaps:Map<String, String>):Bool {
+		if (!previous.exists || previous.legacy || droppedPaths.length > 0 || legacySourceMaps.iterator().hasNext())
+			return false;
+		for (path in pendingOrder) {
+			var expected = previous.digests.get(path);
+			var content = pending.get(path);
+			if (expected == null || content == null)
+				return false;
+			var liveTarget = targetPath(root, path);
+			if (!FileSystem.exists(liveTarget) || digestFor(liveTarget, contentBytes(content)) != expected)
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Keeps the owners of each file for the next request after a skipped
+	 * publication, as a publication does: the types that wrote a candidate now,
+	 * and each earlier owner that the cache filter left out (`writtenPathOwners`).
+	 * The manifest on disk did not change, so the remembered manifest still
+	 * describes it; only its owners are replaced.
+	 */
+	static function rememberSkippedPublicationOwners(root:String, previous:OwnershipState, pending:Map<String, StringOrBytes>,
+			pendingOwners:Map<String, Array<String>>):Void {
+		var remembered = rememberedManifest;
+		if (remembered == null || remembered.path != Path.join([root, MANIFEST_FILENAME]))
+			return;
+		var nextOwners = new Map<String, Array<String>>();
+		for (path in previous.paths) {
+			var owners = pending.exists(path) ? writtenPathOwners(pendingOwners.get(path), previous.owners.get(path)) : previous.owners.get(path);
+			if (owners != null)
+				nextOwners.set(path, owners);
+		}
+		remembered.state.owners = nextOwners;
+	}
+
 	static function readOwnership(root:String):OwnershipState {
 		var manifestPath = Path.join([root, MANIFEST_FILENAME]);
 		if (!FileSystem.exists(manifestPath)) {
@@ -1131,14 +1215,32 @@ class GeneratedOutputOwnership {
 		}
 	}
 
-	static function targetPath(root:String, relative:String):String {
+	/**
+	 * Returns `root/relative` after `ensureCanonicalWithin` checked it.
+	 * `resolvedRoot` is `canonicalDirectory(root)` when the caller has it.
+	 */
+	static function targetPath(root:String, relative:String, ?resolvedRoot:String):String {
 		var path = Path.join([root, relative]);
-		ensureCanonicalWithin(root, path, "generated output path");
+		ensureCanonicalWithin(root, path, "generated output path", resolvedRoot);
 		return path;
 	}
 
-	static function ensureCanonicalWithin(root:String, candidate:String, label:String):Void {
-		var canonicalRoot = normalizeAbsolute(FileSystem.fullPath(root));
+	/** The real, normalized path of an existing directory, as `ensureCanonicalWithin` compares it. */
+	static function canonicalDirectory(root:String):String {
+		return normalizeAbsolute(FileSystem.fullPath(root));
+	}
+
+	/**
+	 * Stops the build when `candidate` is not inside `root` after symbolic
+	 * links are resolved, or when it crosses a symbolic link inside `root`.
+	 *
+	 * `resolvedRoot` is `canonicalDirectory(root)`, computed once by a caller
+	 * that checks many paths below the same root in one publication. Without
+	 * it, the root is resolved again for each path. The candidate itself is
+	 * always resolved again.
+	 */
+	static function ensureCanonicalWithin(root:String, candidate:String, label:String, ?resolvedRoot:String):Void {
+		var canonicalRoot = resolvedRoot != null ? resolvedRoot : canonicalDirectory(root);
 		var existing = candidate;
 		while (!FileSystem.exists(existing)) {
 			var parent = Path.directory(existing);
@@ -1268,7 +1370,7 @@ class GeneratedOutputOwnership {
 			buffer.add(record.digest);
 			buffer.add("\n");
 		}
-		return Sha256.encode(buffer.toString()).toLowerCase();
+		return sha256Hex(haxe.io.Bytes.ofString(buffer.toString()));
 	}
 
 	// Macro-eval values can come from a separately loaded standard-library class
@@ -1369,7 +1471,7 @@ class GeneratedOutputOwnership {
 	}
 
 	static function hashBytes(bytes:Bytes):String {
-		return Sha256.make(bytes).toHex().toLowerCase();
+		return sha256Hex(bytes);
 	}
 
 	static function validDigest(value:String):Bool {

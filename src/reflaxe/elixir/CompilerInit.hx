@@ -30,6 +30,7 @@ class CompilerInit {
 	 * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
 	 */
 	public static function Start() {
+		reflaxe.elixir.debug.CompilerPhaseTimings.markRequestBegan();
 		// Direct repo-local hxml files often invoke CompilerInit without going through
 		// `-lib reflaxe.elixir`. Run the idempotent bootstrap here too so source-layout
 		// `_std` overrides and vendored Reflaxe are visible in dev/test mode.
@@ -148,9 +149,11 @@ class CompilerInit {
 		// Macro-phase discovery: force-type framework-annotated modules so they join normal compilation.
 		// Under fast_boot, RepoDiscovery uses a temp-file cache to avoid repeated project-wide scans.
 		if (discoverAnnotatedModules) {
+			final discoveryStarted = reflaxe.elixir.debug.CompilerPhaseTimings.startEarly();
 			try {
 				reflaxe.elixir.macros.RepoDiscovery.run();
 			} catch (e:haxe.Exception) {}
+			reflaxe.elixir.debug.CompilerPhaseTimings.finishEarly("repo_discovery_including_forced_typing", discoveryStarted);
 		}
 
 		// Ensure the exception wrapper module exists when compiling Haxe `throw` / `try-catch`.

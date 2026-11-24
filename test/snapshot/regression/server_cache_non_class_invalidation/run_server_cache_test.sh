@@ -1810,6 +1810,118 @@ run_private_exports_variant() {
 # - inherited-hello and inherited-none: an inherited method of DceKid's parent
 #   becomes live and dead again. DceKid's own members do not change, but its
 #   module has a `hello` delegator only while the parent's `hello` is live.
+# Prints the count of one phase in the phase report of `log`, or 0 when the
+# report has no such phase.
+phase_count() {
+	python3 - "$1" "$2" <<'PY'
+import json
+import sys
+
+count = None
+for line in open(sys.argv[1], encoding="utf-8"):
+    if line.startswith("REFLAXE_ELIXIR_TIMINGS "):
+        phases = json.loads(line.split(" ", 1)[1])["phases"]
+        count = sum(phase["count"] for phase in phases if phase["name"] == sys.argv[2])
+if count is None:
+    raise SystemExit("no phase report in " + sys.argv[1])
+print(count)
+PY
+}
+
+# Prints the bytes digest and the nanosecond file time of the output manifest.
+manifest_stamp() {
+	python3 - "$1/_GeneratedFiles.json" <<'PY'
+import hashlib
+import os
+import sys
+
+path = sys.argv[1]
+print(hashlib.sha256(open(path, "rb").read()).hexdigest(), os.stat(path).st_mtime_ns)
+PY
+}
+
+# Replaces the first `old` in `path` with `new`.
+replace_once() {
+	python3 - "$1" "$2" "$3" <<'PY'
+import sys
+
+path, old, new = sys.argv[1], sys.argv[2], sys.argv[3]
+text = open(path, encoding="utf-8").read()
+if old not in text:
+    raise SystemExit(f"fixture could not find {old!r} in {path}")
+open(path, "w", encoding="utf-8").write(text.replace(old, new, 1))
+PY
+}
+
+# A warm request whose output equals the published output must not touch the
+# output folder: no prepare or transaction folder, and no new manifest. The
+# manifest keeps its bytes and its file time. A request that changes a file
+# still runs the whole transaction.
+run_unchanged_output_variant() {
+	local direct_comment="$TMP_ROOT/direct-unchanged-comment"
+	local direct_body="$TMP_ROOT/direct-unchanged-body"
+	local log="$TMP_ROOT/unchanged-output.log"
+	local before after
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "unchanged-output-baseline"
+
+	# 1. No edit.
+	before="$(manifest_stamp "$SERVER_OUTPUT")"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	after="$(manifest_stamp "$SERVER_OUTPUT")"
+	if [[ "$before" != "$after" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-no-edit wrote a new manifest ($before -> $after)" >&2
+		return 1
+	fi
+	grep -Fq 'No files updated.' "$log" || {
+		echo "SERVER_CACHE_REUSE:unchanged-output-no-edit did not report that no file changed" >&2
+		return 1
+	}
+	if [[ "$(phase_count "$log" output_transaction_skipped)" != "1" ]] \
+		|| [[ "$(phase_count "$log" output_transaction_journal_preparation)" != "0" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-no-edit ran the output transaction" >&2
+		return 1
+	fi
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "unchanged-output-no-edit"
+
+	# 2. A comment at the end of a line in a class body. Haxe types Main again
+	# and Reflaxe builds it again, but the Elixir and its source map stay the same.
+	replace_once "$PROJECT_DIR/src/Main.hx" "return Ready;" "return Ready; // same output"
+	before="$(manifest_stamp "$SERVER_OUTPUT")"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	after="$(manifest_stamp "$SERVER_OUTPUT")"
+	compile_direct "$direct_comment"
+	compare_generated_output "$direct_comment" "$SERVER_OUTPUT" "unchanged-output-comment"
+	if [[ "$(built_class_count "$log")" == "0" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-comment built no class; the edit did not reach Haxe" >&2
+		return 1
+	fi
+	if [[ "$before" != "$after" ]] || [[ "$(phase_count "$log" output_transaction_skipped)" != "1" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-comment ran the output transaction for identical output" >&2
+		return 1
+	fi
+
+	# 3. A real class-body edit changes main.ex, so the transaction runs.
+	replace_once "$PROJECT_DIR/src/Main.hx" "return payload.value + payload.value;" \
+		"return payload.value + payload.value + payload.value;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	after="$(manifest_stamp "$SERVER_OUTPUT")"
+	compile_direct "$direct_body"
+	compare_generated_output "$direct_body" "$SERVER_OUTPUT" "unchanged-output-body-edit"
+	if [[ "$before" == "$after" ]] || [[ "$(phase_count "$log" output_transaction_skipped)" != "0" ]]; then
+		echo "SERVER_CACHE_REUSE:unchanged-output-body-edit skipped the transaction of a changed file" >&2
+		return 1
+	fi
+
+	# 4. Back to the baseline: main.ex changes again.
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "unchanged-output-restored"
+	echo "SERVER_CACHE_REUSE:unchanged-output-skips-transaction:PASS"
+}
+
 run_dce_members_variant() {
 	local variants="$FIXTURE_DIR/variants/dce-members"
 	local dce_args=(-dce full -main Main)
@@ -2156,6 +2268,7 @@ run_module_routes_variant
 run_private_exports_variant
 run_dce_members_variant
 run_dropped_output_variant
+run_unchanged_output_variant
 run_failed_request_registry_variant
 run_native_class_variant
 run_tampered_output_variant

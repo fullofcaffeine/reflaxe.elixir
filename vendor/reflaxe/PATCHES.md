@@ -671,7 +671,7 @@ Local fix:
   macros, so it does not see routes that such a macro adds (for example
   `@:build(Gen.addRoutes())` adding `@:routes(...)` with `cls.meta.add`). A
   contract edit there can still miss the error on a warm build. The new
-  `BaseCompiler.isReadWithoutDependency(moduleType)` lets the target name
+  `BaseCompiler.isReadWithoutDependency(moduleType, typeKey)` lets the target name
   these types. The default is true for every type, which keeps the earlier
   rule for a target that does not override it. A file is compared only when
   it declares an enum, typedef or abstract and the target names one of its
@@ -682,6 +682,13 @@ Local fix:
   its class): a comment after the class built all 141 classes in 12.7 to
   14.1 s (load about 7.5). It now builds the same 3 classes as an edit
   inside the class, in 1.2 to 1.4 s (load about 10).
+- `applyBuildCacheCheckFilter` reads the common data, the `typeKey`, and the
+  target's `isReadWithoutDependency` answer of each type one time per request
+  (`describeTypes`), and the live-module-set, source-text, and filter steps
+  share them. Before, each step read them again. In the macro interpreter that
+  cost about 13 ms of each warm todo-app request (518 types, load about 25).
+  `isReadWithoutDependency(moduleType, typeKey)` therefore takes the key that
+  the caller already has. The answers and the filter result are the same.
 - The live module set counts a typedef or an abstract only when the target
   names it. Such a type writes no file of its own in Reflaxe.Elixir, so
   adding or removing a typedef builds only the types that Haxe typed again.

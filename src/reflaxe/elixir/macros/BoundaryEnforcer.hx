@@ -47,7 +47,7 @@ class BoundaryEnforcer {
 			return;
 		}
 
-		Context.onAfterTyping(enforceExampleBoundaries);
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("boundary_enforcer", enforceExampleBoundaries);
 	}
 
 	static function enforceExampleBoundaries(types:Array<ModuleType>):Void {

@@ -67,7 +67,7 @@ class ReferenceSemanticsDiagnostics {
 
 		var projectRoot = normalizePath(Sys.getCwd());
 		var compilerOwnedRoots = findCompilerOwnedRoots(projectRoot);
-		Context.onAfterTyping(types -> diagnose(types, projectRoot, compilerOwnedRoots));
+		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("reference_semantics", types -> diagnose(types, projectRoot, compilerOwnedRoots));
 	}
 
 	static function diagnose(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {

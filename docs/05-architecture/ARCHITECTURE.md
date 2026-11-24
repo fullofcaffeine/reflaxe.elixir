@@ -15,7 +15,9 @@ This document is the canonical “how the compiler is structured today” overvi
 4. **Printer** turns `ElixirAST` → Elixir source code (formatting + surface syntax).
 5. **Output** stages the complete file set, runs optional target formatting, validates manifest
    ownership/collisions, then transactionally publishes files and commits a content-hashed
-   `_GeneratedFiles.json` last.
+   `_GeneratedFiles.json` last. On a compilation server, a cached rebuild whose files all equal
+   the published files runs the same checks and then skips the transaction: no prepare folder,
+   no journal, and no new manifest.
 
 ### Ownership check on a Haxe compilation server
 

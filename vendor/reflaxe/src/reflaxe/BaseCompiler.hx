@@ -361,8 +361,12 @@ abstract class BaseCompiler {
 		Classes are built again by the ordinary rule. For a class, the result
 		only decides whether the enums, typedefs and abstracts in its file
 		count as read without a dependency.
+
+		`typeKey` is `ReflectCompiler.typeKey` of the type. The caller has it
+		already, and computing it again for each type of a large program costs
+		measurable time on every warm request.
 	**/
-	public function isReadWithoutDependency(moduleType: ModuleType): Bool {
+	public function isReadWithoutDependency(moduleType: ModuleType, typeKey: String): Bool {
 		return true;
 	}
 

@@ -655,6 +655,108 @@ The `dropped-output` case of `npm run test:reflaxe-server-cache` checks these
 three examples, a request without an edit after the first two (no class is
 built and no file changes), and each edit back.
 
+### A request that changes no file
+
+A warm request often writes the same output that is already on disk: a
+request without an edit, a save that changes no byte, or an edit that does not
+change the Elixir, such as a comment in a method. Such a request still runs
+each ownership check of a publication: it recovers an interrupted
+transaction, checks each file that it built again against the manifest
+(a hand edit still stops the build), and checks that each kept file still
+exists. Then it stops. It writes no prepare folder, no journal, and no new
+`_GeneratedFiles.json`, and it prints `No files updated.`
+
+The manifest keeps its bytes and its file time. Its `id` field counts the
+publications that changed something; nothing reads it for a decision. A full
+build always runs the transaction, so it still deletes each owned file that it
+does not write. A file that is missing on disk is a change: the request runs
+the transaction and writes the file again.
+
+Before, each such request wrote a new manifest and hashed it with SHA-256 in
+Haxe's macro interpreter: about 85 ms of a 0.36 s todo-app request on a loaded
+machine (see the table below). The `unchanged-output` case of
+`npm run test:reflaxe-server-cache` checks a request without an edit, a
+comment edit in a class, and a real edit.
+
+### Work that a warm request still does for the whole program
+
+Some steps of a warm request read every type or every file of the program,
+whatever the size of the edit. Run the server with `REFLAXE_ELIXIR_TIMINGS=1`
+to see them; each request prints one `REFLAXE_ELIXIR_TIMINGS` line. The phases
+for these steps are:
+
+| Step | Phase in the report |
+| --- | --- |
+| Compare each known source file with its last copy | `source_freshness_check`, `after_typing:source_freshness_record` |
+| Find annotated modules in the project class paths | `repo_discovery_including_forced_typing` |
+| After-typing checks | `after_typing:<name>` |
+| StringTools runtime scan and member lists | `string_tools_runtime_scan`, `kept_class_builds_registration` |
+| Choose the types to build | `reflaxe_module_filters_and_init` (with `cache_filter_should_recompile_class`) |
+| Output transaction | `output_transaction_including_formatting`, or `output_transaction_skipped` |
+| Remove empty output folders | `output_empty_directory_prune` |
+
+`request_start_to_filter_types` is the time from the first Reflaxe.Elixir macro
+of the request until the compiler's request starts. It holds the first three
+steps, Haxe's typing, and dead-code elimination. `total_wall_ms` starts after
+that span, so add the two for the compiler's share of a request. The time of
+the `haxe --connect` client and of Haxe's own request setup is in neither.
+
+Measured on the todo-app (518 types, 124 generated files), with a server that
+ran with `REFLAXE_ELIXIR_TIMINGS=1`, on 2026-11-23. The machine was loaded (a
+one-minute load of 18 to 21 on 12 cores), so the absolute values are high; use
+them to compare the steps. Each value is the median of 12 requests, and the
+two values are two rounds that took turns between the old and new code. The
+class-body edit changes one string in `SessionController`; it builds 3
+classes.
+
+| Step (ms) | No edit, before | No edit, after | Class-body edit, before | Class-body edit, after |
+| --- | --- | --- | --- | --- |
+| Request, end to end (client) | 361, 359 | 263, 292 | 587, 527 | 448, 460 |
+| 1. Source freshness | 12, 11 | 10, 13 | 12, 12 | 11, 11 |
+| 2. Annotated-module discovery | 11, 11 | 10, 12 | 23, 22 | 21, 22 |
+| 3. Other after-typing checks | 16, 15 | 15, 16 | 17, 16 | 16, 16 |
+| 4. StringTools scan and member lists | 7, 7 | 7, 7 | 7, 7 | 6, 7 |
+| 5. Choose the types to build | 42, 42 | 31, 34 | 43, 41 | 32, 33 |
+| 6. Output transaction | 85, 89 | 10, 11 | 121, 109 | 49, 47 |
+| 7. Remove empty folders | 2, 2 | 1, 1 | 2, 2 | 1, 1 |
+
+The StringTools scan itself took about 1 ms here, because it stops at the
+first class that needs the runtime module. In a program without such a class
+it reads every typed body (about 11 ms for the 33 classes of the
+server-cache test). Discovery in an edit includes the typing of the edited
+module, which Haxe does while discovery asks for it.
+
+What changed, and why the output stays the same:
+
+- The output transaction is skipped when no file changes (see above).
+- The type filter reads the facts of each type one time per request. Before,
+  its steps read them again, and each read costs time in the macro
+  interpreter.
+- A publication checks a staged path for symbolic links only when it writes
+  that path, and resolves the output folder once instead of once for each
+  owned file. Partial staging writes a few files, but it checked every owned
+  path two times, with several file system calls each. Every path that the
+  request writes, copies, or deletes is still checked as before.
+- The ownership check computes SHA-256 with code that is about 2.4 times
+  faster in the macro interpreter (`Sha256Hex`). It gives the same digests as
+  `haxe.crypto.Sha256`; the `test:perf-benchmark-contract` test compares
+  them. A publication hashes the whole manifest, so this time grew with the
+  program.
+
+What is still done for the whole program on each request, and why:
+
+- Each known source file is read and compared, because Haxe cannot see a
+  second save within one second (see above).
+- Each project `.hx` file is read for annotated-module discovery. A file that
+  no build uses yet can gain `@:router` at any time.
+- The after-typing checks, the private-method scan and the member lists touch
+  each type. Their typed-body scans already keep their results for classes
+  that Haxe did not type again; what remains is the cost of reading each type
+  in the macro interpreter.
+- A request that changes a file still writes and hashes a new manifest and
+  its generation record, which list every generated file, and checks that
+  each kept file still exists.
+
 This is real compiler-state reuse, but not a universal module-artifact cache:
 
 - Reflaxe still performs required whole-program fact collection and output work.

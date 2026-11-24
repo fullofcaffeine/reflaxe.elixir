@@ -26,7 +26,11 @@ typedef CompilerPhaseTiming = {
  * HOW
  * - Set `REFLAXE_ELIXIR_TIMINGS=1` for a diagnostic compile.
  * - Callers record durations on this compiler-owned instance.
- * - One machine-readable JSON line is printed after publication succeeds.
+ * - One machine-readable JSON line is printed after publication succeeds and
+ *   the warm-cache results are committed (`ElixirCompiler.onOutputComplete`).
+ * - Phases that run before the compiler's request starts (initialization
+ *   macros, after-typing callbacks) are kept with `startEarly`/`finishEarly`
+ *   and added to the next report by `addEarlyPhases`.
  *
  * Normal compilation pays only an enabled check and never writes a timing file.
  */
@@ -34,6 +38,20 @@ class CompilerPhaseTimings {
 	public static inline var OUTPUT_PREFIX = "REFLAXE_ELIXIR_TIMINGS ";
 
 	public var enabled(default, null):Bool;
+
+	/**
+	 * Phases that ran before the compiler object exists or before its request
+	 * starts in `ElixirCompiler.filterTypes`: the initialization macros, and the
+	 * callbacks that Haxe calls after typing. Not `@:persistent`, so Haxe clears
+	 * the list at the start of each compilation-server request.
+	 */
+	static var earlyPhases:Array<CompilerPhaseTiming> = [];
+
+	/** Start of `CompilerInit.Start` in this request, or zero. Not `@:persistent`. */
+	static var requestBeganMs:Float = 0.0;
+
+	static var environmentChecked = false;
+	static var environmentOn = false;
 
 	var totals:Map<String, Float> = new Map();
 	var counts:Map<String, Int> = new Map();
@@ -106,6 +124,72 @@ class CompilerPhaseTimings {
 			total_wall_ms: nowMs() - requestStartedMs,
 			phases: snapshot()
 		}));
+	}
+
+	/**
+	 * Returns a timestamp for an early phase when `REFLAXE_ELIXIR_TIMINGS` is on,
+	 * or zero. Use it where no compiler object exists yet, for example in an
+	 * initialization macro.
+	 */
+	public static function startEarly():Float {
+		return earlyEnabled() ? nowMs() : 0.0;
+	}
+
+	/** Records an early phase that started at `startedMs`; see `startEarly`. */
+	public static function finishEarly(name:String, startedMs:Float, count:Int = 1):Void {
+		if (!earlyEnabled())
+			return;
+		earlyPhases.push({name: name, durationMs: nowMs() - startedMs, count: count < 1 ? 1 : count});
+	}
+
+	/** Marks the start of `CompilerInit.Start`, the first macro of a request. */
+	public static function markRequestBegan():Void {
+		if (earlyEnabled() && requestBeganMs == 0.0)
+			requestBeganMs = nowMs();
+	}
+
+	/**
+	 * Adds the early phases of this request to this compiler's report, and the
+	 * time from `markRequestBegan` until now as `request_start_to_filter_types`.
+	 * That span holds the initialization macros, Haxe's typing, the after-typing
+	 * callbacks, and dead-code elimination. Call it after `reset`.
+	 */
+	public function addEarlyPhases():Void {
+		if (!enabled)
+			return;
+		for (phase in earlyPhases)
+			record(phase.name, phase.durationMs, phase.count);
+		earlyPhases = [];
+		if (requestBeganMs > 0.0)
+			record("request_start_to_filter_types", nowMs() - requestBeganMs);
+	}
+
+	/**
+	 * Registers `callback` with `Context.onAfterTyping` and records its time as
+	 * the early phase `after_typing:<name>`. Haxe calls after-typing callbacks
+	 * before the compiler's request starts, so their cost is otherwise not in
+	 * the report. With timings off, this only registers the callback.
+	 */
+	public static function onAfterTyping(name:String, callback:Array<haxe.macro.Type.ModuleType>->Void):Void {
+		#if macro
+		if (!earlyEnabled()) {
+			haxe.macro.Context.onAfterTyping(callback);
+			return;
+		}
+		haxe.macro.Context.onAfterTyping(types -> {
+			final started = nowMs();
+			callback(types);
+			finishEarly("after_typing:" + name, started);
+		});
+		#end
+	}
+
+	static function earlyEnabled():Bool {
+		if (!environmentChecked) {
+			environmentOn = environmentEnabled();
+			environmentChecked = true;
+		}
+		return environmentOn;
 	}
 
 	static inline function nowMs():Float {
