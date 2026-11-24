@@ -69,10 +69,29 @@ abstract class GenericCompiler<
 	}
 
 	/**
+		Forgets the file name and folder that the last compiled type set with
+		`setOutputFileName` and `setOutputFileDir`.
+
+		`generateCompiledCollection` clears them only when a type produced
+		output. A type whose `compile*Impl` set a folder and then returned null
+		left that folder to the next type. Example: a class in package `haxe`
+		set the folder `haxe` and wrote nothing, and the next type, an enum
+		without a package, was written to `haxe/` instead of the top folder.
+		The folder then depended on which type the compiler built just before,
+		so a warm compilation-server build, which builds fewer types, wrote the
+		enum to a different path than a fresh build.
+	**/
+	function clearFilePlacementOverrides() {
+		fileNameOverride = null;
+		fileDirOverride = null;
+	}
+
+	/**
 		Compiles the provided class.
 		Override `compileClassImpl` to configure the behavior.
 	**/
 	public function compileClass(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>) {
+		clearFilePlacementOverrides();
 		final data = {
 			#if reflaxe_hooks
 			final hookResult = compileClassHook.call(null, this, classType, varFields, funcFields);
@@ -94,6 +113,7 @@ abstract class GenericCompiler<
 		Override `compileEnumImpl` to configure the behavior.
 	**/
 	public function compileEnum(enumType: EnumType, options: Array<EnumOptionData>) {
+		clearFilePlacementOverrides();
 		final data = {
 			#if reflaxe_hooks
 			final hookResult = compileEnumHook.call(null, this, enumType, options);
@@ -115,6 +135,7 @@ abstract class GenericCompiler<
 		Override `compileTypedefImpl` to configure the behavior.
 	**/
 	public function compileTypedef(typedefType: DefType) {
+		clearFilePlacementOverrides();
 		final data = {
 			#if reflaxe_hooks
 			final hookResult = compileTypedefHook.call(null, this, typedefType);
@@ -136,6 +157,7 @@ abstract class GenericCompiler<
 		Override `compileAbstractImpl` to configure the behavior.
 	**/
 	public function compileAbstract(abstractType: AbstractType) {
+		clearFilePlacementOverrides();
 		final data = {
 			#if reflaxe_hooks
 			final hookResult = compileAbstractHook.call(null, this, abstractType);
