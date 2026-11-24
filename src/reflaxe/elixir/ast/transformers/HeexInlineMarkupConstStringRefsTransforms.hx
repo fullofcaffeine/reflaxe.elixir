@@ -9,6 +9,7 @@ import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.macros.RepoDiscovery;
+import reflaxe.elixir.TemplateFactReads;
 #end
 
 /**
@@ -221,6 +222,9 @@ class HeexInlineMarkupConstStringRefsTransforms {
 
 	#if macro
 	static function getConstRefToValueMap():Null<Map<String, String>> {
+		// The map holds the values of the hook and event registries.
+		TemplateFactReads.note(TemplateFactReads.HOOK_NAMES);
+		TemplateFactReads.note(TemplateFactReads.EVENT_NAMES);
 		if (constRefToValueCache != null)
 			return constRefToValueCache;
 		constRefToValueCache = buildConstRefToValueMap();

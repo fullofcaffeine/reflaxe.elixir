@@ -350,8 +350,10 @@ abstract class BaseCompiler {
 
 		WHAT changes with the result
 		- true: an edit of an enum, typedef or abstract in this type's source
-		  file builds every type again, and so does adding or removing this
-		  type. This is the safe default for a compiler that does not say.
+		  file builds the types that Haxe typed again and the types that
+		  `typesToBuildForChangedSources` names; with the default answer of
+		  that function, every type. Adding or removing this type builds every
+		  type again. This is the safe default for a compiler that does not say.
 		- false: such an edit builds only the types that Haxe typed again: the
 		  types of the edited file and the types that depend on it. Adding or
 		  removing a typedef or an abstract does the same. Return false only
@@ -368,6 +370,34 @@ abstract class BaseCompiler {
 	**/
 	public function isReadWithoutDependency(moduleType: ModuleType, typeKey: String): Bool {
 		return true;
+	}
+
+	/**
+		Returns the types that a warm request must build in addition to the
+		types that Haxe typed again, after an edit outside the classes of a
+		file that `isReadWithoutDependency` names. Returns null to build every
+		type again, which is the default and the rule before this function
+		existed.
+
+		WHY
+		- Such a file holds a type that the target reads while it builds
+		  another type that does not refer to it. Haxe does not type that
+		  other type again, so Reflaxe cannot tell from Haxe whether its
+		  output changed. Building every type is safe, but slow: in
+		  Reflaxe.Elixir's todo-app an edit of one typedef in a shared types
+		  file built 141 classes, although Haxe typed only 6 again.
+		- A target that records which of these types each build read can
+		  answer with the types that read a changed one.
+
+		`changedTypeKeys` holds the `ReflectCompiler.typeKey` of each type
+		declared in a changed file; Reflaxe builds them again in any case.
+		`liveTypeKeys` holds the key of every type of this request. A type
+		that the result names is built again; the result must name each type
+		whose output can change, and each type that the target knows nothing
+		about.
+	**/
+	public function typesToBuildForChangedSources(changedTypeKeys: Array<String>, liveTypeKeys: Array<String>): Null<Map<String, Bool>> {
+		return null;
 	}
 
 	/**

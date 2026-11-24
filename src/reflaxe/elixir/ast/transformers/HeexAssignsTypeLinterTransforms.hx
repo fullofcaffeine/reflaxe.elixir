@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.NameUtils;
+import reflaxe.elixir.TemplateFactReads;
 import phoenix.types.HXXComponentRegistry;
 
 using StringTools;
@@ -165,6 +166,7 @@ class HeexAssignsTypeLinterTransforms {
 	 * This is macro-only to avoid bloating runtime output.
 	 */
 	public static function exportComponentIndexForTooling():Array<Dynamic> {
+		TemplateFactReads.note(TemplateFactReads.ALL_COMPONENTS);
 		buildComponentFunctionIndex();
 		if (componentFunctionIndex == null)
 			return [];
@@ -2185,6 +2187,7 @@ class HeexAssignsTypeLinterTransforms {
 		#if macro
 		if (componentTag == null || componentTag.length == 0)
 			return "";
+		noteComponentRead(componentTag);
 
 		if (componentFunctionIndex == null) {
 			buildComponentFunctionIndex();
@@ -2347,6 +2350,8 @@ class HeexAssignsTypeLinterTransforms {
 	static function resolveComponentDefinition(componentTag:String):Null<ComponentDefinition> {
 		if (componentTag == null || componentTag.length == 0)
 			return null;
+		// Before the cache: a cached definition was computed from the index too.
+		noteComponentRead(componentTag);
 		var cacheKey = componentDefinitionCacheKey(componentTag);
 		if (componentDefinitionCache.exists(cacheKey))
 			return componentDefinitionCache.get(cacheKey);
@@ -2404,6 +2409,25 @@ class HeexAssignsTypeLinterTransforms {
 
 		componentDefinitionCache.set(cacheKey, resolved);
 		return resolved;
+	}
+
+	/**
+	 * Records the component index entry that a lookup of `componentTag` reads
+	 * (`TemplateFactReads`): `<.badge>` and `<CoreComponents.badge>` both read
+	 * the entry `badge`, so a warm request checks the template again when the
+	 * props of any component named `badge` change. Uses the same key as the
+	 * lookups in `resolveComponentDefinition` and
+	 * `explainComponentResolutionFailure`; a tag that is neither form reads no
+	 * entry.
+	 */
+	static function noteComponentRead(componentTag:String):Void {
+		if (componentTag.charAt(0) == ".") {
+			TemplateFactReads.note(TemplateFactReads.componentRead(componentTag.substr(1)));
+		} else if (isLikelyModuleComponentTag(componentTag)) {
+			var lastDot = componentTag.lastIndexOf(".");
+			if (lastDot > 0 && lastDot < componentTag.length - 1)
+				TemplateFactReads.note(TemplateFactReads.componentRead(NameUtils.toSnakeCase(componentTag.substr(lastDot + 1))));
+		}
 	}
 
 	static function componentDefinitionCacheKey(componentTag:String):String {
@@ -3326,6 +3350,7 @@ class HeexAssignsTypeLinterTransforms {
 
 	#if macro
 	static function getAllowedPhxHookNames():Null<Map<String, Bool>> {
+		TemplateFactReads.note(TemplateFactReads.HOOK_NAMES);
 		if (phxHookNameCache != null)
 			return phxHookNameCache;
 		phxHookNameCache = buildAllowedPhxHookNames();
@@ -3333,6 +3358,7 @@ class HeexAssignsTypeLinterTransforms {
 	}
 
 	static function getAllowedPhxEventNames():Null<Map<String, Bool>> {
+		TemplateFactReads.note(TemplateFactReads.EVENT_NAMES);
 		if (phxEventNameCache != null)
 			return phxEventNameCache;
 		phxEventNameCache = buildAllowedPhxEventNames();
@@ -3534,6 +3560,7 @@ class HeexAssignsTypeLinterTransforms {
 	}
 
 	static function getCustomHtmlTagRegistry():Map<String, Array<String>> {
+		TemplateFactReads.note(TemplateFactReads.HTML_TAGS);
 		if (customHtmlTagRegistryCache != null)
 			return customHtmlTagRegistryCache;
 		#if macro
@@ -3555,6 +3582,7 @@ class HeexAssignsTypeLinterTransforms {
 	}
 
 	static function getCustomHtmlTagKindRegistry():Map<String, Map<String, String>> {
+		TemplateFactReads.note(TemplateFactReads.HTML_TAGS);
 		if (customHtmlTagKindRegistryCache != null)
 			return customHtmlTagKindRegistryCache;
 		#if macro
@@ -3896,6 +3924,10 @@ class HeexAssignsTypeLinterTransforms {
 	}
 
 	static function getAllowedHtmlAttributesForTag(tag:String):Map<String, Bool> {
+		// Before the cache: the entry of a custom tag holds the attributes of an
+		// `@:hxxHtmlTags` registry.
+		if (HXXComponentRegistry.getElementType(tag) == null)
+			TemplateFactReads.note(TemplateFactReads.HTML_TAGS);
 		var key = tag.toLowerCase();
 		if (allowedHtmlAttributeCache.exists(key))
 			return allowedHtmlAttributeCache.get(key);

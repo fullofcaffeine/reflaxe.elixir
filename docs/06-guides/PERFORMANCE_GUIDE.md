@@ -106,6 +106,13 @@ The B variant adds one comment line: runtime behavior stays the same, while the 
 positions genuinely change. The harness performs one unreported warm-up by default, then reports
 p50/p95 plus min/max/mean for measured samples.
 
+With `--use-haxe-server`, this edit measures the shared-types path of a warm request. `TodoTypes.hx`
+holds an enum that the props of the layout components reach, so its text is a template fact. Such an
+edit used to build all 141 classes; it now builds the 6 classes that Haxe types again, plus each
+template whose recorded checks read a changed fact (none for this comment). See
+[An edit in a shared types file](WATCHER_WORKFLOW.md#an-edit-outside-a-class). Compare runs from
+before and after that change with care: the benchmark's B variant is the same, but the work is not.
+
 Useful local options:
 
 ```bash

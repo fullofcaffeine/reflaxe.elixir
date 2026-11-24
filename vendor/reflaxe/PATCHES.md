@@ -576,7 +576,8 @@ Status: local patch, not upstreamed.
 Files:
 
 - `src/reflaxe/ReflectCompiler.hx`
-- `src/reflaxe/BaseCompiler.hx` (`isReadWithoutDependency`)
+- `src/reflaxe/BaseCompiler.hx` (`isReadWithoutDependency`,
+  `typesToBuildForChangedSources`)
 
 Why it exists:
 
@@ -694,6 +695,27 @@ Local fix:
   adding or removing a typedef builds only the types that Haxe typed again.
   Classes and enums always count, so a removed one cannot leave its file. A
   target that writes a file for a typedef must keep the default answer.
+- A change of a compared file no longer builds every type when the target
+  can say which types read it. `applyBuildCacheCheckFilter` finds the changed
+  files, maps each one to the `typeKey` of each live type that it declares,
+  and asks `BaseCompiler.typesToBuildForChangedSources(changedTypeKeys,
+  liveTypeKeys)`. It builds the types of the changed files, the types that
+  Haxe typed again, and the types that the target names. The default answer
+  is null, which builds every type, as before. A changed file that declares
+  no live type also builds every type.
+
+  Reflaxe.Elixir answers with `TemplateFactReads`: each build records the
+  template facts that its template checks read (the hook, event and HTML-tag
+  registries, and each component that a template looks up by name), and each
+  fact has a fingerprint of its declaration. The answer names each type whose
+  recorded reads see a fact with a new fingerprint, and each type without a
+  record.
+
+  Measured on the todo-app (`TodoTypes.hx` holds an enum that the props of the
+  layout components reach): a comment after the class, a field in a typedef
+  that no template reads, and an optional field in `Todo` each built all 141
+  classes in 11.3 to 11.7 s. Each now builds the 6 classes that Haxe typed
+  again, in 3.7 to 3.8 s (two interleaved rounds, median of 4, load 15 to 21).
 
 Current decision:
 
@@ -727,13 +749,19 @@ the abstract edit with non-ASCII text in front of the class. The
 disagree so that a byte cut would cover the registry; the warm build must
 reject the renamed hook.
 
-Not done (`haxe.elixir.codex-c0o.4`): in a compared file (a template
-registry, a component file, or a file that component props reach), an edit to
-an enum, typedef or abstract, or a comment between declarations, still
-regenerates every module. A class edit in a module that many modules import
-still builds each module that Haxe typed again. An edit inside a registry or
-component class builds only what Haxe typed again; this is older than the
-template list and not changed by it.
+The `shared-type` case keeps a component's props typedef and an enum that the
+props reach beside typedefs that only Haxe code reads, as the todo-app's
+`TodoTypes.hx` does. An unread typedef field, a field that one class reads
+through Haxe, an inline function body, and a comment must not build the
+template that looks up the component; a new prop, a new enum constructor, and
+metadata on the enum must build it; a prop type change must make the warm build
+reject the unchanged template. Each warm output must equal a fresh build.
+
+Not done (`haxe.elixir.codex-c0o.4`): a class that Haxe typed again is still
+built again, also when it does not read the changed declaration. A class edit
+in a module that many modules import still builds each module that Haxe typed
+again. An edit inside a registry or component class builds only what Haxe
+typed again; this is older than the template list and not changed by it.
 
 Validation before removal:
 
@@ -741,6 +769,52 @@ Validation before removal:
 - `npm run test:reflaxe-server-cache`
 - `npm run test:haxelib-package`
 - `npm run test:quick`
+
+### 10. `GenericCompiler.hx`: Each Type Starts Without a File Placement Override
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/GenericCompiler.hx`
+
+Why it exists:
+
+`setOutputFileName` and `setOutputFileDir` set the file of the type that is
+being compiled. `generateCompiledCollection` cleared them, but only when the
+type produced output. A type whose `compile*Impl` set a folder and then
+returned null passed that folder to the next type that did not set one.
+
+Observed failure shape:
+
+- In the server-cache test, a class in package `haxe` set the folder `haxe`
+  and produced nothing. The next type was an enum without a package, and a
+  fresh build wrote it to `haxe/cache_shared_tone.ex` instead of
+  `cache_shared_tone.ex`.
+- A warm compilation-server build builds fewer types, so another type came
+  before the enum, and the warm build wrote `cache_shared_tone.ex`. The warm
+  output differed from the fresh output although no source differed.
+
+Local fix:
+
+- `compileClass`, `compileEnum`, `compileTypedef` and `compileAbstract` clear
+  both overrides before they call the target's `compile*Impl`
+  (`clearFilePlacementOverrides`). Each type's file now depends only on that
+  type.
+- A fresh todo-app build writes the same 124 files with the same bytes before
+  and after this patch.
+
+Current decision:
+
+Keep. The file of a type must not depend on build order.
+
+Upstream action:
+
+Good upstream candidate. Do not open a PR without explicit user authorization.
+
+Validation before removal:
+
+- `npm run test:reflaxe-server-cache` (`shared-type` case)
 
 ## Local Non-Framework Metadata
 
