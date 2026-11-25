@@ -173,7 +173,12 @@ new walk:
 | Measurement for one `TodoLive` pass pipeline | Old walk | New walk |
 | --- | ---: | ---: |
 | Interpreter allocation (minor heap words, exact) | 816 M | 767 M |
-| CPU time, median of 6 runs | 2.78 s | 2.55 s |
+| CPU time, median of 6 runs (indicative: measured on a busy machine) | 2.78 s | 2.55 s |
+
+The allocation count is exact and repeats run to run. The CPU time was measured at a load of 36,
+so treat it as indicative. An independent check measured one walk of a 9,771-node tree at 605
+minor heap words per node before and 314 after, and a whole fresh todo-app compile at 5,409 M
+words before and 5,274 M after.
 
 The fresh todo-app output tree is byte-identical before and after (125 files), and a warm build after
 edits equals a fresh build. The pipeline call made 3,433 walks for this one module.
