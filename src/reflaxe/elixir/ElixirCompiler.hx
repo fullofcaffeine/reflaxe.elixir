@@ -608,8 +608,22 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * Example: an edit of an unread typedef in the todo-app's `TodoTypes.hx`
 	 * changes no template fact, so no template is built again; a new field in
 	 * the props of `<.badge>` builds each template that looks up `badge`.
+	 *
+	 * Returns every live type when the output folder has no
+	 * `_GeneratedFiles.json`, so that the request builds every type, as a fresh
+	 * build. Example: `mix clean` removes each owned file and the manifest while
+	 * the compile server runs. A request without an edit would build no type,
+	 * and the output transaction would keep "the files of the types that it did
+	 * not build" from a manifest that is gone: it reported "No files updated."
+	 * and wrote a manifest with no files. The check is one file test for each
+	 * warm request.
 	 */
 	public override function typesToBuildForChangedSources(changedTypeKeys:Array<String>, liveTypeKeys:Array<String>):Null<Map<String, Bool>> {
+		var outputDirectory = resolveOutputDirectory();
+		if (outputDirectory != null && !GeneratedOutputOwnership.hasManifest(outputDirectory)) {
+			phaseTimings.record("cache_filter_missing_output_manifest", 0.0);
+			return [for (key in liveTypeKeys) key => true];
+		}
 		var started = phaseTimings.start();
 		var readers = 0;
 		var builds = TemplateFactReads.buildsForChangedFacts(liveTypeKeys, count -> readers = count);

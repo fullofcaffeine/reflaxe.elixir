@@ -1210,6 +1210,127 @@ run_missing_output_variant() {
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "missing-output-removed"
 }
 
+# Runs one warm request without an edit that must refuse with `message` and
+# leave the output folder exactly as it was.
+expect_warm_refusal() {
+	local label="$1"
+	local message="$2"
+	local log="$TMP_ROOT/$label.log"
+	local before_digest after_digest
+
+	before_digest="$(output_tree_digest "$SERVER_OUTPUT")"
+	if compile_server "$SERVER_OUTPUT" >"$log" 2>&1; then
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build reported success" >&2
+		sed -n '1,40p' "$log" >&2
+		return 1
+	fi
+	grep -Fq "$message" "$log" || {
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$log" >&2
+		return 1
+	}
+	after_digest="$(output_tree_digest "$SERVER_OUTPUT")"
+	if [[ "$before_digest" != "$after_digest" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build changed the output folder although it refused" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_OWNERSHIP:$label-refused:PASS"
+}
+
+# Somebody deletes generated output while the compile server runs, for example
+# with `mix clean`, which removes each owned file and `_GeneratedFiles.json`.
+# The next warm request has no edit, so the cache filter builds no type. The
+# compiler once kept "the owned files of the types that it did not build", read
+# that list from the missing manifest, found none, printed "No files updated.",
+# and wrote a manifest with 0 files, where a fresh build writes every module.
+# Now a warm request without a manifest builds every type, as a fresh build.
+#
+# `deletion` names what is deleted: `folder` (the whole output folder),
+# `files-and-manifest` (each owned file and the manifest, the shape that
+# `mix clean` leaves), `manifest` (only the manifest), or `one-file`.
+run_deleted_output_root_variant() {
+	local deletion="$1"
+	local label="deleted-output-root-$deletion"
+	local log="$TMP_ROOT/$label.log"
+	local manifest="$SERVER_OUTPUT/_GeneratedFiles.json"
+	local manifest_copy="$TMP_ROOT/$label-manifest.json"
+	local main_copy="$TMP_ROOT/$label-main.ex"
+	local fresh_copy="$TMP_ROOT/$label-fresh"
+	local fresh_log="$TMP_ROOT/$label-fresh.log"
+
+	# Two requests, so that the next one is warm and remembers this manifest.
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$label-baseline"
+
+	case "$deletion" in
+		folder)
+			find "$SERVER_OUTPUT" -depth -delete
+			compile_server "$SERVER_OUTPUT" >"$log"
+			;;
+		files-and-manifest)
+			python3 - "$SERVER_OUTPUT" <<'PY2'
+import json
+import os
+import sys
+
+root = sys.argv[1]
+manifest = os.path.join(root, "_GeneratedFiles.json")
+for relative in json.load(open(manifest, encoding="utf-8"))["filesGenerated"]:
+    os.remove(os.path.join(root, relative))
+os.remove(manifest)
+PY2
+			compile_server "$SERVER_OUTPUT" >"$log"
+			;;
+		manifest)
+			# The generated files stay, but no record says that the compiler
+			# owns them. A fresh build refuses to overwrite them; the warm build
+			# must refuse the same way and write no manifest.
+			command cp "$manifest" "$manifest_copy"
+			rm "$manifest"
+			expect_warm_refusal "$label" "Refusing to overwrite unowned file"
+			if [[ -e "$manifest" ]]; then
+				echo "SERVER_CACHE_OWNERSHIP:$label refused build wrote a manifest" >&2
+				return 1
+			fi
+			command cp -R "$SERVER_OUTPUT" "$fresh_copy"
+			if compile_direct "$fresh_copy" >"$fresh_log" 2>&1; then
+				echo "SERVER_CACHE_OWNERSHIP:$label fresh build accepted unowned files" >&2
+				return 1
+			fi
+			grep -Fq "Refusing to overwrite unowned file" "$fresh_log" || {
+				echo "SERVER_CACHE_OWNERSHIP:$label fresh build failed for another reason" >&2
+				sed -n '1,160p' "$fresh_log" >&2
+				return 1
+			}
+			command cp "$manifest_copy" "$manifest"
+			compile_server "$SERVER_OUTPUT" >"$log"
+			;;
+		one-file)
+			# A file of a type that a request without an edit does not build. The
+			# request has no content for the file, so it refuses and names the
+			# fix, as in `run_missing_output_variant`.
+			command cp "$SERVER_OUTPUT/main.ex" "$main_copy"
+			rm "$SERVER_OUTPUT/main.ex"
+			expect_warm_refusal "$label" "Cached rebuild cannot preserve missing owned output"
+			command cp "$main_copy" "$SERVER_OUTPUT/main.ex"
+			compile_server "$SERVER_OUTPUT" >"$log"
+			;;
+		*)
+			echo "SERVER_CACHE_OWNERSHIP:unknown deletion $deletion" >&2
+			return 1
+			;;
+	esac
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$label"
+	if [[ "$deletion" == "folder" || "$deletion" == "files-and-manifest" ]] \
+		&& [[ "$(phase_count "$log" cache_filter_missing_output_manifest)" != "1" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build did not see the missing manifest" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_OWNERSHIP:$label:PASS"
+}
+
 # Reads the phase report of one warm request and prints how many class modules
 # that request built. The server prints the report because it runs with
 # REFLAXE_ELIXIR_TIMINGS=1.
@@ -2576,6 +2697,10 @@ run_failed_request_registry_variant
 run_native_class_variant
 run_tampered_output_variant
 run_missing_output_variant
+run_deleted_output_root_variant folder
+run_deleted_output_root_variant files-and-manifest
+run_deleted_output_root_variant manifest
+run_deleted_output_root_variant one-file
 run_mixed_file_variant
 run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant
