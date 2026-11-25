@@ -210,6 +210,9 @@ class CompilerInit {
 		// Type the native-map helper before DCE. Its @:ifFeature declarations own
 		// retention, so unused inline map methods do not force runtime output.
 		Context.getType("reflaxe.elixir.IMap");
+		// Load the runtime helpers that generated code may call before typing
+		// ends, never during generation (see TypingPhaseTypes).
+		TypingPhaseTypes.registerRuntimeSupportLoad();
 		ReflectCompiler.AddCompiler(new ElixirCompiler(), {
 			fileOutputExtension: outputExtension,
 			outputDirDefineName: "elixir_output",
