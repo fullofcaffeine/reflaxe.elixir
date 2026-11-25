@@ -231,7 +231,7 @@ successfully contributes a compatibility pass.
 | Output quality | `npm run test:handwritten-output`, `test:generated-formatting` | Representative generated Elixir stays formatted and within reviewed structural budgets | Semantic correctness alone |
 | Examples | `test:examples`, `test:examples-output`, `test:examples-elixir`, `test:examples-runtime` | Maintained examples compile, keep reviewed output, pass strict Elixir checks, and run where declared | Unlisted examples or unsupported capabilities |
 | Framework/application | `test:mix-fast`, todo-app Haxe ExUnit tests, bounded QA sentinel and Playwright specs | OTP/Phoenix/Ecto callbacks and selected browser journeys work end to end | General portable-Haxe conformance |
-| Server/watch lifecycle | `test:haxe-server-*`, `test:reflaxe-server-cache`, dev-watcher sentinel flow | Process ownership, cleanup, invalidation, and watched application behavior | Clean fresh-process/package behavior |
+| Server/watch lifecycle | `test:haxe-server-*`, `test:template-fact-reads`, `test:reflaxe-server-cache`, dev-watcher sentinel flow | Process ownership, cleanup, invalidation, and watched application behavior | Clean fresh-process/package behavior |
 | Package/consumer | `test:haxelib-package`, scheduled README release smoke | An isolated consumer can install the built/released artifact and generate equivalent output | Every release matrix combination |
 | Security/release/performance | dependency/secret scans, release policy tests, `ci:budgets`, dedicated perf workflows | Those named policies and bounded measurements hold | Language or framework correctness not exercised there |
 

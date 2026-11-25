@@ -1593,6 +1593,275 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "component-props-removed"
 }
 
+# Fails unless the warm request in `log` built fewer class modules than a full
+# build (`full_count`) and added exactly `expected` template readers: classes
+# that Haxe did not type again, built only because a template check in them
+# reads a changed template fact.
+expect_template_readers() {
+	local log="$1"
+	local label="$2"
+	local full_count="$3"
+	local expected="$4"
+	local built readers
+	built="$(built_class_count "$log")"
+	readers="$(phase_count "$log" cache_filter_template_fact_readers)"
+	if ((built >= full_count)); then
+		echo "SERVER_CACHE_REUSE:$label built $built class modules, the same as a full build ($full_count)" >&2
+		return 1
+	fi
+	if ((readers != expected)); then
+		echo "SERVER_CACHE_REUSE:$label built $readers template readers again, expected $expected" >&2
+		return 1
+	fi
+	echo "SERVER_CACHE_REUSE:$label:PASS built=$built readers=$readers full=$full_count"
+}
+
+# A shared types file, like the todo-app's `TodoTypes.hx`: typedefs and an
+# enum that classes read through Haxe references, beside the props of a
+# component that a template reads by tag name only. Before, any edit outside
+# the class of such a file built every module again. Now a warm request builds
+# the types that Haxe typed again, and a class that Haxe did not type again
+# only when one of its template checks read a template fact that changed. Each
+# warm output must equal a fresh build.
+run_shared_type_variant() {
+	local variants="$FIXTURE_DIR/variants/shared-type"
+	local shared="$PROJECT_DIR/src/CacheShared.hx"
+	local log="$TMP_ROOT/shared-type.log"
+	local direct_failure_log="$TMP_ROOT/direct-shared-type-prop-kind.log"
+	local server_failure_log="$TMP_ROOT/server-shared-type-prop-kind.log"
+	local full_count
+
+	cp "$variants/MainShared.hx" "$PROJECT_DIR/src/Main.hx"
+	local name
+	for name in CacheShared CacheSharedComponents CacheSharedPage CacheSharedQuiet CacheSharedRowUser CacheSharedInline CacheSharedInlinePage CacheSharedPanelBase; do
+		cp "$variants/$name.hx" "$PROJECT_DIR/src/$name.hx"
+	done
+	# Old file times: every edit below is an ordinary save of a known file
+	# (see the component-props case).
+	python3 - "$PROJECT_DIR/src" <<'PY'
+import os
+import sys
+import time
+
+stamp = time.time() - 30
+for name in os.listdir(sys.argv[1]):
+    os.utime(os.path.join(sys.argv[1], name), (stamp, stamp))
+PY
+	compile_server "$SERVER_OUTPUT" >"$log"
+	full_count="$(built_class_count "$log")"
+	compile_direct "$TMP_ROOT/direct-shared-type-before"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-before" "$SERVER_OUTPUT" "shared-type-before"
+	compile_server "$SERVER_OUTPUT"
+
+	# 1. A field of a typedef that no class reads.
+	edit_with_new_file_time "$shared" "	var note:String;" "	var note:String;
+	var extra:Int;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-unread-field"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-unread-field" "$SERVER_OUTPUT" "shared-type-unread-field"
+	expect_template_readers "$log" "shared-type-unread-field" "$full_count" 0
+
+	# 2. A field that one class reads through a Haxe reference changes its type.
+	edit_with_new_file_time "$shared" "	var id:Int;" "	var id:Float;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-read-field"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-read-field" "$SERVER_OUTPUT" "shared-type-read-field"
+	expect_template_readers "$log" "shared-type-read-field" "$full_count" 0
+
+	# 3. The component props get a field. Only the template that uses the
+	# component reads the props; the quiet template does not.
+	edit_with_new_file_time "$shared" "	@:optional var tone:CacheSharedTone;" "	@:optional var tone:CacheSharedTone;
+	@:optional var size:String;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-prop-added"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-prop-added" "$SERVER_OUTPUT" "shared-type-prop-added"
+	expect_template_readers "$log" "shared-type-prop-added" "$full_count" 1
+
+	# 4. A prop changes its type. A fresh build rejects the unchanged template,
+	# so the warm build must reject it too.
+	edit_with_new_file_time "$shared" "	var label:String;
+	@:optional" "	var label:Int;
+	@:optional"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-shared-type-prop-kind" \
+		>"$direct_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-prop-kind direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq '"label" expects int but got string' "$direct_failure_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-prop-kind direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_failure_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_failure_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-prop-kind warm build accepted a template against stale component props" >&2
+		return 1
+	fi
+	grep -Fq '"label" expects int but got string' "$server_failure_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-prop-kind warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_failure_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:shared-type-prop-kind:PASS"
+	edit_with_new_file_time "$shared" "	var label:Int;
+	@:optional" "	var label:String;
+	@:optional"
+	compile_server "$SERVER_OUTPUT"
+	compile_direct "$TMP_ROOT/direct-shared-type-prop-kind-restored"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-prop-kind-restored" "$SERVER_OUTPUT" "shared-type-prop-kind-restored"
+
+	# 5. The enum that the props reach gets a constructor.
+	edit_with_new_file_time "$shared" "	Loud;" "	Loud;
+	Bright;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-enum-constructor"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-enum-constructor" "$SERVER_OUTPUT" "shared-type-enum-constructor"
+	grep -Fq 'def bright()' "$SERVER_OUTPUT/cache_shared_tone.ex" || {
+		echo "SERVER_CACHE_PARITY:shared-type-enum-constructor kept the stale enum" >&2
+		return 1
+	}
+	expect_template_readers "$log" "shared-type-enum-constructor" "$full_count" 1
+
+	# 6. The body of an inline function changes. This is class text, so it
+	# takes the class path; the class that inlines the call is built again.
+	edit_with_new_file_time "$shared" "return n * 2;" "return n * 3;"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-inline-body"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-inline-body" "$SERVER_OUTPUT" "shared-type-inline-body"
+	grep -Fq 'n * 3' "$SERVER_OUTPUT/cache_shared_row_user.ex" || {
+		echo "SERVER_CACHE_PARITY:shared-type-inline-body kept the stale inlined body" >&2
+		return 1
+	}
+	expect_template_readers "$log" "shared-type-inline-body" "$full_count" 0
+
+	# 7. Metadata on the enum that the props reach.
+	edit_with_new_file_time "$shared" "enum CacheSharedTone {" "@:elixirIdiomatic
+enum CacheSharedTone {"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-metadata"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-metadata" "$SERVER_OUTPUT" "shared-type-metadata"
+	expect_template_readers "$log" "shared-type-metadata" "$full_count" 1
+
+	# 8. Only a comment changes. The template facts are the same.
+	edit_with_new_file_time "$shared" "/** No class reads this typedef. **/" "/** No class reads this typedef, still. **/"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$TMP_ROOT/direct-shared-type-comment"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-comment" "$SERVER_OUTPUT" "shared-type-comment"
+	expect_template_readers "$log" "shared-type-comment" "$full_count" 0
+
+	# 9. Back to the first shared file in one save.
+	copy_with_new_file_time "$variants/CacheShared.hx" "$shared"
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-before" "$SERVER_OUTPUT" "shared-type-restored"
+	expect_template_readers "$log" "shared-type-restored" "$full_count" 1
+
+	# 10. A prop changes its kind inside the component class. This is class
+	# text, so no compared file text changes, but the component's fingerprint
+	# does: the warm build must check the page again and reject it, as a fresh
+	# build does. The next edit outside a class of the shared file must not
+	# lose that state (the comparison must not publish a fingerprint that it
+	# did not check): the warm build must still reject the page.
+	local inline_component="$PROJECT_DIR/src/CacheSharedInline.hx"
+	local direct_class_edit_log="$TMP_ROOT/direct-shared-type-class-edit-then-comment.log"
+	local server_class_edit_log="$TMP_ROOT/server-shared-type-class-edit-then-comment.log"
+	edit_with_new_file_time "$inline_component" "{title:String, ?count:Int}" "{title:Int, ?count:Int}"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$TMP_ROOT/server-shared-type-class-edit.log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit warm build accepted a template against props changed in a class edit" >&2
+		return 1
+	fi
+	grep -Fq '"title" expects int but got string' "$TMP_ROOT/server-shared-type-class-edit.log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$TMP_ROOT/server-shared-type-class-edit.log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:shared-type-class-edit:PASS"
+	edit_with_new_file_time "$shared" "/** No class reads this typedef. **/" "/** No class reads this typedef, again. **/"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-shared-type-class-edit-then-comment" \
+		>"$direct_class_edit_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit-then-comment direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq '"title" expects int but got string' "$direct_class_edit_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit-then-comment direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_class_edit_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_class_edit_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit-then-comment warm build kept a template check against stale component props after an edit of the shared file" >&2
+		return 1
+	fi
+	grep -Fq '"title" expects int but got string' "$server_class_edit_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-class-edit-then-comment warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_class_edit_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:shared-type-class-edit-then-comment:PASS"
+	edit_with_new_file_time "$inline_component" "{title:Int, ?count:Int}" "{title:String, ?count:Int}"
+	copy_with_new_file_time "$variants/CacheShared.hx" "$shared"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-before" "$SERVER_OUTPUT" "shared-type-class-edit-restored"
+
+	# 11. The base of an extended props typedef gets a required field, in a
+	# file that holds no template fact of its own. The page that uses
+	# `<.shared_panel>` does not set it, so a fresh build rejects the page.
+	# Haxe types CacheShared.hx again, and the fingerprint of the extended
+	# typedef holds the merged fields, so the check on every warm request
+	# already catches this change. Following the extended type into the
+	# base's file (the AExtend walk in TemplateFactSources) is a second layer.
+	local panel_base="$PROJECT_DIR/src/CacheSharedPanelBase.hx"
+	local direct_base_log="$TMP_ROOT/direct-shared-type-extended-base.log"
+	local server_base_log="$TMP_ROOT/server-shared-type-extended-base.log"
+	edit_with_new_file_time "$panel_base" "	var title:String;" "	var title:String;
+	var subtitle:String;"
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" compile.hxml -D "elixir_output=$TMP_ROOT/direct-shared-type-extended-base" \
+		>"$direct_base_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-extended-base direct build unexpectedly succeeded" >&2
+		return 1
+	fi
+	grep -Fq 'is missing required attribute "subtitle"' "$direct_base_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-extended-base direct build failed for the wrong reason" >&2
+		sed -n '1,160p' "$direct_base_log" >&2
+		return 1
+	}
+	if "$TIMEOUT" --secs 120 --cwd "$PROJECT_DIR" -- \
+		"$HAXE_BIN" --connect "$SERVER_PORT" compile.hxml -D "elixir_output=$SERVER_OUTPUT" \
+		>"$server_base_log" 2>&1
+	then
+		echo "SERVER_CACHE_PARITY:shared-type-extended-base warm build accepted a template against a stale extended base" >&2
+		return 1
+	fi
+	grep -Fq 'is missing required attribute "subtitle"' "$server_base_log" || {
+		echo "SERVER_CACHE_PARITY:shared-type-extended-base warm build failed for the wrong reason" >&2
+		sed -n '1,160p' "$server_base_log" >&2
+		return 1
+	}
+	echo "SERVER_CACHE_DIAGNOSTIC_PARITY:shared-type-extended-base:PASS"
+	copy_with_new_file_time "$variants/CacheSharedPanelBase.hx" "$panel_base"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$TMP_ROOT/direct-shared-type-before" "$SERVER_OUTPUT" "shared-type-extended-base-restored"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/CacheShared.hx" "$PROJECT_DIR/src/CacheSharedComponents.hx" "$PROJECT_DIR/src/CacheSharedPage.hx" \
+		"$PROJECT_DIR/src/CacheSharedQuiet.hx" "$PROJECT_DIR/src/CacheSharedRowUser.hx" \
+		"$PROJECT_DIR/src/CacheSharedInline.hx" "$PROJECT_DIR/src/CacheSharedInlinePage.hx" "$PROJECT_DIR/src/CacheSharedPanelBase.hx"
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "shared-type-removed"
+}
+
 run_router_contract_variant() {
 	local variants="$FIXTURE_DIR/variants/router-contract"
 	local direct_failure_log="$TMP_ROOT/direct-router-contract-renamed.log"
@@ -2312,6 +2581,7 @@ run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant
 run_decoy_registry_variant
 run_component_props_variant
+run_shared_type_variant
 run_router_contract_variant
 run_discovery_variant
 run_cross_project_variant

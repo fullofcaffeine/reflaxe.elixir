@@ -494,8 +494,7 @@ does not type the template's class again when they change:
 - `<.card title="Hello">` is checked against the props of the `@:component`
   function `card`, for example `card(assigns:Assigns<CardAssigns>)`.
 
-For these files, an edit of an enum, typedef, or abstract still builds every
-module once:
+Reflaxe compares the text of these files between requests:
 
 - a file with a type that has `@:phxHookNames`, `@:phxEventNames`, or
   `@:hxxHtmlTags`;
@@ -503,26 +502,93 @@ module once:
 - a file with an enum, typedef, or abstract that the type of a `@:component`
   function reaches, for example a `CardAssigns` typedef in a `Types.hx` file.
 
-A concrete example is an unreferenced `@:phxHookNames` abstract: renaming one
-registered hook must revalidate every HXX template that relies on that global
-registry. Rebuilding only the abstract could leave an unchanged template
-validated against the old hook list. Reflaxe detects the exact source-content
-change of such a file and regenerates the complete current target once.
+These types are the *template facts*. A concrete example is an unreferenced
+`@:phxHookNames` abstract: renaming one registered hook must revalidate every
+HXX template that relies on that global registry. Rebuilding only the abstract
+could leave an unchanged template validated against the old hook list.
+
+**An edit in a shared types file.** When the text of such a file changes
+outside its classes, a warm request builds:
+
+1. the types of the file and the types that Haxe types again, as for any edit;
+2. each other type whose last build read a template fact that changed.
+
+Each build records the template facts that its template checks read: the hook
+registries, the event registries, the custom HTML tags, or the components that
+it looks up by name, such as `card` for `<.card>`. A fact changed when its
+declaration differs from the last successful build: a field, a type, a
+constructor, a value, metadata, or documentation. Source positions do not count,
+because no template check reads them.
+
+For example, the todo-app's `src_shared/shared/TodoTypes.hx` holds `TodoSort`,
+which the props of the layout components reach (`LayoutAssigns<User,
+TodoLiveAssigns>`), so its text is compared. It also holds typedefs that only
+ordinary Haxe code reads, such as `ClientState`.
+
+| Edit in `TodoTypes.hx` | Before | Now |
+| --- | --- | --- |
+| A comment after the class | 141 classes, about 11.3 s | 6 classes, about 3.7 s |
+| A new field in `ClientState`, which no template reads | 141 classes, about 11.3 s | 6 classes, about 3.7 s |
+| A new optional field in `Todo` | 141 classes, about 11.3 s | 6 classes, about 3.7 s |
+
+The 6 classes are `TodoTypes` and the classes that Haxe types again because they
+import it (`TodoLive`, `SafeAssigns`, `Layouts`, the router functions, and
+`LiveReactAssets`). `TodoLive` takes most of the time. Measured on 2026-11-24
+on 12 cores with a one-minute load of 15 to 21, so the absolute values are
+high: two rounds that took turns between the old and the new code, median of
+4 warm requests per edit and round (old 11.3 to 11.7 s, new 3.7 to 3.8 s).
+
+A change of a component's props builds each template that looks up that
+component, also when Haxe does not type the template again. A change of a hook
+registry builds each template that checks a hook name. This also holds for an
+edit inside a class, which changes no compared file text: Reflaxe checks the
+facts on every warm request. For example, `card(assigns:Assigns<{title:String}>)`
+changed to `{title:Int}` in `CoreComponents.hx` builds each template that uses
+`<.card>`. Before this rule, such a class edit built only what Haxe typed again,
+and the template kept its old check until the next full build.
+
+Raw Phoenix does the same for a compile-time dependency: `mix compile`
+recompiles a module whose `use`, `import`, or `require` target changed, and
+leaves a module that only calls a function of it at run time.
+
+The record is kept only in the server's memory and changes only after a build
+writes its output, so a failed build does not change it. A fact counts as
+checked only in a request that compared it, which every warm request does. A
+type without a record counts as a reader of every fact. If a template check
+reads a fact outside the build of a type (a tool, for example), every record is
+dropped, and the next warm request builds every type, whether or not a fact
+changed. If such a read happens in every request, every request is a full
+build: safe, but slow.
+
+`typedef Props = Base & {...}` and `{> Base, ...}` count `Base` as a fact of the
+component too, so its file is compared although it holds no component.
+
+What is still outside this rule:
+
+- Std and framework types that a template check reads by name, such as
+  `phoenix.Phoenix.Form` and `phoenix.Phoenix.FormField` for a `:let` binding of
+  a form, are not facts. They change only with the compiler's library; restart
+  the watcher after such a change.
+- An importer that Haxe types again is built again, also when it does not read
+  the changed declaration. In the todo-app, `TodoLive` imports `TodoTypes`, so
+  each edit of `TodoTypes.hx` builds it. Comparing what each importer reads from
+  the changed type is tracked separately (`haxe.elixir.codex-c0o.4`).
 
 In a file of this list, only an edit outside the classes and module-level
-functions causes the full regeneration. Reflaxe compares the file text without
+functions takes this path. Reflaxe compares the file text without
 `class Name { ... }`, `interface Name { ... }`, and each module-level function or
 variable. An edit inside one of these takes the class-only path. For example,
 `CoreComponents.hx` holds `typedef ButtonAssigns = {...}` and the class with the
 component functions. A change in the body of `button` builds that module and the
-modules that Haxe typed again with it. A change in `ButtonAssigns`, or a comment
-between two typedefs, builds everything. Metadata and documentation in front of
-a class are outside the class text that Haxe reports, so an edit there also
-builds everything.
+modules that Haxe typed again with it. A change in `ButtonAssigns` also builds
+each template that looks up `button`. A comment between two typedefs changes no
+fact, so it builds only what Haxe types again. Metadata and documentation in
+front of a class are outside the class text that Haxe reports; for a component
+class they are a fact of each of its components.
 
 Reflaxe checks each class position against the file before it leaves the class
-out. If a check fails, the whole file is compared and every edit in it builds
-everything, as for a file without this rule. One case is easy to meet: a class or
+out. If a check fails, the whole file is compared, and every edit in it, also an
+edit inside a class, takes the path of an edit outside the classes. One case is easy to meet: a class or
 module-level function whose text contains something that looks like the start of
 a type declaration, for example a comment with the words `enum Status` or
 `typedef Options`. Non-ASCII text, a byte order mark, and CRLF line ends do not
@@ -567,7 +633,9 @@ changes, not a second incremental cache.
 The live module set counts classes and enums, because each one can write an
 Elixir file. A typedef writes no file, so adding or removing one builds only the
 types that Haxe types again, as any other edit in its file; in a file of the
-template list above, it builds everything. An abstract usually brings a hidden
+template list above, it also builds the templates that read a changed fact. A
+typedef that a component's props reach is itself a template fact and counts in
+the live module set, so adding or removing it builds everything. An abstract usually brings a hidden
 class for its methods and values, so adding or removing it builds everything.
 
 ### Dead-code elimination can change a class that you did not edit

@@ -23,7 +23,7 @@
 		"phoenix/conn_state.ex",
 		"phoenix/channels/wire_payload.ex",
 		"my_app_web/profile_live.ex",
-		"haxe/resource_hook_event.ex",
+		"resource_hook_event.ex",
 		"haxe/iterators/array_key_value_iterator.ex",
 		"haxe/iterators/array_iterator.ex",
 		"haxe/functional/result.ex",
@@ -91,7 +91,7 @@
 			"sha256": "7c2a5a2cc281bb9a1c5ed1bb56e351bdb68b53a7d048fa70decc5bfdd527419e"
 		},
 		{
-			"path": "haxe/resource_hook_event.ex",
+			"path": "resource_hook_event.ex",
 			"sha256": "677e17c202d45f786df9728e5e862ec6566e44e50e2691f4368696f5d12fa03e"
 		},
 		{

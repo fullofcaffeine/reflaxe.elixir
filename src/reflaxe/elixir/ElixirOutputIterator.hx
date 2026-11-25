@@ -197,7 +197,13 @@ class ElixirOutputIterator {
 			// when passing to the transformer
 			// Pass the context to ensure metadata is available to transformation passes
 			final transformStarted = compiler.phaseTimings.start();
+			// Template checks among the passes record the template facts that
+			// this type reads (TemplateFactReads), so that a warm request builds
+			// the type again when one of those facts changes.
+			if (astData.baseType != null)
+				TemplateFactReads.beginBuild(reflaxe.ReflectCompiler.typeKey(astData.baseType));
 			final transformedAST = ElixirASTTransformer.transform(astData.data, context);
+			TemplateFactReads.endBuild();
 			compiler.phaseTimings.finish("pass_manager", transformStarted);
 
 			#if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end

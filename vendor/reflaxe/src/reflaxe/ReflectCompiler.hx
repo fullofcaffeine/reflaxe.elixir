@@ -42,12 +42,6 @@ using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.TypeHelper;
 
 /**
-	One part of a source file where Haxe says a class or a module-level field
-	is written. `min` and `max` count characters, as Haxe positions do.
-	`start` must match the text at `min`. See
-	`ReflectCompiler.nonClassSourceText`.
-**/
-/**
 	The facts of one type that `applyBuildCacheCheckFilter` reads, computed
 	once per request (see `describeTypes`).
 **/
@@ -58,6 +52,23 @@ private typedef DescribedType = {
 	final readWithoutDependency: Bool;
 }
 
+/**
+	The source files that `applyBuildCacheCheckFilter` compares between
+	requests (see `collectNonClassSourceTexts`): one entry per file, the path
+	and the text without classes, and the `typeKey` of each live type that
+	each file declares.
+**/
+private typedef NonClassSources = {
+	final texts: Array<String>;
+	final typeKeysByFile: Map<String, Array<String>>;
+}
+
+/**
+	One part of a source file where Haxe says a class or a module-level field
+	is written. `min` and `max` count characters, as Haxe positions do.
+	`start` must match the text at `min`. See
+	`ReflectCompiler.nonClassSourceText`.
+**/
 private typedef ClassSourceSpan = {
 	final min: Int;
 	final max: Int;
@@ -578,23 +589,39 @@ class ReflectCompiler {
 				if(countsForLiveModuleSet(type)) type.moduleType.getUniqueId()
 		];
 		currentModuleIds.sort(Reflect.compare);
-		currentNonClassSourceTexts = collectNonClassSourceTexts(types);
+		final nonClassSources = collectNonClassSourceTexts(types);
+		currentNonClassSourceTexts = nonClassSources.texts;
 		final liveModuleSetChanged = previousSuccessfulModuleIds != null
 			&& !previousSuccessfulModuleIds.equals(currentModuleIds);
-		final nonClassSourceChanged = previousSuccessfulNonClassSourceTexts != null
-			&& !previousSuccessfulNonClassSourceTexts.equals(currentNonClassSourceTexts);
+		final previousTexts = previousSuccessfulNonClassSourceTexts;
+		final nonClassSourceChanged = previousTexts != null
+			&& !previousTexts.equals(currentNonClassSourceTexts);
+		// The types that the target asks to build besides the ones that Haxe
+		// typed again, or null to build every type (see
+		// `typesToBuildForChangedSources`). Asked on every warm request: a fact
+		// that a target reads by name can also change in a class edit, which
+		// changes no compared text, and the target must compare each fact
+		// before it can publish the fact as checked.
+		final changedSourceBuilds: Null<Map<String, Bool>> = if(!isWarmRequest || liveModuleSetChanged) {
+			null;
+		} else if(!nonClassSourceChanged || previousTexts == null) {
+			final extra = compiler.typesToBuildForChangedSources([], [for(type in types) type.key]);
+			extra != null ? extra : new Map<String, Bool>();
+		} else {
+			typesToBuildForChangedSources(compiler, types, previousTexts, nonClassSources);
+		}
 
-		if(isWarmRequest && !liveModuleSetChanged && !nonClassSourceChanged) {
+		if(isWarmRequest && !liveModuleSetChanged && changedSourceBuilds != null) {
 			final result = [];
 			final keptKeys = new Map<String, Bool>();
 			for(type in types) {
 				final build = switch(type.moduleType) {
 					case TClassDecl(_.get() => c):
-						compiler.shouldRecompileClass(c) || wasTypedSinceLastPublication(c);
+						compiler.shouldRecompileClass(c) || wasTypedSinceLastPublication(c) || changedSourceBuilds.exists(type.key);
 					case TEnumDecl(_):
 						// Haxe types an enum again when its file or a module that it
 						// uses changed. An enum that Haxe reused has the same output.
-						wasTypedSinceLastPublication(type.data);
+						wasTypedSinceLastPublication(type.data) || changedSourceBuilds.exists(type.key);
 					case _:
 						true; // Typedefs and abstracts produce no module of their own; always pass them on.
 				}
@@ -620,6 +647,69 @@ class ReflectCompiler {
 		}
 		#end
 		return moduleTypes;
+	}
+
+	/**
+		Returns the types to build again because the text of a compared file
+		(`collectNonClassSourceTexts`) differs from the last publication: each
+		type that a changed file declares, and each type that the compiler
+		names (`BaseCompiler.typesToBuildForChangedSources`). Returns null to
+		build every type again: when the compiler cannot tell, or when a changed
+		file declares no live type.
+
+		Before, any such change built every type again. Example: in the
+		todo-app, `TodoTypes.hx` holds an enum that the props of a component
+		reach, so each edit of a typedef in it built all 141 classes. Haxe typed
+		6 of them again; Reflaxe.Elixir adds the templates whose recorded
+		reads see a changed component or registry, which is often none.
+
+		Why the types of a changed file are always built: Haxe types them again
+		after an ordinary save, so this costs nothing then. It also covers a
+		change that only this byte comparison sees.
+	**/
+	static function typesToBuildForChangedSources(compiler: BaseCompiler, types: Array<DescribedType>, previousTexts: Array<String>, current: NonClassSources): Null<Map<String, Bool>> {
+		final previousByFile = textsByFile(previousTexts);
+		final currentByFile = textsByFile(current.texts);
+		final changedFiles = [];
+		for(file => text in currentByFile) {
+			if(previousByFile.get(file) != text) {
+				changedFiles.push(file);
+			}
+		}
+		for(file in previousByFile.keys()) {
+			if(!currentByFile.exists(file)) {
+				changedFiles.push(file);
+			}
+		}
+		final changedKeys = [];
+		for(file in changedFiles) {
+			final keys = current.typeKeysByFile.get(file);
+			if(keys == null || keys.length == 0) {
+				return null;
+			}
+			for(key in keys) {
+				changedKeys.push(key);
+			}
+		}
+		final compilerBuilds = compiler.typesToBuildForChangedSources(changedKeys, [for(type in types) type.key]);
+		if(compilerBuilds == null) {
+			return null;
+		}
+		final builds = compilerBuilds.copy();
+		for(key in changedKeys) {
+			builds.set(key, true);
+		}
+		return builds;
+	}
+
+	/** Splits the entries of `collectNonClassSourceTexts` into path and text. **/
+	static function textsByFile(texts: Array<String>): Map<String, String> {
+		final result = new Map<String, String>();
+		for(entry in texts) {
+			final separator = entry.indexOf("\u0000");
+			result.set(separator < 0 ? entry : entry.substr(0, separator), entry);
+		}
+		return result;
 	}
 
 	/**
@@ -684,9 +774,13 @@ class ReflectCompiler {
 		141 classes of the todo-app (about 14 s) before this rule, and builds
 		the same 3 classes as an edit inside the class now.
 
-		When one of these texts changes, `applyBuildCacheCheckFilter` performs one
-		full target regeneration. Reading exact bytes avoids trusting timestamps;
-		duplicate declarations from the same source file are read only once.
+		When one of these texts changes, `applyBuildCacheCheckFilter` builds the
+		types of the changed file, the types that Haxe typed again, and the types
+		that the compiler names (`typesToBuildForChangedSources`), or every type
+		when the compiler cannot tell. Reading exact bytes avoids trusting
+		timestamps; duplicate declarations from the same source file are read
+		only once. The result also maps each compared file to the `typeKey` of
+		each live type that it declares.
 
 		Each entry holds the text itself, not a hash of it. Haxe compares two
 		strings with native code, but it runs SHA-256 in the macro interpreter,
@@ -702,7 +796,7 @@ class ReflectCompiler {
 		Reflaxe builds it again. `nonClassSourceText` explains what is cut and
 		what stays.
 	**/
-	static function collectNonClassSourceTexts(types:Array<DescribedType>):Array<String> {
+	static function collectNonClassSourceTexts(types:Array<DescribedType>):NonClassSources {
 		#if eval
 		final fullPaths = new Map<String, String>();
 		function fullPath(sourceFile:String):String {
@@ -719,11 +813,12 @@ class ReflectCompiler {
 		// the compiler can read one of its types without a dependency.
 		final nonClassFiles = new Map<String, Bool>();
 		final readFiles = new Map<String, Bool>();
-		final classTypes:Array<ClassType> = [];
+		final nonClassKeysByFile = new Map<String, Array<String>>();
+		final classTypes:Array<{type:DescribedType, classType:ClassType}> = [];
 		for(type in types) {
 			final isClass = switch(type.moduleType) {
 				case TClassDecl(_.get() => classType):
-					classTypes.push(classType);
+					classTypes.push({type: type, classType: classType});
 					true;
 				case _:
 					false;
@@ -739,21 +834,31 @@ class ReflectCompiler {
 			final resolved = fullPath(sourceFile);
 			if(!isClass) {
 				nonClassFiles.set(resolved, true);
+				var keys = nonClassKeysByFile.get(resolved);
+				if(keys == null) {
+					keys = [];
+					nonClassKeysByFile.set(resolved, keys);
+				}
+				keys.push(type.key);
 			}
 			if(readWithoutDependency) {
 				readFiles.set(resolved, true);
 			}
 		}
 		final sourceFiles = new Map<String, Bool>();
+		final typeKeysByFile = new Map<String, Array<String>>();
 		for(sourceFile in nonClassFiles.keys()) {
 			if(readFiles.exists(sourceFile)) {
 				sourceFiles.set(sourceFile, true);
+				final keys = nonClassKeysByFile.get(sourceFile);
+				typeKeysByFile.set(sourceFile, keys != null ? keys.copy() : []);
 			}
 		}
 
 		// Only a class that shares its file with a non-class declaration matters.
 		final classSpans = new Map<String, Array<ClassSourceSpan>>();
-		for(classType in classTypes) {
+		for(entry in classTypes) {
+			final classType = entry.classType;
 			final sourceFile = Context.getPosInfos(classType.pos).file;
 			if(sourceFile == null || sourceFile.length == 0) {
 				continue;
@@ -768,6 +873,10 @@ class ReflectCompiler {
 				classSpans.set(resolved, spans);
 			}
 			addClassSourceSpans(classType, sourceFile, spans);
+			final keys = typeKeysByFile.get(resolved);
+			if(keys != null) {
+				keys.push(entry.type.key);
+			}
 		}
 
 		final result = [];
@@ -776,9 +885,9 @@ class ReflectCompiler {
 			result.push(sourceFile + "\u0000" + text);
 		}
 		result.sort(Reflect.compare);
-		return result;
+		return { texts: result, typeKeysByFile: typeKeysByFile };
 		#else
-		return [];
+		return { texts: [], typeKeysByFile: new Map() };
 		#end
 	}
 

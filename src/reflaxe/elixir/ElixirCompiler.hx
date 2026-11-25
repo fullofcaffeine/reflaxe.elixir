@@ -508,7 +508,9 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			durationMs -> phaseTimings.record("private_method_exports_class_scan", durationMs));
 		phaseTimings.finish("private_method_exports", exportsStarted);
 		var factSourcesStarted = phaseTimings.start();
-		templateFactSources = TemplateFactSources.collect(result);
+		var facts = TemplateFactSources.collect(result);
+		templateFactSources = facts;
+		TemplateFactReads.beginRequest(facts);
 		phaseTimings.finish("template_fact_sources", factSourcesStarted);
 		// ReflectCompiler applies its define/server-cache filters and initialization
 		// callbacks after this method returns and before onCompileStart().
@@ -572,26 +574,50 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	/**
-	 * The `ReflectCompiler.typeKey` of each type of this request that a template
-	 * check reads without a Haxe dependency, or null before `filterTypes` ran.
-	 * See `TemplateFactSources`.
+	 * The types of this request that a template check reads without a Haxe
+	 * dependency, by `ReflectCompiler.typeKey`, or null before `filterTypes`
+	 * ran. See `TemplateFactSources`.
 	 */
-	var templateFactSources:Null<Map<String, Bool>> = null;
+	var templateFactSources:Null<Map<String, TemplateFactSources.TemplateFact>> = null;
 
 	/**
 	 * Returns true for a template registry, a component class, and the types that
 	 * the props of a component reach (`TemplateFactSources`). An edit of an enum,
-	 * typedef or abstract in their files builds every type again, because an
-	 * unchanged template can depend on them. For every other type, Reflaxe builds
-	 * only what Haxe typed again: an edit after the class in a LiveView file with
-	 * typedefs builds that file's types and their users, not every module. Every
-	 * typedef and abstract writes no Elixir file of its own, which this answer
-	 * requires (see `BaseCompiler.isReadWithoutDependency`). Returns true before
-	 * `filterTypes` ran, the safe answer.
+	 * typedef or abstract in their files also builds each type whose template
+	 * checks read a changed one (`typesToBuildForChangedSources`), because Haxe
+	 * does not type an unchanged template again. For every other type, Reflaxe
+	 * builds only what Haxe typed again: an edit after the class in a LiveView
+	 * file with typedefs builds that file's types and their users, not every
+	 * module. Every typedef and abstract writes no Elixir file of its own, which
+	 * this answer requires (see `BaseCompiler.isReadWithoutDependency`). Returns
+	 * true before `filterTypes` ran, the safe answer.
 	 */
 	public override function isReadWithoutDependency(moduleType:haxe.macro.Type.ModuleType, typeKey:String):Bool {
 		var sources = templateFactSources;
 		return sources == null || sources.exists(typeKey);
+	}
+
+	/**
+	 * Returns the types that a warm request must build again, besides the ones
+	 * that Haxe typed again: each type whose last published build read a
+	 * template fact that changed, and each type without such a record
+	 * (`TemplateFactReads`). Reflaxe asks on every warm request, also when no
+	 * compared file changed, because a class edit can change a fact: a prop
+	 * type written in a component function's signature.
+	 *
+	 * Example: an edit of an unread typedef in the todo-app's `TodoTypes.hx`
+	 * changes no template fact, so no template is built again; a new field in
+	 * the props of `<.badge>` builds each template that looks up `badge`.
+	 */
+	public override function typesToBuildForChangedSources(changedTypeKeys:Array<String>, liveTypeKeys:Array<String>):Null<Map<String, Bool>> {
+		var started = phaseTimings.start();
+		var readers = 0;
+		var builds = TemplateFactReads.buildsForChangedFacts(liveTypeKeys, count -> readers = count);
+		phaseTimings.finish("cache_filter_template_fact_check", started);
+		// Counts the types that a recorded read builds again; the server-cache test reads it.
+		if (readers > 0)
+			phaseTimings.record("cache_filter_template_fact_readers", 0, readers);
+		return builds;
 	}
 
 	public override function onCompileEnd():Void {
@@ -1358,8 +1384,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * @return ElixirAST representing the compiled module
 	 */
 	public function compileClassImpl(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<reflaxe.elixir.ast.ElixirAST> {
-		if (classType != null)
+		if (classType != null) {
 			recordClassBuild(classType, null);
+			TemplateFactReads.markBuilt(ReflectCompiler.typeKey(classType));
+		}
 		if (!phaseTimings.enabled)
 			return compileClassBody(classType, varFields, funcFields);
 		var started = phaseTimings.start();
@@ -1489,6 +1517,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	function compileEnumBody(enumType:EnumType, options:Array<EnumOptionData>):Null<reflaxe.elixir.ast.ElixirAST> {
 		if (enumType == null)
 			return null;
+		TemplateFactReads.markBuilt(ReflectCompiler.typeKey(enumType));
 
 		var targetAlias = reflaxe.elixir.PhoenixTargetNames.enumTargetAlias(enumType);
 		if (targetAlias != null) {
@@ -6776,6 +6805,7 @@ left_name == right_name and left_params == right_params';
 			keptPrivateMethodExports.commit();
 		if (keptClassBuilds != null)
 			keptClassBuilds.commit();
+		TemplateFactReads.commit();
 		ReferenceSemanticsDiagnostics.commitRequest();
 		// Last, so that the report covers the pruning and the commits above.
 		phaseTimings.report();
