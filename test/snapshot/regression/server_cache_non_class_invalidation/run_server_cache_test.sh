@@ -1247,7 +1247,8 @@ expect_warm_refusal() {
 #
 # `deletion` names what is deleted: `folder` (the whole output folder),
 # `files-and-manifest` (each owned file and the manifest, the shape that
-# `mix clean` leaves), `manifest` (only the manifest), or `one-file`.
+# `mix clean` leaves), `manifest` (only the manifest), `one-file`, or
+# `folder-and-edit` (the whole folder, and a source edit in the same request).
 run_deleted_output_root_variant() {
 	local deletion="$1"
 	local label="deleted-output-root-$deletion"
@@ -1290,6 +1291,10 @@ PY2
 			command cp "$manifest" "$manifest_copy"
 			rm "$manifest"
 			expect_warm_refusal "$label" "Refusing to overwrite unowned file"
+			grep -Fq "manifest missing" "$log" || {
+				echo "SERVER_CACHE_OWNERSHIP:$label warm refusal did not say that the manifest is missing" >&2
+				return 1
+			}
 			if [[ -e "$manifest" ]]; then
 				echo "SERVER_CACHE_OWNERSHIP:$label refused build wrote a manifest" >&2
 				return 1
@@ -1299,13 +1304,28 @@ PY2
 				echo "SERVER_CACHE_OWNERSHIP:$label fresh build accepted unowned files" >&2
 				return 1
 			fi
-			grep -Fq "Refusing to overwrite unowned file" "$fresh_log" || {
+			grep -Fq "Refusing to overwrite unowned file" "$fresh_log" && grep -Fq "manifest missing" "$fresh_log" || {
 				echo "SERVER_CACHE_OWNERSHIP:$label fresh build failed for another reason" >&2
 				sed -n '1,160p' "$fresh_log" >&2
 				return 1
 			}
 			command cp "$manifest_copy" "$manifest"
 			compile_server "$SERVER_OUTPUT" >"$log"
+			;;
+		folder-and-edit)
+			# The folder goes, and the same request also has an edit. The
+			# request must build every type, not only the edited one.
+			find "$SERVER_OUTPUT" -depth -delete
+			cp "$FIXTURE_DIR/variants/enum/CacheStatus.hx" "$PROJECT_DIR/src/CacheStatus.hx"
+			compile_server "$SERVER_OUTPUT" >"$log"
+			compile_direct "$fresh_copy" >/dev/null
+			compare_generated_output "$fresh_copy" "$SERVER_OUTPUT" "$label-edited"
+			grep -Fq "def archived()" "$SERVER_OUTPUT/cache_status.ex" || {
+				echo "SERVER_CACHE_OWNERSHIP:$label warm build did not write the edited enum" >&2
+				return 1
+			}
+			restore_baseline_sources
+			compile_server "$SERVER_OUTPUT" >/dev/null
 			;;
 		one-file)
 			# A file of a type that a request without an edit does not build. The
@@ -1323,11 +1343,92 @@ PY2
 			;;
 	esac
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$label"
-	if [[ "$deletion" == "folder" || "$deletion" == "files-and-manifest" ]] \
+	if [[ "$deletion" == "folder" || "$deletion" == "files-and-manifest" || "$deletion" == "folder-and-edit" ]] \
 		&& [[ "$(phase_count "$log" cache_filter_missing_output_manifest)" != "1" ]]; then
 		echo "SERVER_CACHE_OWNERSHIP:$label warm build did not see the missing manifest" >&2
 		return 1
 	fi
+	echo "SERVER_CACHE_OWNERSHIP:$label:PASS"
+}
+
+# Another process writes the output folder while the compile server runs, and
+# leaves a valid manifest that the server did not write. The next warm request
+# has no edit, so the cache filter builds no type, and the server once kept
+# every file that this other manifest listed: it printed "No files updated.",
+# exited 0, and the output stayed the other build's output. A warm request now
+# builds every type when the manifest bytes are not the bytes that this server
+# published last, so the result equals a fresh build of the server's own
+# configuration.
+#
+# `writer` names the other process: `direct-define` (a direct build with
+# `-D server_cache_feature`, so main.ex holds "enabled" where the server's
+# configuration gives "disabled"), or `empty` (each generated file removed,
+# and a valid manifest that lists no file).
+run_foreign_manifest_variant() {
+	local writer="$1"
+	local label="foreign-manifest-$writer"
+	local log="$TMP_ROOT/$label.log"
+	local fresh="$TMP_ROOT/$label-fresh"
+
+	# Two requests, so that the next one is warm and remembers this manifest.
+	cp "$FIXTURE_DIR/variants/configuration/MainConfiguration.hx" "$PROJECT_DIR/src/Main.hx"
+	write_project_hxml "$PROJECT_DIR"
+	compile_server "$SERVER_OUTPUT"
+	compile_server "$SERVER_OUTPUT"
+
+	case "$writer" in
+		direct-define)
+			compile_direct "$SERVER_OUTPUT" -D server_cache_feature >/dev/null
+			grep -Fq '"enabled"' "$SERVER_OUTPUT/main.ex" || {
+				echo "SERVER_CACHE_OWNERSHIP:$label direct build did not write the other configuration" >&2
+				return 1
+			}
+			;;
+		empty)
+			python3 - "$SERVER_OUTPUT" <<'PY2'
+import hashlib
+import json
+import os
+import sys
+
+root = sys.argv[1]
+manifest = os.path.join(root, "_GeneratedFiles.json")
+previous = json.load(open(manifest, encoding="utf-8"))
+for relative in previous["filesGenerated"]:
+    os.remove(os.path.join(root, relative))
+empty = {
+    "version": 2,
+    "protocol": "reflaxe-elixir/generated-output",
+    "id": previous["id"] + 1,
+    "filesGenerated": [],
+    "ownedFiles": [],
+    "generation": hashlib.sha256(b"").hexdigest(),
+}
+with open(manifest, "w", encoding="utf-8") as target:
+    json.dump(empty, target)
+PY2
+			;;
+		*)
+			echo "SERVER_CACHE_OWNERSHIP:unknown writer $writer" >&2
+			return 1
+			;;
+	esac
+
+	compile_server "$SERVER_OUTPUT" >"$log"
+	compile_direct "$fresh" >/dev/null
+	compare_generated_output "$fresh" "$SERVER_OUTPUT" "$label"
+	grep -Fq '"disabled"' "$SERVER_OUTPUT/main.ex" || {
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build kept the other build's main.ex" >&2
+		return 1
+	}
+	if [[ "$(phase_count "$log" cache_filter_foreign_output_manifest)" != "1" ]]; then
+		echo "SERVER_CACHE_OWNERSHIP:$label warm build did not see the foreign manifest" >&2
+		return 1
+	fi
+
+	restore_baseline_sources
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "$label-removed"
 	echo "SERVER_CACHE_OWNERSHIP:$label:PASS"
 }
 
@@ -2701,6 +2802,9 @@ run_deleted_output_root_variant folder
 run_deleted_output_root_variant files-and-manifest
 run_deleted_output_root_variant manifest
 run_deleted_output_root_variant one-file
+run_deleted_output_root_variant folder-and-edit
+run_foreign_manifest_variant direct-define
+run_foreign_manifest_variant empty
 run_mixed_file_variant
 run_mixed_file_registry_variant
 run_mixed_file_non_ascii_variant

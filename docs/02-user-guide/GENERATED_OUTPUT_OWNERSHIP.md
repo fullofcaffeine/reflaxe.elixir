@@ -83,8 +83,24 @@ runs (for example with `mix clean`), the next server build renders every module,
 does. A cached rebuild cannot run without the manifest, because only the manifest lists the files
 that it keeps. When the generated files are still there but the manifest is gone, nothing proves
 that the compiler owns them, so the build stops with "Refusing to overwrite unowned file", the same
-as a full build; restore the manifest or remove those files. Before this check, such a build
-reported "No files updated." and wrote a manifest that listed no files.
+as a full build, and the message says "manifest missing"; restore the manifest or remove those
+files. Before this check, such a build reported "No files updated." and wrote a manifest that listed
+no files.
+
+The same is true when another process writes the output folder while a compilation server runs.
+Example: the server builds with its HXML, and a direct `haxe build.hxml -D some_feature` then writes
+other files and its own manifest to the same folder. A cached rebuild trusts only the manifest that
+this server wrote last, because only that manifest lists the output of the modules that the server
+did not render again. So the next server build compares the manifest bytes with the bytes that it
+wrote last (one small file read), and when they differ it renders every module, as a full build
+does. Before this check, the server build reported "No files updated." and kept the other build's
+files. A hand edit of a generated file does not change the manifest, so it keeps the behavior
+described above.
+
+If the manifest disappears or changes while a cached rebuild runs (after the check above and before
+publication), the build stops and publishes nothing, with "Cached rebuild found no
+`_GeneratedFiles.json`" or "Cached rebuild found a `_GeneratedFiles.json` ... that this compile
+server did not write". Run the build again; it renders every module.
 
 On a safe cached rebuild, the compiler hashes newly rendered candidates in memory and compares them
 with the version 2 manifest. It reuses an old digest only after verifying that the live file still

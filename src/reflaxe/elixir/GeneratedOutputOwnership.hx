@@ -55,6 +55,14 @@ private typedef RememberedManifest = {
 	var path:String;
 	var bytes:Bytes;
 	var state:OwnershipState;
+
+	/**
+	 * True when this process wrote these bytes in its last publication to
+	 * `path`. False when it only read them: another process wrote them, or
+	 * changed the manifest after this process published it. See
+	 * `isLastPublishedManifest`.
+	 */
+	var published:Bool;
 }
 
 /** File bytes that this compiler process already hashed, and their SHA-256 digest. */
@@ -145,21 +153,64 @@ class GeneratedOutputOwnership {
 	@:persistent static var rememberedManifest:Null<RememberedManifest> = null;
 	// True when the last `readOwnership` reused the remembered manifest state.
 	static var lastManifestReused = false;
+	// True when the last `readOwnership` read the bytes of this process's last
+	// publication (see `isLastPublishedManifest`).
+	static var lastManifestPublished = false;
 
 	/**
 	 * Returns true when `outputDirectory` holds `_GeneratedFiles.json`. Returns
-	 * false when the manifest or the whole folder is missing.
+	 * false when the manifest or the whole folder is missing. A path that is
+	 * not a regular file counts as present.
 	 *
-	 * A cached rebuild needs the manifest: it keeps the owned files of the types
-	 * that it does not build, and only the manifest lists them. On a compile
-	 * server, `ElixirCompiler.typesToBuildForChangedSources` asks this before
-	 * the cache filter runs, and a request without a manifest builds every type.
-	 * A path that is not a regular file counts as present, so that
-	 * `readOwnership` reports it.
+	 * `ElixirCompiler.typesToBuildForChangedSources` asks this only to name why
+	 * a warm request builds every type (a missing manifest or a foreign one);
+	 * `isLastPublishedManifest` makes the decision.
 	 */
 	public static function hasManifest(outputDirectory:String):Bool {
 		#if sys
 		return FileSystem.exists(Path.join([outputDirectory, MANIFEST_FILENAME]));
+		#else
+		return false;
+		#end
+	}
+
+	/**
+	 * Returns true when `_GeneratedFiles.json` in `outputDirectory` has exactly
+	 * the bytes that this compiler process wrote in its last publication.
+	 * Returns false when the manifest or the folder is missing, when another
+	 * process wrote the manifest, and when this process has published nothing
+	 * to this folder yet.
+	 *
+	 * A cached rebuild keeps the owned files of the types that it does not
+	 * build, and trusts the manifest to describe them. That is true only for
+	 * the manifest that this process wrote: it lists the output of the types
+	 * that this server built, and this process knows which type wrote each
+	 * file. Example: a server builds main.ex with "disabled", and a direct
+	 * build with `-D server_cache_feature` then writes "enabled" and its own
+	 * manifest to the same folder. A warm request without an edit kept that
+	 * main.ex, reported "No files updated.", and differed from a fresh build.
+	 * On a compile server, `ElixirCompiler.typesToBuildForChangedSources` asks
+	 * this before the cache filter runs, and a request builds every type when
+	 * the answer is false. The cost is one read of the manifest for each warm
+	 * request.
+	 *
+	 * A hand edit of a generated file does not change the manifest, so it does
+	 * not change this answer; see `verifiedOwnedPaths` for that case.
+	 */
+	public static function isLastPublishedManifest(outputDirectory:String):Bool {
+		#if sys
+		var remembered = rememberedManifest;
+		if (remembered == null || !remembered.published)
+			return false;
+		if (!FileSystem.exists(outputDirectory) || !FileSystem.isDirectory(outputDirectory))
+			return false;
+		var manifestPath = Path.join([FileSystem.fullPath(Path.normalize(outputDirectory)), MANIFEST_FILENAME]);
+		if (manifestPath != remembered.path || !FileSystem.exists(manifestPath) || FileSystem.isDirectory(manifestPath))
+			return false;
+		// A manifest that cannot be read builds every type; the publication
+		// then reports the read error, as a fresh build does.
+		var bytes = try File.getBytes(manifestPath) catch (_:Dynamic) null;
+		return bytes != null && bytes.length == remembered.bytes.length && bytes.compare(remembered.bytes) == 0;
 		#else
 		return false;
 		#end
@@ -230,12 +281,14 @@ class GeneratedOutputOwnership {
 			var preflightStarted = phaseTimings.start();
 			var previous = readOwnership(root);
 			// A cached rebuild keeps the files of the types that it did not build,
-			// and only the manifest lists them. Without it, the request would write
-			// a manifest without those files and report success. The cache filter
-			// builds every type when the manifest is missing (see `hasManifest`), so
-			// this stops only a manifest that disappeared during the request.
+			// and only the manifest that this process published lists them. The
+			// cache filter builds every type when the manifest is missing or is
+			// not that one (see `isLastPublishedManifest`), so these stop only a
+			// manifest that another process removed or wrote during the request.
 			if (cachedRebuild && !previous.exists)
 				fail('Cached rebuild found no `$MANIFEST_FILENAME` in `$root`: generated output was removed while the compile server ran. Run the build again; a build without the manifest builds every module.');
+			if (cachedRebuild && !lastManifestPublished)
+				fail('Cached rebuild found a `$MANIFEST_FILENAME` in `$root` that this compile server did not write: another process changed the generated output while the compile server ran. Run the build again; it builds every module.');
 			if (lastManifestReused)
 				phaseTimings.record("output_manifest_reused", 0.0);
 			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;
@@ -271,8 +324,11 @@ class GeneratedOutputOwnership {
 				var target = targetPath(root, path);
 				if (FileSystem.exists(target) && !oldSet.exists(path)) {
 					var legacyDigest = legacySourceMapDigest(root, path, oldSet);
-					if (legacyDigest == null)
-						fail('Refusing to overwrite unowned file `$target`. Move it, choose isolated output, or remove the ownership collision explicitly.');
+					if (legacyDigest == null) {
+						// The same code runs for warm and fresh builds, so both print this text.
+						var missingManifest = previous.exists ? '' : ' The output folder has no `$MANIFEST_FILENAME` (manifest missing), so it owns no file; restore the manifest or remove the generated files.';
+						fail('Refusing to overwrite unowned file `$target`. Move it, choose isolated output, or remove the ownership collision explicitly.$missingManifest');
+					}
 					legacySourceMaps.set(path, legacyDigest);
 				}
 			}
@@ -576,7 +632,8 @@ class GeneratedOutputOwnership {
 					digests: newDigests.copy(),
 					generation: generation,
 					owners: nextOwners
-				}
+				},
+				published: true
 			};
 
 			removeTransactionTemps(root, journal);
@@ -669,6 +726,7 @@ class GeneratedOutputOwnership {
 
 	static function readOwnership(root:String):OwnershipState {
 		var manifestPath = Path.join([root, MANIFEST_FILENAME]);
+		lastManifestPublished = false;
 		if (!FileSystem.exists(manifestPath)) {
 			return {
 				exists: false,
@@ -694,6 +752,7 @@ class GeneratedOutputOwnership {
 			&& remembered.path == manifestPath
 			&& remembered.bytes.length == bytes.length
 			&& remembered.bytes.compare(bytes) == 0;
+		lastManifestPublished = sameBytes && remembered.published;
 		#if !reflaxe_elixir_full_ownership_check
 		if (sameBytes) {
 			lastManifestReused = true;
@@ -705,7 +764,12 @@ class GeneratedOutputOwnership {
 		// is the one that this process wrote.
 		if (sameBytes)
 			state.owners = remembered.state.owners.copy();
-		rememberedManifest = {path: manifestPath, bytes: bytes, state: copyOwnershipState(state)};
+		rememberedManifest = {
+			path: manifestPath,
+			bytes: bytes,
+			state: copyOwnershipState(state),
+			published: lastManifestPublished
+		};
 		return state;
 	}
 
