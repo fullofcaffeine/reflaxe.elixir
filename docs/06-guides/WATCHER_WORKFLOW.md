@@ -714,10 +714,11 @@ their source maps, until the next full build, and still exited 0.
 
 The record lives in the server's memory, beside the manifest that the server
 wrote last. When the manifest on disk is not that one (another process wrote
-it, or the server restarted), the owners are unknown, and the warm build keeps
-the old files as before. The first request of a server always builds every
-type and deletes every file that it does not write. A file without a known
-type, such as an extra file that the compiler adds, is also kept.
+it, or the server restarted), the owners are unknown, so the warm request
+builds every type, as a fresh build does (phase
+`cache_filter_foreign_output_manifest`). The first request of a server always
+builds every type and deletes every file that it does not write. A file
+without a known type, such as an extra file that the compiler adds, is kept.
 
 The `dropped-output` case of `npm run test:reflaxe-server-cache` checks these
 three examples, a request without an edit after the first two (no class is

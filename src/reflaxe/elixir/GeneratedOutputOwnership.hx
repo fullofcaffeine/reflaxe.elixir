@@ -795,8 +795,9 @@ class GeneratedOutputOwnership {
 	 *   The old file and its `.ex.map` then belong to no left-out type and are
 	 *   dropped, as in a fresh build.
 	 *
-	 * A file with unknown owners is kept, as before: for example an extra file,
-	 * or every file when the manifest on disk is not the one this process wrote.
+	 * A file with unknown owners, such as an extra file, is kept. A manifest on
+	 * disk that this process did not publish never reaches this point: the
+	 * warm request then builds every type (`isLastPublishedManifest`).
 	 */
 	/**
 	 * Returns the owners of a file that this request writes: the types that
