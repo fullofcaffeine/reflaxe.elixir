@@ -147,6 +147,25 @@ class GeneratedOutputOwnership {
 	static var lastManifestReused = false;
 
 	/**
+	 * Returns true when `outputDirectory` holds `_GeneratedFiles.json`. Returns
+	 * false when the manifest or the whole folder is missing.
+	 *
+	 * A cached rebuild needs the manifest: it keeps the owned files of the types
+	 * that it does not build, and only the manifest lists them. On a compile
+	 * server, `ElixirCompiler.typesToBuildForChangedSources` asks this before
+	 * the cache filter runs, and a request without a manifest builds every type.
+	 * A path that is not a regular file counts as present, so that
+	 * `readOwnership` reports it.
+	 */
+	public static function hasManifest(outputDirectory:String):Bool {
+		#if sys
+		return FileSystem.exists(Path.join([outputDirectory, MANIFEST_FILENAME]));
+		#else
+		return false;
+		#end
+	}
+
+	/**
 	 * Recovers a previously activated publication transaction, or removes a prepare
 	 * tree that could not have changed live output yet.
 	 */
@@ -210,6 +229,13 @@ class GeneratedOutputOwnership {
 		try {
 			var preflightStarted = phaseTimings.start();
 			var previous = readOwnership(root);
+			// A cached rebuild keeps the files of the types that it did not build,
+			// and only the manifest lists them. Without it, the request would write
+			// a manifest without those files and report success. The cache filter
+			// builds every type when the manifest is missing (see `hasManifest`), so
+			// this stops only a manifest that disappeared during the request.
+			if (cachedRebuild && !previous.exists)
+				fail('Cached rebuild found no `$MANIFEST_FILENAME` in `$root`: generated output was removed while the compile server ran. Run the build again; a build without the manifest builds every module.');
 			if (lastManifestReused)
 				phaseTimings.record("output_manifest_reused", 0.0);
 			var usePartialStaging = cachedRebuild && !previous.legacy && !requiresCompletePreparedOutput;

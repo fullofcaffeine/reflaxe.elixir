@@ -78,6 +78,14 @@ back in the same request, with the same bytes as a full build. A cached rebuild 
 that module has nothing to write, so it stops with "Cached rebuild cannot preserve missing owned
 output" and publishes nothing; run a full Haxe rebuild.
 
+If someone deletes `_GeneratedFiles.json`, or the whole output folder, while a compilation server
+runs (for example with `mix clean`), the next server build renders every module, as a full build
+does. A cached rebuild cannot run without the manifest, because only the manifest lists the files
+that it keeps. When the generated files are still there but the manifest is gone, nothing proves
+that the compiler owns them, so the build stops with "Refusing to overwrite unowned file", the same
+as a full build; restore the manifest or remove those files. Before this check, such a build
+reported "No files updated." and wrote a manifest that listed no files.
+
 On a safe cached rebuild, the compiler hashes newly rendered candidates in memory and compares them
 with the version 2 manifest. It reuses an old digest only after verifying that the live file still
 matches it, and it rechecks owned files after the prepared-output hook has finished. Changed and new
