@@ -81,6 +81,12 @@ typedef PassConfig = {
 	/** Explicit semantic ownership used by the typed applicability gate. */
 	?scope:PassScope,
 	/**
+	 * Optional structural fact the module must contain before this pass can change it.
+	 * Declared in `PassPreconditionManifest`; when the fact is absent the runner skips
+	 * the pass. Omit it and the pass always runs.
+	 */
+	?precondition:reflaxe.elixir.ast.PassPrecondition,
+	/**
 	 * Optional contextual variant of the pass (receives CompilationContext)
 	 */
 	?contextualPass:ContextualTransformPass,
@@ -288,6 +294,12 @@ class ElixirASTTransformer {
 		var __skippedPassCount = 0;
 		#end
 
+		// Precondition skips (see PassPreconditionManifest). The scan describes exactly
+		// `scannedTree`. A skip is taken only on a scan of the current tree object;
+		// after a pass returns a different tree, the next possible skip scans again.
+		var featureScan:Null<PassFeatureScan> = null;
+		var scannedTree:Null<ElixirAST> = null;
+
 		for (passConfig in passes) {
 			#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
 			__passTimingRegistryIndex++;
@@ -308,6 +320,33 @@ class ElixirASTTransformer {
 				#end
 				continue;
 			}
+			#if !reflaxe_elixir_disable_pass_preconditions
+			var precondition = passConfig.precondition;
+			if (precondition != null) {
+				// A scan that says the fact is present only makes the pass run, which is
+				// always safe, even if the scan is of an older tree. Only a skip needs a
+				// scan of the current tree, so scan again only then.
+				var scan = featureScan;
+				var skip = false;
+				if (scan == null || !scan.satisfies(precondition)) {
+					if (scan == null || scannedTree != result) {
+						scan = PassFeatureScan.scan(result);
+						featureScan = scan;
+						scannedTree = result;
+					}
+					skip = !scan.satisfies(precondition);
+				}
+				if (skip) {
+					#if reflaxe_elixir_verify_pass_preconditions
+					verifySkippedPass(passConfig, result, context, rootName);
+					#end
+					#if ((hxx_pass_timing || profile_passes) && !hxx_disable_timing)
+					__skippedPassCount++;
+					#end
+					continue;
+				}
+			}
+			#end
 
 			#if diag_pass_log
 			#if sys
@@ -385,24 +424,7 @@ class ElixirASTTransformer {
 			currentPassName = passConfig.name;
 			#end
 			passContext.beginPass(passConfig.name, passConfig.phase, passConfig.scope);
-			var outcome:PassOutcome;
-			if (passConfig.contextualOutcomePass != null && context != null) {
-				outcome = passConfig.contextualOutcomePass(result, context, passContext);
-			} else if (passConfig.outcomePass != null) {
-				outcome = passConfig.outcomePass(result, passContext);
-			} else if (passConfig.contextualPass != null && context != null) {
-				#if debug_contextual_passes
-				#end
-
-				outcome = PassContext.legacyOutcome(passConfig.contextualPass(result, context));
-			} else {
-				#if debug_contextual_passes
-				#end
-
-				outcome = PassContext.legacyOutcome(passConfig.pass(result));
-			}
-			if (outcome == null || outcome.ast == null)
-				throw 'Pass ${passConfig.name} returned no AST outcome';
+			var outcome:PassOutcome = invokePass(passConfig, result, context, passContext);
 			result = outcome.ast;
 
 			#if reflaxe_elixir_test_result_invariant_mutation
@@ -594,6 +616,53 @@ class ElixirASTTransformer {
 	 * so Haxe resets it at the start of each request, also on a compilation server.
 	 */
 	static var requestPasses:Null<Array<PassConfig>> = null;
+
+	/**
+	 * Runs one configured pass and returns its outcome.
+	 *
+	 * Selects the most specific variant: contextual outcome pass, outcome pass,
+	 * contextual legacy pass, then legacy pass. Legacy results are adapted as
+	 * `Unknown`. The main loop and the precondition verification both call this, so
+	 * a verified skip runs exactly the code that the loop would have run.
+	 */
+	static function invokePass(passConfig:PassConfig, ast:ElixirAST, context:Null<reflaxe.elixir.CompilationContext>, passContext:PassContext):PassOutcome {
+		var outcome:PassOutcome;
+		var contextualOutcomePass = passConfig.contextualOutcomePass;
+		var outcomePass = passConfig.outcomePass;
+		var contextualPass = passConfig.contextualPass;
+		if (contextualOutcomePass != null && context != null) {
+			outcome = contextualOutcomePass(ast, context, passContext);
+		} else if (outcomePass != null) {
+			outcome = outcomePass(ast, passContext);
+		} else if (contextualPass != null && context != null) {
+			outcome = PassContext.legacyOutcome(contextualPass(ast, context));
+		} else {
+			outcome = PassContext.legacyOutcome(passConfig.pass(ast));
+		}
+		if (outcome == null || outcome.ast == null)
+			throw 'Pass ${passConfig.name} returned no AST outcome';
+		return outcome;
+	}
+
+	#if reflaxe_elixir_verify_pass_preconditions
+	/**
+	 * Proves that a skipped pass would have left the tree unchanged.
+	 *
+	 * Runs the pass anyway on the current tree, with a separate `PassContext`, and
+	 * compares the result with `ElixirASTStructuralDigest.equivalent` (structure,
+	 * metadata, and positions). A difference means the declared precondition is not
+	 * necessary, so the build stops and names the pass and the module. The result of
+	 * the extra run is discarded.
+	 */
+	static function verifySkippedPass(passConfig:PassConfig, ast:ElixirAST, context:Null<reflaxe.elixir.CompilationContext>, rootName:String):Void {
+		var verificationContext = new PassContext(rootName, ast, false);
+		verificationContext.beginPass(passConfig.name, passConfig.phase, passConfig.scope);
+		var outcome = invokePass(passConfig, ast, context, verificationContext);
+		if (!ElixirASTStructuralDigest.equivalent(ast, outcome.ast))
+			throw 'Pass precondition is not necessary: ${passConfig.name} was skipped in $rootName, but it changes the tree. '
+				+ 'Fix or remove its entry in PassPreconditionManifest.';
+	}
+	#end
 
 	/**
 	 * Returns the enabled transformation passes, built once for each request.

@@ -113,9 +113,10 @@ npm run profile:passes:baseline
 
 Each scenario uses the default transparent-group path, selects one module, and records only executed
 passes plus one summary. The summary also records skipped and total registry counts, and the guard
-requires `executed + skipped = 578` with stable registry indexes. Current representative counts are
-407 executed passes for core and stdlib,
-570 for Phoenix, 574 for LiveView, 454 for Ecto, 469 for HXX, 410 for ExUnit, and 408 for Mix. Checked-in
+requires that executed plus skipped equals the registry count (559 today) with stable registry
+indexes. A pass skipped by scope or by precondition (see below) counts as skipped. Current
+representative counts are 392 executed passes for core, 366 for stdlib, 503 for Phoenix, 541 for
+LiveView, 414 for Ecto, 408 for HXX, 397 for ExUnit, and 365 for Mix. Checked-in
 milliseconds are reference observations, not performance thresholds; compare them directionally on
 the same machine. Counts and report shape are the stable contract.
 
@@ -182,6 +183,72 @@ words before and 5,274 M after.
 
 The fresh todo-app output tree is byte-identical before and after (125 files), and a warm build after
 edits equals a fresh build. The pipeline call made 3,433 walks for this one module.
+
+### Skipping passes that cannot apply
+
+Scopes skip whole framework families, but inside one module most of the remaining passes still find
+nothing to do. A pass may declare a **precondition**: a structural fact that the module must contain
+before the pass can change it. When the fact is absent, the runner skips the pass and its walk.
+
+- `WebJsonSecondArgRewrite_Ultimate` only rewrites `Phoenix.Controller.json(conn, data)`. Its
+  precondition is `CallTo("Phoenix.Controller", "json")` plus a variable named `data` or `json`.
+  A LiveView without that call skips it.
+- `NumericSuffixVarNormalize` only renames binders such as `value2`. A module without a name that ends
+  in a digit skips it.
+
+Where things live:
+
+- `PassPrecondition` (`src/reflaxe/elixir/ast/`) is the small vocabulary: a node constructor
+  (`HasNode`), a module call (`CallTo`), a call name (`CallNamed`), a variable or binder name property
+  (`HasName`), and `AnyOf`/`AllOf`.
+- `PassFeatureScan` reads those facts from a tree in one walk with `ASTUtils.walk`, the engine that
+  `transformNode` uses. It records binder names from every pattern position. It does not read
+  metadata, `ERaw` text, or the compilation context, so a precondition cannot depend on them.
+- `PassPreconditionManifest` (`registry/`) maps exact pass IDs to preconditions, like
+  `PassScopeManifest` does for scopes. `RegistryOrderDoc` rejects an ID that is not an effective pass,
+  and a misspelled constructor name fails the build.
+
+**Why a skip cannot use an old scan.** The scan describes one tree object. Before a skip, the runner
+checks that the scan is of the current tree object; if a pass has returned a different tree since the
+scan, it scans again. A scan of an older tree is used only in the safe direction: when it says the fact
+is present, the pass runs, which is what would happen without preconditions. So a fact that any pass
+adds is always seen before the next skip, whether or not that pass declares anything. This relies on
+the existing convention that a pass returns new nodes instead of changing the `def` arrays of its input
+in place.
+
+**What a wrong precondition can do.** A precondition must be *necessary*: if the pass can change a tree
+that lacks the fact, the skip changes generated code. Three checks guard this:
+
+1. Each entry names the match arm that needs the fact. Declare a pass only after reading every arm that
+   can return a different node, and only when the pass reads nothing but the tree and writes nothing
+   but its result (for example, `UsageAnalysis` reads the compilation context and stamps metadata in
+   place, so it has no precondition).
+2. `-D reflaxe_elixir_verify_pass_preconditions` runs every skipped pass anyway and stops the build if
+   the result differs from its input in structure, metadata, or positions
+   (`ElixirASTStructuralDigest.equivalent`). The snapshot Makefile turns it on for every fixture.
+   It cannot see a pass that changes its input in place, which is why rule 1 excludes such passes.
+3. `npm run test:pass-scope-parity` compares the normal build with a build that sets
+   `-D reflaxe_elixir_disable_pass_preconditions` and `-D reflaxe_elixir_disable_pass_scopes`, byte
+   for byte.
+
+A pass without a precondition always runs, so a missing declaration is always safe.
+
+**Measured.** 51 passes have a precondition, chosen from the passes with the most no-op cost on
+the todo-app and the snapshot suite. On 2026-11-25 (load 24 to 40 on 12 cores), each todo-app module ran
+its pipeline with preconditions off and on, in turns, in one compiler process. Allocation counts are
+exact; CPU times are indicative on a busy machine:
+
+| Measurement | Off | On |
+| --- | ---: | ---: |
+| All 196 todo-app modules, allocation | 2,869 M words | 2,664 M words (-7.2%) |
+| All 196 todo-app modules, CPU | 12.0 s | 11.2 s |
+| `TodoAppWeb.UserController`, allocation | 230 M words | 170 M words (-26%) |
+| `TodoAppWeb.TodoLive`, allocation | 767 M words | 749 M words (-2.4%) |
+
+A feature-rich LiveView gains little. `TodoLive` contains names such as `_params`, `this1`, and
+`socket`, and calls such as `put_flash`, so most declared facts are present and those passes run; they
+find nothing to do only after their own usage analysis. A scan costs about one walk (1.8 M words on
+`TodoLive`), and it runs only before a possible skip (7 scans and 6 skips per `TodoLive` pipeline).
 
 ### Why grouped, granular, and all-pass builds do not drift
 

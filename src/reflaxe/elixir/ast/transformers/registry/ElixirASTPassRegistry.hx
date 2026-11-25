@@ -4237,6 +4237,7 @@ class ElixirASTPassRegistry {
 			if (enabled[index].phase == null || enabled[index].phase.length == 0)
 				enabled[index].phase = phases[index];
 		PassScopeManifest.apply(enabled);
+		PassPreconditionManifest.apply(enabled);
 		enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled, {
 			requireEffectiveOrder: true,
 			phaseOrder: PassInventory.phaseContracts().map(contract -> contract.id)
