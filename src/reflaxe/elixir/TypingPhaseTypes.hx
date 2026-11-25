@@ -4,6 +4,7 @@ package reflaxe.elixir;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import reflaxe.ReflectCompiler;
+import reflaxe.elixir.ast.TemplateEntryPoints;
 
 /**
  * Keeps the set of types that a build can generate fixed before Haxe finishes
@@ -42,8 +43,11 @@ import reflaxe.ReflectCompiler;
  * WHAT IT LOADS
  * - `StringTools`, whose helpers generated code calls, when the program does
  *   not use it.
- * - `phoenix.Phoenix`, when the program has a template (it types `HXX`) and
- *   does not use `phoenix.Phoenix`. The template linter reads the `Form` and
+ * - `phoenix.Phoenix`, when the program has a template and does not use
+ *   `phoenix.Phoenix`. A program has a template when it types a template
+ *   entry point (`TemplateEntryPoints.isTemplateProducerClass`: `HXX`, or
+ *   `HeexTemplate`, `HXX2` or `H` in `phoenix.hxx`; inline markup becomes
+ *   such a call). The template linter reads the `Form` and
  *   `FormField` types from it to check `<.form :let={f}>` and
  *   `<.inputs_for :let={f}>` values.
  *
@@ -92,10 +96,19 @@ class TypingPhaseTypes {
 	static function loadRuntimeSupport(types:Array<ModuleType>):Void {
 		// Haxe calls each after-typing callback once with the whole typed
 		// program, and again with only the types that the callbacks of the
-		// previous call made Haxe type. No other callback of this compiler
-		// loads a type there (before this load, Reflaxe kept only the last
-		// call's types and would have built almost nothing), so every type of
-		// a later call comes from this load.
+		// previous call made Haxe type. After this load starts, every type of
+		// a later call counts as support only.
+		//
+		// Limit: another after-typing callback can load a type in the same
+		// call, for example the router checks (`RouterBuildMacro`, which asks
+		// for a controller by name) or a project macro. Such a type also
+		// counts as support only and is not generated. Before this load
+		// existed, Reflaxe kept only the last call's types, so such a type
+		// would have been the only type that it built; no test or example
+		// showed that, so these checks find their types already loaded.
+		// Haxe offers no list of loaded modules during typing
+		// (`Context.getAllModuleTypes` is empty until typing ends), so this
+		// callback cannot tell its own types from those of another callback.
 		if (supportLoadChecked) {
 			if (!supportLoadStarted)
 				return;
@@ -113,12 +126,14 @@ class TypingPhaseTypes {
 		var hasTemplates = false;
 		var hasPhoenix = false;
 		for (moduleType in types) {
-			final type = commonData(moduleType);
+			switch (moduleType) {
+				case TClassDecl(classRef) if (TemplateEntryPoints.isTemplateProducerClass(classRef.get())):
+					hasTemplates = true;
+				default:
+			}
 			if (isStringTools(moduleType))
 				hasStringTools = true;
-			else if (type.module == "HXX")
-				hasTemplates = true;
-			else if (type.module == "phoenix.Phoenix")
+			else if (commonData(moduleType).module == "phoenix.Phoenix")
 				hasPhoenix = true;
 		}
 		final paths = [];

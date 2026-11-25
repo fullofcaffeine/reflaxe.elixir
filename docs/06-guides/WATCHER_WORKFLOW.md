@@ -503,21 +503,28 @@ loaded before typing ends, in the same way in every request:
   module. The class and the modules that it loads are generated only when
   generated code calls a `StringTools` helper, as before. Haxe now types this
   class before dead-code elimination, so under `-dce full` the written
-  `string_tools.ex` keeps only the helpers (all `@:keep`) and the functions
-  that the program uses. Before, it kept every function.
+  `string_tools.ex` keeps only the helpers that generated code calls (all
+  `@:keep`, including `fast_code_at` and `unsafe_code_at` for
+  `s.fastCodeAt(i)` and `s.unsafeCodeAt(i)`) and the functions that the
+  program uses. Before, it kept every function.
 - When the program has a template but does not use `phoenix.Phoenix`,
-  Reflaxe.Elixir loads `phoenix.Phoenix` in the same step. The template
-  linter reads `phoenix.Phoenix.Form`, `FormField` and `elixir.types.Term`
-  from the typed program, so it still checks `<.form :let={f}>` and
-  `<.inputs_for :let={f}>` values. Modules that only this load added are not
-  generated.
+  Reflaxe.Elixir loads `phoenix.Phoenix` in the same step. A program has a
+  template when it calls `HXX.hxx(...)`, or `HeexTemplate.root(...)`,
+  `H.root(...)` or `HXX2.root(...)` from `phoenix.hxx`; inline markup becomes
+  such a call. The template linter reads `phoenix.Phoenix.Form`, `FormField`
+  and `elixir.types.Term` from the typed program, so it still checks
+  `<.form :let={f}>` and `<.inputs_for :let={f}>` values. Modules that only
+  this load added are not generated.
 
-Limits: other lookups by name still run during generation, for router and
-controller metadata, discovered hook and tag registries, and component props
-found by type name. They usually ask for modules that the program already
-types. Such a lookup can still keep a module in later warm requests after you
-remove the last reference to it; restart the server, or run a fresh build, if
-a removed module's file stays.
+Limits: a type that another after-typing callback loads after this load
+started (for example the router's controller check, or a project macro)
+also counts as loaded only for runtime support, and is not generated. No
+test or example loads a type there. Other lookups by name still run during
+generation, for router and controller metadata, discovered hook and tag
+registries, and component props found by type name. They usually ask for
+modules that the program already types. Such a lookup can still keep a module
+in later warm requests after you remove the last reference to it; restart the
+server, or run a fresh build, if a removed module's file stays.
 
 ### An edit outside a class
 

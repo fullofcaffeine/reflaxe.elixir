@@ -70,10 +70,21 @@ class ReferenceSemanticsDiagnostics {
 		reflaxe.elixir.debug.CompilerPhaseTimings.onAfterTyping("reference_semantics", types -> diagnose(types, projectRoot, compilerOwnedRoots));
 	}
 
+	/**
+	 * True after the first after-typing call of this request. Haxe calls the
+	 * callback again with only the types that a callback added (for example
+	 * the runtime-support load of `TypingPhaseTypes`); those calls add to the
+	 * same request.
+	 */
+	static var requestStarted = false;
+
 	static function diagnose(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {
 		var started = Sys.time();
-		scanTypes(types, projectRoot, compilerOwnedRoots);
-		lastDurationMs = (Sys.time() - started) * 1000.0;
+		final firstCall = !requestStarted;
+		requestStarted = true;
+		scanTypes(types, projectRoot, compilerOwnedRoots, firstCall);
+		final durationMs = (Sys.time() - started) * 1000.0;
+		lastDurationMs = firstCall ? durationMs : lastDurationMs + durationMs;
 	}
 
 	/**
@@ -86,13 +97,20 @@ class ReferenceSemanticsDiagnostics {
 			cleanClasses.commit();
 	}
 
-	static function scanTypes(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>):Void {
+	/**
+	 * Scans the project classes of `types`. `beginRequest` is true for the first
+	 * call of a request: only that call starts the request of `cleanClasses`.
+	 * A second `begin` would drop the classes that the first call kept, and
+	 * the next request would scan every class again.
+	 */
+	static function scanTypes(types:Array<ModuleType>, projectRoot:String, compilerOwnedRoots:Array<String>, beginRequest:Bool):Void {
 		var clean = cleanClasses;
 		if (clean == null) {
 			clean = new reflaxe.elixir.ClassResultCache();
 			cleanClasses = clean;
 		}
-		clean.begin();
+		if (beginRequest)
+			clean.begin();
 		for (moduleType in types) {
 			switch (moduleType) {
 				case TClassDecl(classRef):

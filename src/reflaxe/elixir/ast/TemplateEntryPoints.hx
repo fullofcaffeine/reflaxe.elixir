@@ -21,20 +21,38 @@ import reflaxe.elixir.ast.ElixirAST;
  *   - ElixirAST call detection (`ECall(mod, fn, ...)`)
  */
 class TemplateEntryPoints {
-	public static function isHxxStaticCall(cls:ClassType, methodName:String):Bool {
-		return cls != null && cls.name == "HXX" && methodName == "hxx";
+	/**
+	 * Returns true for a class whose static `hxx` or `root` call produces a
+	 * template: `HXX`, or `HeexTemplate`, `HXX2` or `H` in `phoenix.hxx`.
+	 *
+	 * A program that types such a class has templates. `TypingPhaseTypes`
+	 * uses this to load the types that the template linter reads, so the
+	 * set of entry points is defined only here.
+	 */
+	public static function isTemplateProducerClass(cls:ClassType):Bool {
+		return isHxxClass(cls) || isHeexTemplateRootClass(cls);
 	}
 
-	public static function isHeexTemplateRootStaticCall(cls:ClassType, methodName:String):Bool {
-		if (cls == null)
-			return false;
-		if (methodName != "root" && methodName != "root_ast")
-			return false;
-		if (cls.pack == null)
+	static function isHxxClass(cls:ClassType):Bool {
+		return cls != null && cls.name == "HXX";
+	}
+
+	static function isHeexTemplateRootClass(cls:ClassType):Bool {
+		if (cls == null || cls.pack == null)
 			return false;
 		if (cls.pack.join(".") != "phoenix.hxx")
 			return false;
 		return cls.name == "HeexTemplate" || cls.name == "HXX2" || cls.name == "H";
+	}
+
+	public static function isHxxStaticCall(cls:ClassType, methodName:String):Bool {
+		return isHxxClass(cls) && methodName == "hxx";
+	}
+
+	public static function isHeexTemplateRootStaticCall(cls:ClassType, methodName:String):Bool {
+		if (methodName != "root" && methodName != "root_ast")
+			return false;
+		return isHeexTemplateRootClass(cls);
 	}
 
 	public static function isTemplateProducerStaticCall(cls:ClassType, methodName:String):Bool {

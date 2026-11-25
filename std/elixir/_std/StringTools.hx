@@ -260,7 +260,13 @@ end', s, pos);
 
 	/**
 	 * Provides fast integer matching for switches on strings
+	 *
+	 * Kept under dead-code elimination: the compiler lowers `s.fastCodeAt(i)`
+	 * to a call of this function, which Haxe does not see as a use.
 	 */
+	#if !macro
+	@:keep
+	#end
 	public static function fastCodeAt(s:String, index:Int):Int {
 		#if macro
 		var code = s.charCodeAt(index);
@@ -279,7 +285,14 @@ end', s, index);
 	 * String positions are codepoints on this target. The official
 	 * Haxe stdlib uses `unsafeCodeAt` in iterator/parser hot paths after doing
 	 * its own bounds checks, so this aliases the target's fast code access.
+	 *
+	 * Kept under dead-code elimination: the compiler lowers
+	 * `s.unsafeCodeAt(i)` to a call of this function, which Haxe does not see
+	 * as a use.
 	 */
+	#if !macro
+	@:keep
+	#end
 	public static function unsafeCodeAt(s:String, index:Int):Int {
 		#if macro
 		var code = s.charCodeAt(index);
