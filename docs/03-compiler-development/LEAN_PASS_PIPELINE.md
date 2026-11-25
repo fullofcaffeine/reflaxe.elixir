@@ -152,6 +152,32 @@ All twelve measured output trees had the same SHA-256 digest. The full categoriz
 then passed 413/413 fixtures. Re-measure on the same host and toolchain when changing this traversal;
 do not compare these workstation seconds directly with hosted CI duration.
 
+### Read-only walks
+
+Most passes find nothing to do in a given module. In the todo-app, a warm build after an edit of one
+function body in `TodoLive.hx` runs 555 passes on `TodoAppWeb.TodoLive`, and only 40 of them change
+its tree (counted with `-D debug_pass_metrics`). No single pass costs more than 2% of the module's pass
+time. The cost is the many walks over the same tree, not one slow pass.
+
+Many of those walks only collect facts through `ASTUtils.walk`. That walk used to call `iterateAST` on
+each node, which made two closures for each node. It now calls `ElixirASTTransformer.visitPreorder`,
+which runs the same traversal engine once over the tree: the engine's boundary check is the visit, and
+the transform callback returns each node unchanged. The visited nodes and their order do not change.
+`npm run test:ast-children` compares the new walk with the old recursion, node by node, over every AST
+constructor.
+
+Measured on 2026-11-25 on the todo-app, at a one-minute load of 36 on 12 cores. The pipeline for
+`TodoAppWeb.TodoLive` ran 12 times in one warm compiler process, taking turns between the old and the
+new walk:
+
+| Measurement for one `TodoLive` pass pipeline | Old walk | New walk |
+| --- | ---: | ---: |
+| Interpreter allocation (minor heap words, exact) | 816 M | 767 M |
+| CPU time, median of 6 runs | 2.78 s | 2.55 s |
+
+The fresh todo-app output tree is byte-identical before and after (125 files), and a warm build after
+edits equals a fresh build. The pipeline call made 3,433 walks for this one module.
+
 ### Why grouped, granular, and all-pass builds do not drift
 
 Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and
