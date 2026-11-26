@@ -44,8 +44,14 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
  *   node, so a new constructor fails to compile until its fields are compared.
  * - The answer can only err toward "different": a metadata record copied with
  *   equal values, an attribute record that drops an optional span, or a pattern
- *   rebuilt with equal content all count as different. A false "different" only
- *   costs the rebuild that happens today.
+ *   rebuilt with equal content all count as different, and so does every
+ *   `EFloat` copy (`-0.0 == 0.0` is true in Haxe, but they print differently).
+ *   A false "different" only costs the rebuild that happens today.
+ * - New arrays and clause records count as the same when every entry is the same
+ *   object or value. This is safe only while no pass changes a payload array or a
+ *   clause record in place: the kept node is the input node, so a pass that edits
+ *   the arrays of a returned node, expecting its own fresh copy, would also edit
+ *   the input tree.
  *
  * Why keeping the original is safe: every field a later reader can see (`def`
  * values, the metadata object, `pos`) is the same in both nodes. Only object
@@ -236,10 +242,10 @@ class ElixirASTShallowEquality {
 					case EInteger(value2): value == value2;
 					default: false;
 				}
-			case EFloat(value): switch (right) {
-					case EFloat(value2): value == value2;
-					default: false;
-				}
+			case EFloat(_):
+				// `==` cannot tell `-0.0` from `0.0` (or match NaN), and the printer writes them
+				// differently. A float copy therefore always counts as a change.
+				false;
 			case EBoolean(value): switch (right) {
 					case EBoolean(value2): value == value2;
 					default: false;

@@ -9,7 +9,9 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTShallowEquality;
+import reflaxe.elixir.ast.transformers.HeexStringReturnToSigilTransforms;
 import reflaxe.elixir.ast.ElixirASTStructuralDigest;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -25,6 +27,7 @@ private typedef NodeCase = {
 
 /** Focused executable contract for exhaustive structural AST traversal. */
 @:nullSafety(Off)
+@:access(reflaxe.elixir.ast.ElixirASTTransformer)
 class TestElixirASTChildren {
 	public static function run():Expr {
 		var samples = testConstructorCoverageAndImmediateChildren();
@@ -37,6 +40,8 @@ class TestElixirASTChildren {
 		testTransformerBoundaryStopsRecursion();
 		testCopyingCallbackKeepsIdentity(samples);
 		testShallowEqualityRejectsRealChanges();
+		testLeafListMatchesChildCounts(samples);
+		testCopyCollapseKeepsHeexReturnDecisions();
 
 		Sys.println("ElixirAST child traversal contract passed");
 		return macro null;
@@ -458,8 +463,8 @@ class TestElixirASTChildren {
 	/**
 	 * A pass callback that rebuilds each node with the same children, for example
 	 * `makeASTWithMeta(EBlock(statements.copy()), n.metadata, n.pos)`, changes
-	 * nothing. The engine must then return the input object for every constructor,
-	 * and the parent must not be rebuilt either.
+	 * nothing. The engine must then return the input object for every constructor
+	 * except `EFloat`, and the parent must not be rebuilt either.
 	 */
 	static function testCopyingCallbackKeepsIdentity(samples:Array<NodeCase>):Void {
 		for (sample in samples) {
@@ -473,6 +478,12 @@ class TestElixirASTChildren {
 				return copy;
 			});
 			assertTrue(copies > 0, sample.name + " copying callback made copies");
+			if (sample.name == "EFloat") {
+				// A float copy always counts as a change (`-0.0 == 0.0` in Haxe).
+				assertTrue(!ElixirASTShallowEquality.sameNode(node, shallowCopy(node)), "EFloat copy counts as a change");
+				assertTrue(result != root, "EFloat copy rebuilds its ancestors");
+				continue;
+			}
 			assertTrue(ElixirASTShallowEquality.sameNode(node, shallowCopy(node)), sample.name + " one-level copy is the same node");
 			assertTrue(result == root, sample.name + " copying callback keeps the root object");
 		}
@@ -508,6 +519,19 @@ class TestElixirASTChildren {
 			makeASTWithMeta(EFragment("div", [{name: attribute.name, value: attribute.value}], []), fragment.metadata, fragment.pos)),
 			"an attribute that drops its span is a change");
 
+		var zero = makeAST(EFloat(0.0));
+		assertTrue(!ElixirASTShallowEquality.sameNode(zero, makeASTWithMeta(EFloat(-0.0), zero.metadata, zero.pos)), "-0.0 is a change from 0.0");
+		var negated = ElixirASTTransformer.transformNode(makeAST(EBlock([zero])), child -> switch (child.def) {
+			case EFloat(_): makeASTWithMeta(EFloat(-0.0), child.metadata, child.pos);
+			default: child;
+		});
+		switch (negated.def) {
+			case EBlock([{def: EFloat(value)}]):
+				assertTrue(1.0 / value < 0, "the engine keeps a -0.0 that replaces 0.0");
+			default:
+				fail("negative zero test did not keep the block shape");
+		}
+
 		var real = ElixirASTTransformer.transformNode(makeAST(EBlock([makeAST(EBlock([ast("old_value")]))])), child -> switch (child.def) {
 			case EVar("old_value"): makeASTWithMeta(EVar("new_value"), child.metadata, child.pos);
 			default: shallowCopy(child);
@@ -515,6 +539,62 @@ class TestElixirASTChildren {
 		var names:Array<String> = [];
 		ASTUtils.walk(real, child -> collectVarName(child, names));
 		assertStrings(["new_value"], names, "a real change under copying ancestors survives");
+	}
+
+	/**
+	 * The engine's inline leaf list (`isLeafDef`) must name exactly the constructors
+	 * that have no AST and no pattern children, except `ERaw`, which the engine only
+	 * gives to the callback when it is a boundary.
+	 */
+	static function testLeafListMatchesChildCounts(samples:Array<NodeCase>):Void {
+		for (sample in samples) {
+			var expected = sample.astChildren == 0 && sample.patternChildren == 0 && sample.name != "ERaw";
+			assertEquals(expected, ElixirASTTransformer.isLeafDef(sample.node.def), sample.name + " leaf classification");
+		}
+		var raw = samples.filter(sample -> sample.name == "ERaw")[0];
+		assertTrue(raw.astChildren == 0 && raw.patternChildren == 0, "ERaw has no children but is not an inline leaf");
+	}
+
+	/**
+	 * `HeexStringReturnToSigilTransforms` decides whether a function body took part in
+	 * the `~H` conversion. That decision must not change when the engine keeps a node
+	 * that a callback only copied. The expected text is the output of `5aa5fdf0a`,
+	 * before the engine kept copies.
+	 */
+	static function testCopyCollapseKeepsHeexReturnDecisions():Void {
+		var cases:Array<{name:String, def:ElixirASTNode, expected:String}> = [
+			{
+				name: "helper(_assigns) with a plain if",
+				def: makeAST(EDefp("badge_class", [PVar("_assigns")], null,
+					makeAST(EBlock([
+						makeAST(EMatch(PVar("label"), makeAST(EIf(ast("flag"), makeAST(EString("on")), makeAST(EString("off")))))),
+						makeAST(ECall(null, "String.upcase", [ast("label")]))
+					])))),
+				expected: 'defmodule ProbeWeb.DemoLive do\n  defp badge_class(assigns) do\n    label = if (flag), do: "on", else: "off"\n    String.upcase(label)\n  end\nend'
+			},
+			{
+				name: "render(assigns) that delegates behind an if",
+				def: makeAST(EDef("render", [PVar("assigns")], null,
+					makeAST(EIf(makeAST(EField(ast("assigns"), "compact")), makeAST(ERemoteCall(ast("CompactView"), "render", [ast("assigns")])),
+						makeAST(ERemoteCall(ast("FullView"), "render", [ast("assigns")])))))),
+				expected: 'defmodule ProbeWeb.DemoLive do\n  def render(assigns) do\n    if (assigns.compact) do\n      CompactView.render(assigns)\n    else\n      FullView.render(assigns)\n    end\n  end\nend'
+			},
+			{
+				name: "card(assigns) with a parenthesized HTML string body",
+				def: makeAST(EDef("card", [PVar("assigns")], null, makeAST(EParen(makeAST(EString("<div>hi</div>")))))),
+				expected: 'defmodule ProbeWeb.DemoLive do\n  def card(assigns) do\n    ("<div>hi</div>")\n  end\nend'
+			},
+			{
+				name: "render(assigns) that delegates without an if",
+				def: makeAST(EDef("render", [PVar("assigns")], null, makeAST(ERemoteCall(ast("FullView"), "render", [ast("assigns")])))),
+				expected: 'defmodule ProbeWeb.DemoLive do\n  def render(assigns) do\n    ~H"""\n    <%= FullView.render(assigns) %>\n    """\n  end\nend'
+			}
+		];
+		for (sample in cases) {
+			var module = makeAST(EModule("ProbeWeb.DemoLive", [], [sample.def]));
+			var printed = StringTools.trim(ElixirASTPrinter.print(HeexStringReturnToSigilTransforms.transformPass(module), 0));
+			assertEquals(sample.expected, printed, "HEEx return decision: " + sample.name);
+		}
 	}
 
 	/**

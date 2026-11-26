@@ -4439,6 +4439,39 @@ class ElixirASTTransformer {
 		return result;
 	}
 
+	#if debug_transformer_hang
+	/**
+	 * Debug-only visit accounting for one node (`-D debug_transformer_hang`). The engine and the
+	 * inline leaf path (`transformChild`) both call it, so leaves are counted as before.
+	 */
+	static function countHangVisit(ast:ElixirAST):Void {
+		nodeVisitCounter++;
+
+		// Create a unique identifier for this node
+		var nodeId = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
+
+		// Track visit frequency
+		var visits = visitedNodes.get(nodeId);
+		if (visits == null)
+			visits = 0;
+		visits++;
+		visitedNodes.set(nodeId, visits);
+
+		// Log breadcrumbs
+		if (nodeVisitCounter % 1000 == 0) {}
+
+		// Detect excessive visits to same node (cycle)
+		if (visits > 1000) {
+			throw 'Infinite recursion detected in transformer: ${nodeId}';
+		}
+
+		// Overall safety limit
+		if (nodeVisitCounter > maxNodeVisits) {
+			throw 'Transformer exceeded maximum node visit limit';
+		}
+	}
+	#end
+
 	/**
 	 * Transforms one child node; inlined at each child position of the engine.
 	 *
@@ -4456,12 +4489,18 @@ class ElixirASTTransformer {
 	static inline function transformChild(child:ElixirAST, transformer:Null<(ElixirAST) -> ElixirAST>, isBoundary:Null<(ElixirAST) -> Bool>):ElixirAST {
 		return if (child != null && child.def != null && isLeafDef(child.def)) {
 			if (transformer == null) {
-				if (isBoundary != null)
-					isBoundary(child);
+				var leafIsBoundary = isBoundary != null && isBoundary(child);
+				#if debug_transformer_hang
+				if (!leafIsBoundary)
+					countHangVisit(child);
+				#end
 				child;
 			} else if (isBoundary != null && isBoundary(child)) {
 				transformer(child);
 			} else {
+				#if debug_transformer_hang
+				countHangVisit(child);
+				#end
 				var leafResult = transformer(child);
 				leafResult != child
 				&& ElixirASTShallowEquality.sameNode(child, leafResult) ? child : leafResult;
@@ -4558,32 +4597,7 @@ class ElixirASTTransformer {
 		}
 
 		#if debug_transformer_hang
-		nodeVisitCounter++;
-
-		// Create a unique identifier for this node
-		var nodeId = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
-
-		// Track visit frequency
-		var visits = visitedNodes.get(nodeId);
-		if (visits == null)
-			visits = 0;
-		visits++;
-		visitedNodes.set(nodeId, visits);
-
-		// Log breadcrumbs
-		if (nodeVisitCounter % 1000 == 0) {}
-
-		// Detect excessive visits to same node (cycle)
-		if (visits > 1000) {
-			#if debug_transformer_hang
-			#end
-			throw 'Infinite recursion detected in transformer: ${nodeId}';
-		}
-
-		// Overall safety limit
-		if (nodeVisitCounter > maxNodeVisits) {
-			throw 'Transformer exceeded maximum node visit limit';
-		}
+		countHangVisit(ast);
 		#end
 
 		// First transform children
