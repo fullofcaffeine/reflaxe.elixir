@@ -2695,6 +2695,66 @@ PY
 	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "registry-failure-removed"
 }
 
+# A "late-typed" module is one that Haxe first types during generation,
+# because code asks Haxe for a type by name after typing ended. Haxe records
+# that lookup as a dependency of an unrelated module that the next warm
+# request reuses, so that request types the late module as part of the
+# program, and builds and writes modules that a fresh build never writes.
+# Each case below makes several requests without an edit. Every warm output
+# must equal one fresh build, and a request without an edit builds nothing.
+# - typed: the assigns name `phoenix.Phoenix.Form`. Reflaxe needed
+#   `StringTools` for its helpers and asked Haxe for it during generation;
+#   the second request added three iterator modules, and under `-dce full`
+#   it wrote a smaller `string_tools.ex` than a fresh build.
+# - let: a `<.form :let={f}>` template is the only use of Phoenix. The
+#   template linter asked Haxe for `phoenix.Phoenix.Form`; the module set grew
+#   over four requests and added `phoenix/*.ex` and `ecto/*.ex`.
+run_late_typed_case() {
+	local name="$1"
+	local source="$2"
+	shift 2
+	local variants="$FIXTURE_DIR/variants/late-typed"
+	local direct_output="$TMP_ROOT/direct-late-typed-$name"
+	local log="$TMP_ROOT/late-typed-$name.log"
+	local request built
+
+	cp "$variants/MainLateForm.hx" "$PROJECT_DIR/src/Main.hx"
+	cp "$variants/$source" "$PROJECT_DIR/src/LateForm.hx"
+	# Old file times make these ordinary known files, so that a request
+	# without an edit does not read them again (see ServerSourceFreshness).
+	python3 - "$PROJECT_DIR/src" <<'PY'
+import os
+import sys
+import time
+
+stamp = time.time() - 30
+for name in ("Main.hx", "LateForm.hx"):
+    os.utime(os.path.join(sys.argv[1], name), (stamp, stamp))
+PY
+	compile_direct "$direct_output" "$@"
+	for request in 1 2 3 4; do
+		compile_server "$SERVER_OUTPUT" "$@" >"$log"
+		compare_generated_output "$direct_output" "$SERVER_OUTPUT" "late-typed-$name-request-$request"
+		built="$(built_class_count "$log")"
+		if ((request > 1 && built != 0)); then
+			echo "SERVER_CACHE_REUSE:late-typed-$name request $request built $built class modules without an edit" >&2
+			return 1
+		fi
+	done
+	echo "SERVER_CACHE_REUSE:late-typed-$name:PASS"
+
+	restore_baseline_sources
+	rm -f "$PROJECT_DIR/src/LateForm.hx"
+}
+
+run_late_typed_variant() {
+	run_late_typed_case "typed" "LateFormTyped.hx"
+	run_late_typed_case "let" "LateFormLet.hx"
+	run_late_typed_case "typed-dce-full" "LateFormTyped.hx" -dce full
+	compile_server "$SERVER_OUTPUT"
+	compare_generated_output "$DIRECT_BASELINE" "$SERVER_OUTPUT" "late-typed-removed"
+}
+
 HAXE_BIN="$(resolve_haxe_server_binary)"
 HAXE_VERSION="$($HAXE_BIN -version)"
 EXPECTED_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$ROOT_DIR/.haxerc")"
@@ -2813,6 +2873,7 @@ run_component_props_variant
 run_shared_type_variant
 run_router_contract_variant
 run_discovery_variant
+run_late_typed_variant
 run_cross_project_variant
 
 FINAL_FD_COUNT="$(open_fd_count "$SERVER_PID")"

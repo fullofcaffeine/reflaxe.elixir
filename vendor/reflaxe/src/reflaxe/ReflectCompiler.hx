@@ -424,10 +424,20 @@ class ReflectCompiler {
 	// =======================================================
 	// * Private Members
 	// =======================================================
-	static var haxeProvidedModuleTypes: Null<Array<ModuleType>>;
+	static var haxeProvidedModuleTypes: Null<Array<ModuleType>> = null;
 
+	/**
+		Keeps every type that Haxe typed in this request.
+
+		Haxe calls this callback once with all typed types. When an
+		after-typing callback makes Haxe type more modules, Haxe calls it
+		again with only the new types. The list must keep the earlier types
+		too, or Reflaxe would build only the new ones. The variable is not
+		persistent, so each request starts with an empty list.
+	**/
 	static function onAfterTyping(moduleTypes: Array<ModuleType>) {
-		haxeProvidedModuleTypes = moduleTypes;
+		final earlier = haxeProvidedModuleTypes;
+		haxeProvidedModuleTypes = earlier == null ? moduleTypes : earlier.concat(moduleTypes);
 		markTypedTypes(moduleTypes);
 	}
 

@@ -11,6 +11,18 @@ defmodule StringTools do
   def rtrim(s) do
     String.trim_trailing(s)
   end
+  def fast_code_at(s, index) do
+    case haxe_char_code_at(s, index) do
+      nil -> -1
+      code -> code
+    end
+  end
+  def unsafe_code_at(s, index) do
+    case haxe_char_code_at(s, index) do
+      nil -> 0
+      code -> code
+    end
+  end
   def haxe_unit_index(s) do
     if byte_size(s) < 256 do
       :walk
