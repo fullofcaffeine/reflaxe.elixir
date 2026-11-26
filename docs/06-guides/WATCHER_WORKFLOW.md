@@ -770,10 +770,11 @@ their source maps, until the next full build, and still exited 0.
 
 The record lives in the server's memory, beside the manifest that the server
 wrote last. When the manifest on disk is not that one (another process wrote
-it, or the server restarted), the owners are unknown, and the warm build keeps
-the old files as before. The first request of a server always builds every
-type and deletes every file that it does not write. A file without a known
-type, such as an extra file that the compiler adds, is also kept.
+it, or the server restarted), the owners are unknown, so the warm request
+builds every type, as a fresh build does (phase
+`cache_filter_foreign_output_manifest`). The first request of a server always
+builds every type and deletes every file that it does not write. A file
+without a known type, such as an extra file that the compiler adds, is kept.
 
 The `dropped-output` case of `npm run test:reflaxe-server-cache` checks these
 three examples, a request without an edit after the first two (no class is
@@ -807,8 +808,17 @@ again: a cached rebuild cannot know which files it keeps, so the request builds
 every type, as a direct build, and its report has the phase
 `cache_filter_missing_output_manifest`. The `deleted-output-root` cases of
 `npm run test:reflaxe-server-cache` delete the folder, the owned files and the
-manifest, only the manifest, and one kept file, and compare each result with a
-direct build.
+manifest, only the manifest, one kept file, and the folder in a request that
+also has an edit, and compare each result with a direct build.
+
+A manifest that this server did not write is the same case: when the
+manifest bytes are not the bytes of the server's last publication, the request
+builds every type, and its report has the phase
+`cache_filter_foreign_output_manifest`. Example: a direct build with another
+`-D` define writes the same output folder. The `foreign-manifest` cases write
+the folder with such a direct build, and with a valid manifest that lists no
+file, and compare the next warm request with a direct build of the server's
+configuration.
 
 Before, each such request wrote a new manifest and hashed it with SHA-256 in
 Haxe's macro interpreter: about 85 ms of a 0.36 s todo-app request on a loaded
@@ -954,8 +964,10 @@ Common cases:
 - **Output folder or `_GeneratedFiles.json` deleted while the server runs** (for
   example by `mix clean`): the next server build renders every module, as a
   direct build does. If the generated files are still there without the manifest,
-  the build stops with "Refusing to overwrite unowned file", as a direct build
-  does; restore the manifest or remove those files. See
+  the build stops with "Refusing to overwrite unowned file" and "manifest
+  missing", as a direct build does; restore the manifest or remove those files.
+  Another build that writes the same folder (for example a direct build with
+  another define) also makes the next server build render every module. See
   [Generated Output Ownership](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
 - **Direct succeeds but server fails:** capture the failing edit and warm request
   sequence. This is an invalidation or persistent-state bug, not a reason to
