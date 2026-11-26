@@ -253,10 +253,17 @@ found 308 distinct call sites:
   every caller. Four of those callers compare the result with their input:
   - `HeexStringReturnToSigilTransforms.convertStringReturns`: changes output; fixed with the flag
     above.
-  - `BinderTransforms.rewriteInScope` callers, `ReduceWhileSentinelCleanupTransforms.transformPass`,
-    and `StaticVarMutationRewriteTransforms.transformPass`: identity only chooses between returning
-    the node and rebuilding it with the same children and the same shape, so the output is the same
-    either way.
+  - `ReduceWhileSentinelCleanupTransforms.transformPass` and
+    `StaticVarMutationRewriteTransforms.transformPass`: identity only chooses between returning the
+    node and rebuilding it with the same children, the same shape, metadata and position, so the
+    output is the same either way.
+  - `BinderTransforms.rewriteInScope` callers: the same output, for a simpler reason.
+    `rewriteInScope` is hand-written recursion; its only engine use is `transformAST`, where every
+    child is a boundary, so no copy is ever kept and its identity result is the same on both engines.
+
+`ReduceMetasHeadRepairTransforms.pass` also compares a result with its input (`newBody !=
+clause.body`) and rebuilds with fresh metadata when they differ. It is safe today because the
+callbacks of `repairInBody` never return a copy; a comment at that site says so.
 - 9 store the result in a variable that is never compared by identity.
 
 Code that keys a map by node objects was read by hand. `TempVariableTransforms` and

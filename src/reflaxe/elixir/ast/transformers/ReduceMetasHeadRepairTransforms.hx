@@ -62,6 +62,8 @@ class ReduceMetasHeadRepairTransforms {
 							if (binderName == null)
 								return n;
 							var newBody = repairInBody(clause.body, binderName);
+							// Identity decides here: a rebuild gets fresh metadata. Safe while no repairInBody callback
+							// returns a one-level copy (the engine keeps such a copy as the input node).
 							if (newBody == clause.body) {
 								n;
 							} else {
