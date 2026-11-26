@@ -59,21 +59,12 @@ class ASTUtils {
 	 * WHAT: Performs a full structural traversal without rebuilding the tree.
 	 * The visitor is called on every AST node, including values carried by patterns.
 	 *
-	 * HOW: Recurses through `ElixirASTTransformer.iterateAST`, which derives its
-	 * immediate visit from the compiler's one fused structural traversal engine.
+	 * HOW: Delegates to `ElixirASTTransformer.visitPreorder`, which runs the
+	 * compiler's one fused structural traversal engine once over the tree. Each
+	 * parent is visited before its children, in the same order as before.
 	 */
 	public static function walk(ast:ElixirAST, visitor:ElixirAST->Void):Void {
-		if (ast == null || ast.def == null)
-			return;
-
-		function walkNode(node:ElixirAST):Void {
-			if (node == null || node.def == null)
-				return;
-			visitor(node);
-			ElixirASTTransformer.iterateAST(node, walkNode);
-		}
-
-		walkNode(ast);
+		ElixirASTTransformer.visitPreorder(ast, visitor);
 	}
 
 	/**

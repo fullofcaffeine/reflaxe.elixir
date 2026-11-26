@@ -41,11 +41,13 @@ UPDATE_TIMEOUT_SECS := $(patsubst %s,%,$(UPDATE_TIMEOUT))
 
 # Pipeline Selection
 # By default uses AST pipeline. Set USE_LEGACY=1 to use old string pipeline for comparison
+# Snapshot builds also prove every precondition skip: each skipped pass runs anyway and
+# the build fails if it would have changed the tree (see PassPreconditionManifest).
 ifdef USE_LEGACY
-HAXE_FLAGS := -D use_legacy_string_pipeline -D reflaxe_elixir_validate_results
+HAXE_FLAGS := -D use_legacy_string_pipeline -D reflaxe_elixir_validate_results -D reflaxe_elixir_verify_pass_preconditions
 PIPELINE_MODE := (Legacy String Pipeline)
 else
-HAXE_FLAGS := -D reflaxe_elixir_validate_results
+HAXE_FLAGS := -D reflaxe_elixir_validate_results -D reflaxe_elixir_verify_pass_preconditions
 PIPELINE_MODE := (AST Pipeline)
 endif
 

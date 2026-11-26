@@ -58,7 +58,14 @@ def compile_fixture(profile: dict, *, granular: bool, all_passes: bool) -> None:
     if granular:
         command.extend(["-D", "hxx_granular_pass_registry"])
     if all_passes:
-        command.extend(["-D", "reflaxe_elixir_disable_pass_scopes"])
+        command.extend(
+            [
+                "-D",
+                "reflaxe_elixir_disable_pass_scopes",
+                "-D",
+                "reflaxe_elixir_disable_pass_preconditions",
+            ]
+        )
     command_output(command)
 
 

@@ -26,7 +26,8 @@ private typedef NodeCase = {
 @:nullSafety(Off)
 class TestElixirASTChildren {
 	public static function run():Expr {
-		testConstructorCoverageAndImmediateChildren();
+		var samples = testConstructorCoverageAndImmediateChildren();
+		testWalkMatchesImmediateChildRecursion(samples);
 		testPatternCoverageAndEmbeddedAst();
 		testMetadataPositionAndAttributeSpans();
 		testDeterministicStructuralWalk();
@@ -38,7 +39,7 @@ class TestElixirASTChildren {
 		return macro null;
 	}
 
-	static function testConstructorCoverageAndImmediateChildren():Void {
+	static function testConstructorCoverageAndImmediateChildren():Array<NodeCase> {
 		var child = ast("child");
 		var pattern = PVar("pattern");
 		var nodes:Array<NodeCase> = [
@@ -188,6 +189,42 @@ class TestElixirASTChildren {
 			assertTrue(ElixirASTTransformer.transformNode(sample.node, child -> child) == sample.node,
 				sample.name + " no-op traversal preserves node identity");
 		}
+		return nodes;
+	}
+
+	/**
+	 * `ASTUtils.walk` must visit the same nodes, in the same preorder, as the
+	 * older recursion that called `iterateAST` on each node. Every constructor
+	 * sample is nested in one module, and each leaf gets its own name, so a
+	 * change of visit order or a missed child fails this check.
+	 */
+	static function testWalkMatchesImmediateChildRecursion(samples:Array<NodeCase>):Void {
+		var counter = 0;
+		var distinct = samples.map(sample -> ElixirASTTransformer.transformNode(sample.node, node -> switch (node.def) {
+			case EVar(_): makeASTWithMeta(EVar("leaf_" + (counter++)), node.metadata, node.pos);
+			default: node;
+		}));
+		var root = makeAST(EModule("Walk", [{name: "attr", value: ast("attr_value")}], [makeAST(EBlock(distinct)), makeAST(EDo(distinct))]));
+
+		var expected:Array<ElixirASTNode> = [];
+		referencePreorder(root, expected);
+		var actual:Array<ElixirASTNode> = [];
+		ASTUtils.walk(root, node -> actual.push(node));
+
+		assertTrue(counter > samples.length, "walk fixture has distinct leaves");
+		assertEquals(expected.length, actual.length, "walk visit count");
+		for (i in 0...expected.length)
+			assertTrue(expected[i] == actual[i], "walk visit " + i + " is the same node in the same order");
+		var none = 0;
+		ASTUtils.walk(null, _ -> none++);
+		assertEquals(0, none, "walk ignores a null root");
+	}
+
+	static function referencePreorder(node:ElixirASTNode, out:Array<ElixirASTNode>):Void {
+		if (node == null || node.def == null)
+			return;
+		out.push(node);
+		ElixirASTTransformer.iterateAST(node, child -> referencePreorder(child, out));
 	}
 
 	static function testPatternCoverageAndEmbeddedAst():Void {

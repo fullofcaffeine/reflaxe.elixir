@@ -4,6 +4,7 @@ import haxe.crypto.Sha256;
 import haxe.io.Path;
 import reflaxe.elixir.ast.transformers.registry.PassIntrospection;
 import reflaxe.elixir.ast.transformers.registry.PassInventory;
+import reflaxe.elixir.ast.transformers.registry.PassPreconditionManifest;
 import reflaxe.elixir.ast.transformers.registry.PassScopeManifest;
 import reflaxe.elixir.ast.transformers.registry.RegistryCore.RegistryDiagnostics;
 
@@ -250,5 +251,12 @@ class RegistryOrderDoc {
 		missingScopedPasses.sort(Reflect.compare);
 		if (missingScopedPasses.length > 0)
 			throw 'Pass scope manifest references missing registry IDs: ${missingScopedPasses.join(", ")}';
+		var missingPreconditionPasses:Array<String> = [];
+		for (passName in PassPreconditionManifest.declarations().keys())
+			if (!effectiveNames.exists(passName))
+				missingPreconditionPasses.push(passName);
+		missingPreconditionPasses.sort(Reflect.compare);
+		if (missingPreconditionPasses.length > 0)
+			throw 'Pass precondition manifest references missing registry IDs: ${missingPreconditionPasses.join(", ")}';
 	}
 }
