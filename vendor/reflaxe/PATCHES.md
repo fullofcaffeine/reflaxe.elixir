@@ -842,6 +842,44 @@ Validation before removal:
 
 - `npm run test:reflaxe-server-cache` (`shared-type` case)
 
+### 11. `ReflectCompiler.hx`: Keep Every Type That Haxe Typed In The Request
+
+Status: local patch, not upstreamed.
+
+Files:
+
+- `src/reflaxe/ReflectCompiler.hx` (`onAfterTyping`)
+
+Why it exists:
+
+Haxe calls an after-typing callback once with every typed type. When a
+callback makes Haxe type more modules, Haxe calls each callback again, with
+only the new types. Upstream Reflaxe stored the list of the last call, so it
+would build only those new types.
+
+Reflaxe.Elixir now loads `StringTools` in such a callback
+(`TypingPhaseTypes.registerRuntimeSupportLoad`). It must not ask Haxe for a
+type during generation: Haxe records that lookup as a dependency of an
+unrelated module, and the next warm request on a compilation server then
+types the looked-up module as part of the program. A fresh build never does.
+Observed: the second warm request built 26 classes instead of 23 and wrote
+`haxe/iterators/string_iterator.ex`, `string_key_value_iterator.ex` and
+`int_iterator.ex`, which a fresh build does not write.
+
+Local fix:
+
+- `onAfterTyping` appends the types of each call to the list of the request.
+  The list variable has an initializer (`= null`), because the macro
+  interpreter resets a static variable between requests only when it has one.
+
+Upstream action:
+
+Good upstream candidate. Do not open a PR without explicit user authorization.
+
+Validation before removal:
+
+- `npm run test:reflaxe-server-cache` (`late-typed` cases)
+
 ## Local Non-Framework Metadata
 
 These files are local to this vendored copy and are not framework patches:

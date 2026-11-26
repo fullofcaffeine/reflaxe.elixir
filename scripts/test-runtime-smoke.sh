@@ -72,6 +72,7 @@ TEST_DIRS=(
   "test/snapshot/regression/tuple_value_with_hoisted_receiver"
   "test/snapshot/regression/tuple_argument_order"
   "test/snapshot/regression/string_codepoint_units"
+  "test/snapshot/regression/string_code_at_dce_full"
   "test/snapshot/regression/string_scan_scaling"
   "test/snapshot/regression/ereg_codepoint_positions"
   "test/snapshot/regression/string_buf_linear_append"
