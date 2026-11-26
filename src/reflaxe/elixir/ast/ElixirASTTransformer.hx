@@ -6014,6 +6014,49 @@ class ElixirASTTransformer {
 	}
 
 	/**
+	 * Visit every node of a tree in preorder without rebuilding it.
+	 *
+	 * WHAT
+	 * - Calls `visitor` once for `root` and once for each structural descendant,
+	 *   including AST values carried by patterns. A parent is visited before its
+	 *   children, and children are visited in the engine's normal child order.
+	 *   `null` children and nodes without a `def` are not visited.
+	 *
+	 * WHY
+	 * - Many passes first collect facts with `ASTUtils.walk` and then find
+	 *   nothing to change. On a large LiveView module, the old walk called
+	 *   `iterateAST` for each node, which created two closures per node and
+	 *   cost about twice as much as a full no-op `transformNode`.
+	 *
+	 * HOW
+	 * - Runs the one fused traversal engine once over the whole tree. The
+	 *   engine asks its boundary predicate about each node before it reads the
+	 *   node's children, so the predicate is the preorder visit; it always
+	 *   answers "not a boundary", so every child is entered. The transform
+	 *   callback returns each node unchanged, so no node is rebuilt.
+	 * - The visited nodes and their order are the same as the old
+	 *   `visitor(node)` then `iterateAST(node, ...)` recursion. There is still no
+	 *   second child switch.
+	 *
+	 * EXAMPLE
+	 * - `visitPreorder(EBlock([EVar("a"), ECall(null, "f", [EVar("b")])]), v)`
+	 *   calls `v` on the block, `a`, the call, then `b`.
+	 */
+	public static function visitPreorder(root:ElixirAST, visitor:ElixirAST->Void):Void {
+		if (root == null || root.def == null)
+			return;
+		transformNodeScopedInternal(root, keepNode, node -> {
+			visitor(node);
+			return false;
+		});
+	}
+
+	/** Identity transform callback used by read-only traversals. */
+	static function keepNode(node:ElixirAST):ElixirAST {
+		return node;
+	}
+
+	/**
 	 * Visit one node's immediate structural children without rebuilding it.
 	 *
 	 * Nested pattern structure is walked so every AST value carried by a pattern
