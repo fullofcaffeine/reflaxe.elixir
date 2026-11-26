@@ -9,6 +9,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.emptyMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirASTShallowEquality;
 import reflaxe.elixir.ast.ElixirASTStructuralDigest;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -34,6 +35,8 @@ class TestElixirASTChildren {
 		testTransformerDelegatesToStructuralChildren();
 		testTransformerPreservesUnchangedBranches();
 		testTransformerBoundaryStopsRecursion();
+		testCopyingCallbackKeepsIdentity(samples);
+		testShallowEqualityRejectsRealChanges();
 
 		Sys.println("ElixirAST child traversal contract passed");
 		return macro null;
@@ -450,6 +453,97 @@ class TestElixirASTChildren {
 		ASTUtils.walk(mapped, child -> collectVarName(child, names));
 
 		assertStrings(["mapped_outside", "inside"], names, "transformNodeUntil lexical boundary");
+	}
+
+	/**
+	 * A pass callback that rebuilds each node with the same children, for example
+	 * `makeASTWithMeta(EBlock(statements.copy()), n.metadata, n.pos)`, changes
+	 * nothing. The engine must then return the input object for every constructor,
+	 * and the parent must not be rebuilt either.
+	 */
+	static function testCopyingCallbackKeepsIdentity(samples:Array<NodeCase>):Void {
+		for (sample in samples) {
+			var node = makeAST(sample.node.def);
+			var copies = 0;
+			var root = makeAST(EBlock([node, ast("sibling")]));
+			var result = ElixirASTTransformer.transformNode(root, child -> {
+				var copy = shallowCopy(child);
+				if (copy != child)
+					copies++;
+				return copy;
+			});
+			assertTrue(copies > 0, sample.name + " copying callback made copies");
+			assertTrue(ElixirASTShallowEquality.sameNode(node, shallowCopy(node)), sample.name + " one-level copy is the same node");
+			assertTrue(result == root, sample.name + " copying callback keeps the root object");
+		}
+	}
+
+	/** A copy with any visible difference must still replace the original. */
+	static function testShallowEqualityRejectsRealChanges():Void {
+		var target = ast("target");
+		var arg = ast("arg");
+		var node = makeAST(ECall(target, "put", [arg]));
+		assertTrue(ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(ECall(target, "put", [arg]), node.metadata, node.pos)),
+			"same call with a new argument array is a copy");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(ECall(target, "push", [arg]), node.metadata, node.pos)),
+			"a changed function name is a change");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(ECall(target, "put", [ast("arg")]), node.metadata, node.pos)),
+			"a new child object is a change");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(ECall(target, "put", [arg, arg]), node.metadata, node.pos)),
+			"an extra argument is a change");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeAST(ECall(target, "put", [arg]))), "fresh metadata is a change");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(ECall(target, "put", [arg]), {}, node.pos)),
+			"a metadata record copied with equal values is a change");
+		assertTrue(!ElixirASTShallowEquality.sameNode(node, makeASTWithMeta(EBlock([target]), node.metadata, node.pos)), "a new constructor is a change");
+		var bare:ElixirASTNode = {def: EVar("x"), metadata: null, pos: null};
+		assertTrue(!ElixirASTShallowEquality.sameNode(bare, {def: EVar("x"), metadata: null, pos: null}), "null metadata never matches");
+		var attribute = {
+			name: "class",
+			value: ast("value"),
+			nameSpanStart: 1,
+			nameSpanEnd: 6
+		};
+		var fragment = makeAST(EFragment("div", [attribute], []));
+		assertTrue(!ElixirASTShallowEquality.sameNode(fragment,
+			makeASTWithMeta(EFragment("div", [{name: attribute.name, value: attribute.value}], []), fragment.metadata, fragment.pos)),
+			"an attribute that drops its span is a change");
+
+		var real = ElixirASTTransformer.transformNode(makeAST(EBlock([makeAST(EBlock([ast("old_value")]))])), child -> switch (child.def) {
+			case EVar("old_value"): makeASTWithMeta(EVar("new_value"), child.metadata, child.pos);
+			default: shallowCopy(child);
+		});
+		var names:Array<String> = [];
+		ASTUtils.walk(real, child -> collectVarName(child, names));
+		assertStrings(["new_value"], names, "a real change under copying ancestors survives");
+	}
+
+	/**
+	 * Rebuilds one node with new arrays and new clause records but the same child
+	 * objects, scalars, metadata object, and position.
+	 */
+	static function shallowCopy(node:ElixirASTNode):ElixirASTNode {
+		var params = Type.enumParameters(node.def).map(copyParameter);
+		var def = Type.createEnumIndex(ElixirASTDef, Type.enumIndex(node.def), params);
+		return makeASTWithMeta(def, node.metadata, node.pos);
+	}
+
+	static function copyParameter(value:Dynamic):Dynamic {
+		if (Std.isOfType(value, Array)) {
+			var values:Array<Dynamic> = value;
+			return values.map(copyRecord);
+		}
+		return copyRecord(value);
+	}
+
+	static function copyRecord(value:Dynamic):Dynamic {
+		if (value == null || Type.typeof(value) != TObject || Reflect.hasField(value, "def"))
+			return value;
+		var copy:Dynamic = {};
+		for (field in Reflect.fields(value)) {
+			var fieldValue:Dynamic = Reflect.field(value, field);
+			Reflect.setField(copy, field, Std.isOfType(fieldValue, Array) ? (fieldValue : Array<Dynamic>).copy() : fieldValue);
+		}
+		return copy;
 	}
 
 	static function nodeCase(name:String, def:ElixirASTDef, astChildren:Int, patternChildren:Int):NodeCase {

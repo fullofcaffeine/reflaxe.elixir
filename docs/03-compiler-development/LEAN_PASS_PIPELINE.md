@@ -183,6 +183,61 @@ words before and 5,274 M after.
 The fresh todo-app output tree is byte-identical before and after (125 files), and a warm build after
 edits equals a fresh build. The pipeline call made 3,433 walks for this one module.
 
+### Engine cost per node
+
+A profile of the same `TodoLive` edit (on `5aa5fdf0a`) found that 295 of its 555 pass runs return a
+new tree object with no structural change, and that these runs allocate 499 M of the pipeline's
+767 M words. The first guess was that rebuilt nodes cause this allocation. A measurement disproved
+it: making the engine keep a node that a callback only copied (below) changed the pipeline's
+allocation by +0.2%. Most of the allocation is the cost of the walks themselves. In the Haxe macro
+interpreter every function call allocates a frame of about 30 words, and an anonymous record about
+18 words. A no-op `transformNode` cost about 260 words per node on a synthetic module.
+
+The traversal engine now avoids work it does not need:
+
+- **Leaf children inline.** Most nodes are leaves (`EVar`, `EAtom`, literals). The engine handles a
+  leaf child in place (`transformChild`, an inline function) instead of calling itself just to find
+  that the leaf has no children. A leaf still gets the same calls in the same order: the boundary
+  predicate, then the callback. `ERaw` is not handled this way, because the engine gives it to the
+  callback only when it is a boundary.
+- **No result records.** The child-array helpers return the array itself when nothing changed, and a
+  copy when something changed, instead of an `{array, changed}` record for each array.
+- **Patterns without closures.** `PVar` and `PWildcard` hold no AST, so the engine returns them at
+  once. `ElixirPatternChildren.mapImmediate` copies a pattern, an array, or a record only when one of
+  its children changed, and it no longer makes two closures and a new pattern value per call.
+- **Walks without an identity callback.** `visitPreorder` (behind `ASTUtils.walk`) passes no
+  transform callback; the engine reads `null` as "keep every node".
+- **Copies kept as the original.** When a callback returns a one-level copy of its input (same
+  constructor, the same child objects, the same scalar values, the same metadata object, and the same
+  position), the engine keeps the input (`ElixirASTShallowEquality.sameNode`). Its parent then sees an
+  unchanged child and is not rebuilt either. This does not cut allocation, but on `TodoLive` it makes
+  183 more pass runs return their input object (403 of 555 instead of 220). The other 112 no-change
+  rebuilds come from passes with hand-written recursion that copy whole subtrees; a one-level check
+  cannot see those.
+
+Why the output cannot change: a kept node and its copy have the same `def` values, the same metadata
+object, and the same position, so the printer and every later pass read the same values. Only object
+identity differs. A metadata write in place lands in the same object either way. A node whose
+metadata is `null` is never treated as a copy, because a later `node.metadata = {}` would then write
+to a node that the input tree also holds. A pass that keeps an identity map of nodes it collected
+before it ran (`TempVariableTransforms`, `AssignmentExtractionTransforms`) only changes nodes whose
+callback result is not a copy, so it is not affected. `npm run test:ast-children` checks, for every
+AST constructor, that a callback that copies every node gives back the input object, and that a real
+change (another name, another child, fresh metadata, a dropped attribute span) is still a change.
+
+Measured on 2026-11-25 on the todo-app, after an edit of one string in `TodoLive.hx`. The `TodoLive`
+pass pipeline ran 12 times in one warm compiler process, taking turns between the old engine and the
+new one (a temporary copy of the old engine, not committed). The one-minute load was 55 to 67 on 12
+cores:
+
+| Measurement for one `TodoLive` pass pipeline | Old engine | New engine |
+| --- | ---: | ---: |
+| Interpreter allocation (minor heap words, exact) | 767.7 M | 537.8 M (-30%) |
+| CPU time, median of 6 runs (indicative: measured on a busy machine) | 3.83 s | 3.24 s (-15%) |
+
+The fresh todo-app output tree is byte-identical before and after (125 files, `_GeneratedFiles.json`
+included).
+
 ### Why grouped, granular, and all-pass builds do not drift
 
 Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and
