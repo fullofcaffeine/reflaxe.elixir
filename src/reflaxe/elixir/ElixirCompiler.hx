@@ -492,6 +492,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// type must write nothing (see ServerSourceFreshness.refuseStaleReuse).
 		if (moduleTypes != null)
 			ServerSourceFreshness.refuseStaleReuse(moduleTypes);
+		// From here on, generation reads types only from the typed program.
+		TypingPhaseTypes.beginGeneration(moduleTypes != null ? moduleTypes : []);
 		// The diagnostic ran in Haxe's after-typing callback, before this reset.
 		phaseTimings.record("reference_semantics_diagnostics", ReferenceSemanticsDiagnostics.lastDurationMs);
 		if (ReferenceSemanticsDiagnostics.lastScannedClassCount > 0)
@@ -520,7 +522,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 	function filterTypesBody(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
-		var result = moduleTypes != null ? moduleTypes.copy() : [];
+		// A type that only the runtime-support load typed is not part of the
+		// program; `addStringToolsModuleIfMissing` adds `StringTools` back
+		// when generated code needs it.
+		var result = moduleTypes != null ? moduleTypes.filter(moduleType -> !TypingPhaseTypes.isRuntimeSupportOnly(moduleType)) : [];
 		forceStringToolsRuntime = false;
 
 		// Migration-only compilation mode:
@@ -545,7 +550,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		var needsStringTools = moduleTypesNeedStringToolsRuntime(result);
 		phaseTimings.finish("string_tools_runtime_scan", scanStarted);
 		if (needsStringTools) {
-			addStringToolsModuleIfMissing(result);
+			addStringToolsModuleIfMissing(result, moduleTypes);
 		}
 		return result;
 		#else
@@ -609,19 +614,26 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * changes no template fact, so no template is built again; a new field in
 	 * the props of `<.badge>` builds each template that looks up `badge`.
 	 *
-	 * Returns every live type when the output folder has no
-	 * `_GeneratedFiles.json`, so that the request builds every type, as a fresh
-	 * build. Example: `mix clean` removes each owned file and the manifest while
-	 * the compile server runs. A request without an edit would build no type,
-	 * and the output transaction would keep "the files of the types that it did
-	 * not build" from a manifest that is gone: it reported "No files updated."
-	 * and wrote a manifest with no files. The check is one file test for each
-	 * warm request.
+	 * Returns every live type, so that the request builds every type as a
+	 * fresh build does, when `_GeneratedFiles.json` in the output folder is not
+	 * the manifest that this server published last
+	 * (`GeneratedOutputOwnership.isLastPublishedManifest`). A request without an
+	 * edit builds no type, and the output transaction keeps "the files of the
+	 * types that it did not build" as the manifest lists them. That list is
+	 * right only for this server's own manifest. Examples:
+	 * - `mix clean` removes each owned file and the manifest while the compile
+	 *   server runs. The request reported "No files updated." and wrote a
+	 *   manifest with no files (phase `cache_filter_missing_output_manifest`).
+	 * - A direct build with another define writes the same folder. The request
+	 *   reported "No files updated." and kept that build's files (phase
+	 *   `cache_filter_foreign_output_manifest`).
+	 * The check reads the manifest one time for each warm request.
 	 */
 	public override function typesToBuildForChangedSources(changedTypeKeys:Array<String>, liveTypeKeys:Array<String>):Null<Map<String, Bool>> {
-		var outputDirectory = resolveOutputDirectory();
-		if (outputDirectory != null && !GeneratedOutputOwnership.hasManifest(outputDirectory)) {
-			phaseTimings.record("cache_filter_missing_output_manifest", 0.0);
+		var outputRoot = resolveOutputDirectory();
+		if (outputRoot != null && !GeneratedOutputOwnership.isLastPublishedManifest(outputRoot)) {
+			phaseTimings.record(GeneratedOutputOwnership.hasManifest(outputRoot) ? "cache_filter_foreign_output_manifest" : "cache_filter_missing_output_manifest",
+				0.0);
 			return [for (key in liveTypeKeys) key => true];
 		}
 		var started = phaseTimings.start();
@@ -836,20 +848,24 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			&& (StringTools.endsWith(normalized, ".cross.hx") || normalized.indexOf("/haxe/versions/") != -1);
 	}
 
-	private function addStringToolsModuleIfMissing(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+	/**
+	 * Makes sure that `result` builds `StringTools`, whose helpers generated
+	 * code calls. When the program does not use `StringTools`, the class comes
+	 * from `typedTypes`, where the runtime-support load put it before typing
+	 * ended (see `TypingPhaseTypes`). Asking Haxe for it here, during
+	 * generation, would make a warm request type more modules than a fresh
+	 * build.
+	 */
+	private function addStringToolsModuleIfMissing(result:Array<haxe.macro.Type.ModuleType>, typedTypes:Null<Array<haxe.macro.Type.ModuleType>>):Void {
 		forceStringToolsRuntime = true;
-		if (moduleTypes == null || hasStringToolsModule(moduleTypes))
+		if (hasStringToolsModule(result) || typedTypes == null)
 			return;
-		try {
-			switch (Context.getType("StringTools")) {
-				case TInst(classRef, _):
-					var classType = classRef.get();
-					if (classType != null && classType.name == "StringTools" && (classType.pack == null || classType.pack.length == 0)) {
-						moduleTypes.push(TClassDecl(classRef));
-					}
-				default:
+		for (moduleType in typedTypes) {
+			if (TypingPhaseTypes.isStringTools(moduleType)) {
+				result.push(moduleType);
+				return;
 			}
-		} catch (_:Dynamic) {}
+		}
 	}
 
 	private function hasStringToolsModule(moduleTypes:Array<haxe.macro.Type.ModuleType>):Bool {

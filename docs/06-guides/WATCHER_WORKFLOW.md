@@ -470,6 +470,62 @@ Before these marks existed, Reflaxe found the typed-again types with a build
 macro that it registers when it starts. It missed each of these cases, and the
 warm build kept the old file and exited 0.
 
+### A warm build types the same modules as a fresh build
+
+A warm request with no edit must build and write the same modules as a fresh
+build, also on the third or tenth request. One Haxe rule makes this need care:
+when code asks Haxe for a type by name, Haxe records a dependency of the
+"current module" on the module of that type. After typing ends, the current
+module is not the module that asked. It is the last class that Haxe's
+expression filters processed, for example `reflaxe.elixir.runtime.HaxeThrow`.
+The server keeps that dependency. The next request reuses that class, and with
+it loads the module that was asked for, so this module is now part of the
+typed program. A fresh build never types it before generation.
+
+Two cases showed this, each with no edit after the first request:
+
+- A class whose assigns name `phoenix.Phoenix.Form`. Reflaxe asked Haxe for
+  `StringTools`, whose helpers generated code calls, during generation. The
+  second request built 26 classes instead of 23 and wrote
+  `haxe/iterators/string_iterator.ex`, `string_key_value_iterator.ex` and
+  `int_iterator.ex`. Under `-dce full` it wrote a different `string_tools.ex`.
+- A template with `<.form :let={f}>` and no other use of Phoenix. The template
+  linter asked Haxe for `phoenix.Phoenix.Form`. The typed program grew over
+  four requests (14, 19, 24, then 26 classes) and the build wrote
+  `phoenix/*.ex` and `ecto/*.ex` files.
+
+The rule now is: **generation reads types only from the typed program, and it
+never asks Haxe to load a module.** A module that generated code may need is
+loaded before typing ends, in the same way in every request:
+
+- Reflaxe.Elixir loads `StringTools` in Haxe's after-typing step when the
+  program does not use it. There Haxe records no dependency on an unrelated
+  module. The class and the modules that it loads are generated only when
+  generated code calls a `StringTools` helper, as before. Haxe now types this
+  class before dead-code elimination, so under `-dce full` the written
+  `string_tools.ex` keeps only the helpers that generated code calls (all
+  `@:keep`, including `fast_code_at` and `unsafe_code_at` for
+  `s.fastCodeAt(i)` and `s.unsafeCodeAt(i)`) and the functions that the
+  program uses. Before, it kept every function.
+- When the program has a template but does not use `phoenix.Phoenix`,
+  Reflaxe.Elixir loads `phoenix.Phoenix` in the same step. A program has a
+  template when it calls `HXX.hxx(...)`, or `HeexTemplate.root(...)`,
+  `H.root(...)` or `HXX2.root(...)` from `phoenix.hxx`; inline markup becomes
+  such a call. The template linter reads `phoenix.Phoenix.Form`, `FormField`
+  and `elixir.types.Term` from the typed program, so it still checks
+  `<.form :let={f}>` and `<.inputs_for :let={f}>` values. Modules that only
+  this load added are not generated.
+
+Limits: a type that another after-typing callback loads after this load
+started (for example the router's controller check, or a project macro)
+also counts as loaded only for runtime support, and is not generated. No
+test or example loads a type there. Other lookups by name still run during
+generation, for router and controller metadata, discovered hook and tag
+registries, and component props found by type name. They usually ask for
+modules that the program already types. Such a lookup can still keep a module
+in later warm requests after you remove the last reference to it; restart the
+server, or run a fresh build, if a removed module's file stays.
+
 ### An edit outside a class
 
 An edit of an enum, typedef, or abstract builds the types that Haxe types
@@ -714,10 +770,11 @@ their source maps, until the next full build, and still exited 0.
 
 The record lives in the server's memory, beside the manifest that the server
 wrote last. When the manifest on disk is not that one (another process wrote
-it, or the server restarted), the owners are unknown, and the warm build keeps
-the old files as before. The first request of a server always builds every
-type and deletes every file that it does not write. A file without a known
-type, such as an extra file that the compiler adds, is also kept.
+it, or the server restarted), the owners are unknown, so the warm request
+builds every type, as a fresh build does (phase
+`cache_filter_foreign_output_manifest`). The first request of a server always
+builds every type and deletes every file that it does not write. A file
+without a known type, such as an extra file that the compiler adds, is kept.
 
 The `dropped-output` case of `npm run test:reflaxe-server-cache` checks these
 three examples, a request without an edit after the first two (no class is
@@ -751,8 +808,17 @@ again: a cached rebuild cannot know which files it keeps, so the request builds
 every type, as a direct build, and its report has the phase
 `cache_filter_missing_output_manifest`. The `deleted-output-root` cases of
 `npm run test:reflaxe-server-cache` delete the folder, the owned files and the
-manifest, only the manifest, and one kept file, and compare each result with a
-direct build.
+manifest, only the manifest, one kept file, and the folder in a request that
+also has an edit, and compare each result with a direct build.
+
+A manifest that this server did not write is the same case: when the
+manifest bytes are not the bytes of the server's last publication, the request
+builds every type, and its report has the phase
+`cache_filter_foreign_output_manifest`. Example: a direct build with another
+`-D` define writes the same output folder. The `foreign-manifest` cases write
+the folder with such a direct build, and with a valid manifest that lists no
+file, and compare the next warm request with a direct build of the server's
+configuration.
 
 Before, each such request wrote a new manifest and hashed it with SHA-256 in
 Haxe's macro interpreter: about 85 ms of a 0.36 s todo-app request on a loaded
@@ -898,8 +964,10 @@ Common cases:
 - **Output folder or `_GeneratedFiles.json` deleted while the server runs** (for
   example by `mix clean`): the next server build renders every module, as a
   direct build does. If the generated files are still there without the manifest,
-  the build stops with "Refusing to overwrite unowned file", as a direct build
-  does; restore the manifest or remove those files. See
+  the build stops with "Refusing to overwrite unowned file" and "manifest
+  missing", as a direct build does; restore the manifest or remove those files.
+  Another build that writes the same folder (for example a direct build with
+  another define) also makes the next server build render every module. See
   [Generated Output Ownership](../02-user-guide/GENERATED_OUTPUT_OWNERSHIP.md).
 - **Direct succeeds but server fails:** capture the failing edit and warm request
   sequence. This is an invalidation or persistent-state bug, not a reason to
