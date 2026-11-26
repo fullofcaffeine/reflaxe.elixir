@@ -470,6 +470,62 @@ Before these marks existed, Reflaxe found the typed-again types with a build
 macro that it registers when it starts. It missed each of these cases, and the
 warm build kept the old file and exited 0.
 
+### A warm build types the same modules as a fresh build
+
+A warm request with no edit must build and write the same modules as a fresh
+build, also on the third or tenth request. One Haxe rule makes this need care:
+when code asks Haxe for a type by name, Haxe records a dependency of the
+"current module" on the module of that type. After typing ends, the current
+module is not the module that asked. It is the last class that Haxe's
+expression filters processed, for example `reflaxe.elixir.runtime.HaxeThrow`.
+The server keeps that dependency. The next request reuses that class, and with
+it loads the module that was asked for, so this module is now part of the
+typed program. A fresh build never types it before generation.
+
+Two cases showed this, each with no edit after the first request:
+
+- A class whose assigns name `phoenix.Phoenix.Form`. Reflaxe asked Haxe for
+  `StringTools`, whose helpers generated code calls, during generation. The
+  second request built 26 classes instead of 23 and wrote
+  `haxe/iterators/string_iterator.ex`, `string_key_value_iterator.ex` and
+  `int_iterator.ex`. Under `-dce full` it wrote a different `string_tools.ex`.
+- A template with `<.form :let={f}>` and no other use of Phoenix. The template
+  linter asked Haxe for `phoenix.Phoenix.Form`. The typed program grew over
+  four requests (14, 19, 24, then 26 classes) and the build wrote
+  `phoenix/*.ex` and `ecto/*.ex` files.
+
+The rule now is: **generation reads types only from the typed program, and it
+never asks Haxe to load a module.** A module that generated code may need is
+loaded before typing ends, in the same way in every request:
+
+- Reflaxe.Elixir loads `StringTools` in Haxe's after-typing step when the
+  program does not use it. There Haxe records no dependency on an unrelated
+  module. The class and the modules that it loads are generated only when
+  generated code calls a `StringTools` helper, as before. Haxe now types this
+  class before dead-code elimination, so under `-dce full` the written
+  `string_tools.ex` keeps only the helpers that generated code calls (all
+  `@:keep`, including `fast_code_at` and `unsafe_code_at` for
+  `s.fastCodeAt(i)` and `s.unsafeCodeAt(i)`) and the functions that the
+  program uses. Before, it kept every function.
+- When the program has a template but does not use `phoenix.Phoenix`,
+  Reflaxe.Elixir loads `phoenix.Phoenix` in the same step. A program has a
+  template when it calls `HXX.hxx(...)`, or `HeexTemplate.root(...)`,
+  `H.root(...)` or `HXX2.root(...)` from `phoenix.hxx`; inline markup becomes
+  such a call. The template linter reads `phoenix.Phoenix.Form`, `FormField`
+  and `elixir.types.Term` from the typed program, so it still checks
+  `<.form :let={f}>` and `<.inputs_for :let={f}>` values. Modules that only
+  this load added are not generated.
+
+Limits: a type that another after-typing callback loads after this load
+started (for example the router's controller check, or a project macro)
+also counts as loaded only for runtime support, and is not generated. No
+test or example loads a type there. Other lookups by name still run during
+generation, for router and controller metadata, discovered hook and tag
+registries, and component props found by type name. They usually ask for
+modules that the program already types. Such a lookup can still keep a module
+in later warm requests after you remove the last reference to it; restart the
+server, or run a fresh build, if a removed module's file stays.
+
 ### An edit outside a class
 
 An edit of an enum, typedef, or abstract builds the types that Haxe types

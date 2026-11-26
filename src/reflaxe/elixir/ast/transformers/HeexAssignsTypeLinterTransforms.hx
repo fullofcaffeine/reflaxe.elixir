@@ -1285,11 +1285,9 @@ class HeexAssignsTypeLinterTransforms {
 
 		#if macro
 		if (looksLikePhoenixFormLetBinding(letDef.props, letDef.typeName)) {
-			var formFieldType:Null<haxe.macro.Type> = null;
-			try
-				formFieldType = Context.getType("phoenix.Phoenix.FormField")
-			catch (_:Dynamic)
-				formFieldType = null;
+			// Read from the typed program only: a lookup that makes Haxe type
+			// `phoenix.Phoenix` now changes the next warm request (TypingPhaseTypes).
+			var formFieldType:Null<haxe.macro.Type> = reflaxe.elixir.TypingPhaseTypes.findType("phoenix.Phoenix.FormField");
 			if (formFieldType != null) {
 				var letInfo = letBindingPropsFromType(formFieldType);
 				if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
@@ -2615,19 +2613,13 @@ class HeexAssignsTypeLinterTransforms {
 	}
 
 	static function resolvePhoenixCoreFormLetType():Null<haxe.macro.Type> {
-		var formType:Null<haxe.macro.Type> = null;
-		try
-			formType = Context.getType("phoenix.Phoenix.Form")
-		catch (_:Dynamic)
-			formType = null;
+		// Read from the typed program only (see TypingPhaseTypes). A program
+		// with templates always has `phoenix.Phoenix` typed by then.
+		var formType:Null<haxe.macro.Type> = reflaxe.elixir.TypingPhaseTypes.findType("phoenix.Phoenix.Form");
 		if (formType == null)
 			return null;
 
-		var termType:Null<haxe.macro.Type> = null;
-		try
-			termType = Context.getType("elixir.types.Term")
-		catch (_:Dynamic)
-			termType = null;
+		var termType:Null<haxe.macro.Type> = reflaxe.elixir.TypingPhaseTypes.findType("elixir.types.Term");
 
 		return switch (formType) {
 			case TType(tdef, params):

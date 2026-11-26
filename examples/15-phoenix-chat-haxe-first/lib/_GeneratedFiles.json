@@ -224,8 +224,8 @@
 		},
 		{
 			"path": "string_tools.ex",
-			"sha256": "85da5fcb3a7928a89fe997af27c71866732bf79a976fdfa88fdd5d79a94e7f2d"
+			"sha256": "e7acdd2dd82ac10e83c993f8cd6be926dc8a5d627c368ad0eaa0e4a608929138"
 		}
 	],
-	"generation": "89a52d3303214d1d11f4d123c2419e9e774432e9a7f540e732aa90f196826f64"
+	"generation": "b09fc4824c55f7656d39cbb6c145130185154834eca1b6b27281ad10c3c1341d"
 }

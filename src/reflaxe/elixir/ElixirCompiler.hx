@@ -492,6 +492,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// type must write nothing (see ServerSourceFreshness.refuseStaleReuse).
 		if (moduleTypes != null)
 			ServerSourceFreshness.refuseStaleReuse(moduleTypes);
+		// From here on, generation reads types only from the typed program.
+		TypingPhaseTypes.beginGeneration(moduleTypes != null ? moduleTypes : []);
 		// The diagnostic ran in Haxe's after-typing callback, before this reset.
 		phaseTimings.record("reference_semantics_diagnostics", ReferenceSemanticsDiagnostics.lastDurationMs);
 		if (ReferenceSemanticsDiagnostics.lastScannedClassCount > 0)
@@ -520,7 +522,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 	function filterTypesBody(moduleTypes:Array<haxe.macro.Type.ModuleType>):Array<haxe.macro.Type.ModuleType> {
 		#if eval
-		var result = moduleTypes != null ? moduleTypes.copy() : [];
+		// A type that only the runtime-support load typed is not part of the
+		// program; `addStringToolsModuleIfMissing` adds `StringTools` back
+		// when generated code needs it.
+		var result = moduleTypes != null ? moduleTypes.filter(moduleType -> !TypingPhaseTypes.isRuntimeSupportOnly(moduleType)) : [];
 		forceStringToolsRuntime = false;
 
 		// Migration-only compilation mode:
@@ -545,7 +550,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		var needsStringTools = moduleTypesNeedStringToolsRuntime(result);
 		phaseTimings.finish("string_tools_runtime_scan", scanStarted);
 		if (needsStringTools) {
-			addStringToolsModuleIfMissing(result);
+			addStringToolsModuleIfMissing(result, moduleTypes);
 		}
 		return result;
 		#else
@@ -836,20 +841,24 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			&& (StringTools.endsWith(normalized, ".cross.hx") || normalized.indexOf("/haxe/versions/") != -1);
 	}
 
-	private function addStringToolsModuleIfMissing(moduleTypes:Array<haxe.macro.Type.ModuleType>):Void {
+	/**
+	 * Makes sure that `result` builds `StringTools`, whose helpers generated
+	 * code calls. When the program does not use `StringTools`, the class comes
+	 * from `typedTypes`, where the runtime-support load put it before typing
+	 * ended (see `TypingPhaseTypes`). Asking Haxe for it here, during
+	 * generation, would make a warm request type more modules than a fresh
+	 * build.
+	 */
+	private function addStringToolsModuleIfMissing(result:Array<haxe.macro.Type.ModuleType>, typedTypes:Null<Array<haxe.macro.Type.ModuleType>>):Void {
 		forceStringToolsRuntime = true;
-		if (moduleTypes == null || hasStringToolsModule(moduleTypes))
+		if (hasStringToolsModule(result) || typedTypes == null)
 			return;
-		try {
-			switch (Context.getType("StringTools")) {
-				case TInst(classRef, _):
-					var classType = classRef.get();
-					if (classType != null && classType.name == "StringTools" && (classType.pack == null || classType.pack.length == 0)) {
-						moduleTypes.push(TClassDecl(classRef));
-					}
-				default:
+		for (moduleType in typedTypes) {
+			if (TypingPhaseTypes.isStringTools(moduleType)) {
+				result.push(moduleType);
+				return;
 			}
-		} catch (_:Dynamic) {}
+		}
 	}
 
 	private function hasStringToolsModule(moduleTypes:Array<haxe.macro.Type.ModuleType>):Bool {
