@@ -4392,46 +4392,133 @@ class ElixirASTTransformer {
 	private static var currentPassName:String = "";
 	#end
 
-	private static function transformArray(arr:Array<ElixirAST>, transformer:(ElixirAST) -> ElixirAST,
-			isBoundary:Null<(ElixirAST) -> Bool>):{array:Array<ElixirAST>, changed:Bool} {
-		var changed = false;
+	/**
+	 * Transforms each element and returns `arr` itself when no element changed, or a
+	 * copy with the changed elements otherwise. Callers test `result != arr`.
+	 */
+	private static inline function transformArray(arr:Array<ElixirAST>, transformer:Null<(ElixirAST) -> ElixirAST>,
+			isBoundary:Null<(ElixirAST) -> Bool>):Array<ElixirAST> {
 		var result = arr;
-
 		for (i in 0...arr.length) {
 			var original = arr[i];
-			var transformed = transformNodeScopedInternal(original, transformer, isBoundary);
+			var transformed = transformChild(original, transformer, isBoundary);
 			if (transformed != original) {
-				if (!changed) {
+				if (result == arr)
 					result = arr.copy();
-					changed = true;
-				}
 				result[i] = transformed;
 			}
 		}
-
-		return {array: result, changed: changed};
+		return result;
 	}
 
-	static function transformPattern(pattern:EPattern, transformer:ElixirAST->ElixirAST, isBoundary:Null<ElixirAST->Bool>):EPattern {
-		return ElixirPatternChildren.mapTree(pattern, child -> transformNodeScopedInternal(child, transformer, isBoundary));
+	/**
+	 * Transforms the AST values carried by one pattern.
+	 *
+	 * `PVar` and `PWildcard` carry none, so they return at once instead of
+	 * building the closures of `ElixirPatternChildren.mapTree`.
+	 */
+	static inline function transformPattern(pattern:EPattern, transformer:Null<ElixirAST->ElixirAST>, isBoundary:Null<ElixirAST->Bool>):EPattern {
+		return switch (pattern) {
+			case null | PVar(_) | PWildcard: pattern;
+			default: ElixirPatternChildren.mapTree(pattern, child -> transformChild(child, transformer, isBoundary));
+		};
 	}
 
-	static function transformPatterns(patterns:Array<EPattern>, transformer:ElixirAST->ElixirAST,
-			isBoundary:Null<ElixirAST->Bool>):{array:Array<EPattern>, changed:Bool} {
-		var changed = false;
+	/** Like `transformArray`, for the patterns of a function head or clause. */
+	static function transformPatterns(patterns:Array<EPattern>, transformer:Null<ElixirAST->ElixirAST>, isBoundary:Null<ElixirAST->Bool>):Array<EPattern> {
 		var result = patterns;
 		for (i in 0...patterns.length) {
 			var original = patterns[i];
 			var transformed = transformPattern(original, transformer, isBoundary);
 			if (transformed != original) {
-				if (!changed) {
+				if (result == patterns)
 					result = patterns.copy();
-					changed = true;
-				}
 				result[i] = transformed;
 			}
 		}
-		return {array: result, changed: changed};
+		return result;
+	}
+
+	#if debug_transformer_hang
+	/**
+	 * Debug-only visit accounting for one node (`-D debug_transformer_hang`). The engine and the
+	 * inline leaf path (`transformChild`) both call it, so leaves are counted as before.
+	 */
+	static function countHangVisit(ast:ElixirAST):Void {
+		nodeVisitCounter++;
+
+		// Create a unique identifier for this node
+		var nodeId = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
+
+		// Track visit frequency
+		var visits = visitedNodes.get(nodeId);
+		if (visits == null)
+			visits = 0;
+		visits++;
+		visitedNodes.set(nodeId, visits);
+
+		// Log breadcrumbs
+		if (nodeVisitCounter % 1000 == 0) {}
+
+		// Detect excessive visits to same node (cycle)
+		if (visits > 1000) {
+			throw 'Infinite recursion detected in transformer: ${nodeId}';
+		}
+
+		// Overall safety limit
+		if (nodeVisitCounter > maxNodeVisits) {
+			throw 'Transformer exceeded maximum node visit limit';
+		}
+	}
+	#end
+
+	/**
+	 * Transforms one child node; inlined at each child position of the engine.
+	 *
+	 * WHY
+	 * - Most children are leaves (`EVar`, `EAtom`, literals, ...). In the Haxe macro
+	 *   interpreter every function call allocates its own frame, so a recursive call
+	 *   just to find that a leaf has no children cost about a sixth of a no-op walk.
+	 *
+	 * HOW
+	 * - A leaf gets exactly what `transformNodeScopedInternal` would do with it: the
+	 *   boundary predicate is called first (read-only walks use it as their visit),
+	 *   then the callback, then the copy check. `ERaw` is not treated as a leaf here,
+	 *   because the engine never passes it to the callback unless it is a boundary.
+	 */
+	static inline function transformChild(child:ElixirAST, transformer:Null<(ElixirAST) -> ElixirAST>, isBoundary:Null<(ElixirAST) -> Bool>):ElixirAST {
+		return if (child != null && child.def != null && isLeafDef(child.def)) {
+			if (transformer == null) {
+				var leafIsBoundary = isBoundary != null && isBoundary(child);
+				#if debug_transformer_hang
+				if (!leafIsBoundary)
+					countHangVisit(child);
+				#end
+				child;
+			} else if (isBoundary != null && isBoundary(child)) {
+				transformer(child);
+			} else {
+				#if debug_transformer_hang
+				countHangVisit(child);
+				#end
+				var leafResult = transformer(child);
+				leafResult != child
+				&& ElixirASTShallowEquality.sameNode(child, leafResult) ? child : leafResult;
+			}
+		} else {
+			transformNodeScopedInternal(child, transformer, isBoundary);
+		}
+	}
+
+	/** True for constructors without AST or pattern children, except `ERaw`. */
+	static inline function isLeafDef(def:ElixirASTDef):Bool {
+		return switch (def) {
+			case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EUnderscore |
+				EAlias(_, _) | EImport(_, _, _, _) | ERequire(_, _) | EModuledoc(_) | EDoc(_) | ESpec(_) | ETypeDef(_, _) | ESigil(_, _, _) | EAssign(_):
+				true;
+			default:
+				false;
+		};
 	}
 
 	/**
@@ -4449,6 +4536,11 @@ class ElixirASTTransformer {
 	 * HOW
 	 * - Uses one fused, exhaustive child switch and applies the callback in postorder.
 	 * - Reuses unchanged nodes and arrays; when a descendant changes, only its ancestor path is rebuilt.
+	 * - When the callback returns a one-level copy of its input (same constructor, child objects,
+	 *   scalars, metadata object, and position; see `ElixirASTShallowEquality`), the input is kept, so
+	 *   a pass that rebuilds without changing anything does not force its ancestors to be rebuilt.
+	 * - Leaf children are handled inline (`transformChild`), without a recursive call: in the macro
+	 *   interpreter each call allocates a frame, and most nodes are leaves.
 	 * - Immediate map/visit APIs are derived from this engine instead of owning duplicate switches.
 	 * - Pattern-contained AST values participate through `ElixirPatternChildren`.
 	 * - ERaw remains opaque and non-transformable by design.
@@ -4494,43 +4586,18 @@ class ElixirASTTransformer {
 		return transformNodeScopedInternal(ast, preserveBoundary, isBoundary);
 	}
 
-	static function transformNodeScopedInternal(ast:ElixirAST, transformer:(ElixirAST) -> ElixirAST, isBoundary:Null<(ElixirAST) -> Bool>,
+	static function transformNodeScopedInternal(ast:ElixirAST, transformer:Null<(ElixirAST) -> ElixirAST>, isBoundary:Null<(ElixirAST) -> Bool>,
 			skipCurrentCallback:Bool = false):ElixirAST {
 		// Handle null AST nodes or nodes with null def
 		if (ast == null || ast.def == null) {
 			return ast; // Return as-is if null
 		}
 		if (isBoundary != null && isBoundary(ast)) {
-			return transformer(ast);
+			return transformer != null ? transformer(ast) : ast;
 		}
 
 		#if debug_transformer_hang
-		nodeVisitCounter++;
-
-		// Create a unique identifier for this node
-		var nodeId = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
-
-		// Track visit frequency
-		var visits = visitedNodes.get(nodeId);
-		if (visits == null)
-			visits = 0;
-		visits++;
-		visitedNodes.set(nodeId, visits);
-
-		// Log breadcrumbs
-		if (nodeVisitCounter % 1000 == 0) {}
-
-		// Detect excessive visits to same node (cycle)
-		if (visits > 1000) {
-			#if debug_transformer_hang
-			#end
-			throw 'Infinite recursion detected in transformer: ${nodeId}';
-		}
-
-		// Overall safety limit
-		if (nodeVisitCounter > maxNodeVisits) {
-			throw 'Transformer exceeded maximum node visit limit';
-		}
+		countHangVisit(ast);
 		#end
 
 		// First transform children
@@ -4540,58 +4607,60 @@ class ElixirASTTransformer {
 				var attrChanged = false;
 				var newAttributes:Array<EAttribute> = attributes;
 				if (attributes != null) {
-					var outAttrs:Array<EAttribute> = [];
-					for (a in attributes) {
-						var newVal = transformNodeScopedInternal(a.value, transformer, isBoundary);
-						if (newVal != a.value)
-							attrChanged = true;
-						outAttrs.push({
-							name: a.name,
-							value: newVal,
-							nameSpanStart: a.nameSpanStart,
-							nameSpanEnd: a.nameSpanEnd,
-							valueSpanStart: a.valueSpanStart,
-							valueSpanEnd: a.valueSpanEnd
-						});
+					for (i in 0...attributes.length) {
+						var a = attributes[i];
+						var newVal = transformChild(a.value, transformer, isBoundary);
+						if (newVal != a.value) {
+							if (!attrChanged) {
+								newAttributes = attributes.copy();
+								attrChanged = true;
+							}
+							newAttributes[i] = {
+								name: a.name,
+								value: newVal,
+								nameSpanStart: a.nameSpanStart,
+								nameSpanEnd: a.nameSpanEnd,
+								valueSpanStart: a.valueSpanStart,
+								valueSpanEnd: a.valueSpanEnd
+							};
+						}
 					}
-					if (attrChanged)
-						newAttributes = outAttrs;
 				}
-				if (bodyResult.changed || attrChanged) {
-					makeASTWithMeta(EModule(name, newAttributes, bodyResult.array), ast.metadata, ast.pos);
+				if (bodyResult != body || attrChanged) {
+					makeASTWithMeta(EModule(name, newAttributes, bodyResult), ast.metadata, ast.pos);
 				} else {
 					ast; // Return original if nothing changed
 				}
 
 			case EDef(name, args, guards, body): var argsResult = transformPatterns(args, transformer,
-					isBoundary); var newGuards = guards != null ? transformNodeScopedInternal(guards, transformer,
-					isBoundary) : null; var newBody = transformNodeScopedInternal(body, transformer,
-					isBoundary); argsResult.changed || newGuards != guards || newBody != body ? makeASTWithMeta(EDef(name, argsResult.array, newGuards,
-					newBody), ast.metadata, ast.pos) : ast;
+					isBoundary); var newGuards = guards != null ? transformChild(guards, transformer,
+					isBoundary) : null; var newBody = transformChild(body, transformer,
+					isBoundary); argsResult != args || newGuards != guards || newBody != body ? makeASTWithMeta(EDef(name, argsResult, newGuards, newBody),
+					ast.metadata, ast.pos) : ast;
 
 			case EDefp(name, args, guards, body): var argsResult = transformPatterns(args, transformer,
-					isBoundary); var newGuards = guards != null ? transformNodeScopedInternal(guards, transformer,
-					isBoundary) : null; var newBody = transformNodeScopedInternal(body, transformer,
-					isBoundary); argsResult.changed || newGuards != guards || newBody != body ? makeASTWithMeta(EDefp(name, argsResult.array, newGuards,
-					newBody), ast.metadata, ast.pos) : ast;
+					isBoundary); var newGuards = guards != null ? transformChild(guards, transformer,
+					isBoundary) : null; var newBody = transformChild(body, transformer,
+					isBoundary); argsResult != args || newGuards != guards || newBody != body ? makeASTWithMeta(EDefp(name, argsResult, newGuards, newBody),
+					ast.metadata, ast.pos) : ast;
 
 			case EDefmacro(name, args, guards, body): var argsResult = transformPatterns(args, transformer,
-					isBoundary); var newGuards = guards != null ? transformNodeScopedInternal(guards, transformer,
-					isBoundary) : null; var newBody = transformNodeScopedInternal(body, transformer,
-					isBoundary); argsResult.changed || newGuards != guards || newBody != body ? makeASTWithMeta(EDefmacro(name, argsResult.array, newGuards,
+					isBoundary); var newGuards = guards != null ? transformChild(guards, transformer,
+					isBoundary) : null; var newBody = transformChild(body, transformer,
+					isBoundary); argsResult != args || newGuards != guards || newBody != body ? makeASTWithMeta(EDefmacro(name, argsResult, newGuards,
 					newBody), ast.metadata, ast.pos) : ast;
 
 			case EDefmacrop(name, args, guards, body): var argsResult = transformPatterns(args, transformer,
-					isBoundary); var newGuards = guards != null ? transformNodeScopedInternal(guards, transformer,
-					isBoundary) : null; var newBody = transformNodeScopedInternal(body, transformer,
-					isBoundary); argsResult.changed || newGuards != guards || newBody != body ? makeASTWithMeta(EDefmacrop(name, argsResult.array, newGuards,
+					isBoundary); var newGuards = guards != null ? transformChild(guards, transformer,
+					isBoundary) : null; var newBody = transformChild(body, transformer,
+					isBoundary); argsResult != args || newGuards != guards || newBody != body ? makeASTWithMeta(EDefmacrop(name, argsResult, newGuards,
 					newBody), ast.metadata, ast.pos) : ast;
 
 			// Blocks
 			case EBlock(expressions):
 				var expResult = transformArray(expressions, transformer, isBoundary);
-				if (expResult.changed) {
-					makeASTWithMeta(EBlock(expResult.array), ast.metadata, ast.pos);
+				if (expResult != expressions) {
+					makeASTWithMeta(EBlock(expResult), ast.metadata, ast.pos);
 				} else {
 					ast; // Return original if nothing changed
 				}
@@ -4599,33 +4668,33 @@ class ElixirASTTransformer {
 			// Transform do-end blocks by visiting each expression
 			case EDo(body):
 				var doResult = transformArray(body, transformer, isBoundary);
-				if (doResult.changed) {
-					makeASTWithMeta(EDo(doResult.array), ast.metadata, ast.pos);
+				if (doResult != body) {
+					makeASTWithMeta(EDo(doResult), ast.metadata, ast.pos);
 				} else {
 					ast;
 				}
 
-			case EIf(condition, thenBranch, elseBranch): var newCondition = transformNodeScopedInternal(condition, transformer,
-					isBoundary); var newThenBranch = transformNodeScopedInternal(thenBranch, transformer,
-					isBoundary); var newElseBranch = elseBranch != null ? transformNodeScopedInternal(elseBranch, transformer,
+			case EIf(condition, thenBranch, elseBranch): var newCondition = transformChild(condition, transformer,
+					isBoundary); var newThenBranch = transformChild(thenBranch, transformer,
+					isBoundary); var newElseBranch = elseBranch != null ? transformChild(elseBranch, transformer,
 					isBoundary) : null; newCondition != condition || newThenBranch != thenBranch || newElseBranch != elseBranch ? makeASTWithMeta(EIf(newCondition,
 					newThenBranch, newElseBranch), ast.metadata, ast.pos) : ast;
 
-			case EUnless(condition, body, elseBranch): var newCondition = transformNodeScopedInternal(condition, transformer,
-					isBoundary); var newBody = transformNodeScopedInternal(body, transformer,
-					isBoundary); var newElseBranch = elseBranch != null ? transformNodeScopedInternal(elseBranch, transformer,
+			case EUnless(condition, body, elseBranch): var newCondition = transformChild(condition, transformer,
+					isBoundary); var newBody = transformChild(body, transformer,
+					isBoundary); var newElseBranch = elseBranch != null ? transformChild(elseBranch, transformer,
 					isBoundary) : null; newCondition != condition || newBody != body || newElseBranch != elseBranch ? makeASTWithMeta(EUnless(newCondition,
 					newBody, newElseBranch), ast.metadata, ast.pos) : ast;
 
 			case ECase(expr, clauses):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				var changed = newExpr != expr;
 				var newClauses = clauses;
 				for (i in 0...clauses.length) {
 					var clause = clauses[i];
 					var newPattern = transformPattern(clause.pattern, transformer, isBoundary);
-					var newGuard = clause.guard != null ? transformNodeScopedInternal(clause.guard, transformer, isBoundary) : null;
-					var newBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
+					var newGuard = clause.guard != null ? transformChild(clause.guard, transformer, isBoundary) : null;
+					var newBody = transformChild(clause.body, transformer, isBoundary);
 					if (newPattern != clause.pattern || newGuard != clause.guard || newBody != clause.body) {
 						if (newClauses == clauses)
 							newClauses = clauses.copy();
@@ -4640,8 +4709,8 @@ class ElixirASTTransformer {
 				var newClauses = clauses;
 				for (i in 0...clauses.length) {
 					var clause = clauses[i];
-					var newCondition = transformNodeScopedInternal(clause.condition, transformer, isBoundary);
-					var newBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
+					var newCondition = transformChild(clause.condition, transformer, isBoundary);
+					var newBody = transformChild(clause.body, transformer, isBoundary);
 					if (newCondition != clause.condition || newBody != clause.body) {
 						if (!changed) {
 							newClauses = clauses.copy();
@@ -4655,7 +4724,7 @@ class ElixirASTTransformer {
 			case EWith(clauses, doBlock, elseBlock): var changed = false; var newClauses = clauses; for (i in 0...clauses.length) {
 					var clause = clauses[i];
 					var newPattern = transformPattern(clause.pattern, transformer, isBoundary);
-					var newExpr = transformNodeScopedInternal(clause.expr, transformer, isBoundary);
+					var newExpr = transformChild(clause.expr, transformer, isBoundary);
 					if (newPattern != clause.pattern || newExpr != clause.expr) {
 						if (!changed) {
 							newClauses = clauses.copy();
@@ -4663,17 +4732,17 @@ class ElixirASTTransformer {
 						}
 						newClauses[i] = {pattern: newPattern, expr: newExpr};
 					}
-				} var newDoBlock = transformNodeScopedInternal(doBlock, transformer,
-					isBoundary); var newElseBlock = elseBlock != null ? transformNodeScopedInternal(elseBlock, transformer,
+				} var newDoBlock = transformChild(doBlock, transformer,
+					isBoundary); var newElseBlock = elseBlock != null ? transformChild(elseBlock, transformer,
 					isBoundary) : null; changed || newDoBlock != doBlock || newElseBlock != elseBlock ? makeASTWithMeta(EWith(newClauses, newDoBlock,
 					newElseBlock), ast.metadata, ast.pos) : ast;
 
-			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock): var newBody = transformNodeScopedInternal(body, transformer,
+			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock): var newBody = transformChild(body, transformer,
 					isBoundary); var changed = newBody != body; var newRescueClauses = rescueClauses; if (rescueClauses != null) {
 					for (i in 0...rescueClauses.length) {
 						var clause = rescueClauses[i];
 						var newPattern = transformPattern(clause.pattern, transformer, isBoundary);
-						var newClauseBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
+						var newClauseBody = transformChild(clause.body, transformer, isBoundary);
 						if (newPattern != clause.pattern || newClauseBody != clause.body) {
 							if (newRescueClauses == rescueClauses)
 								newRescueClauses = rescueClauses.copy();
@@ -4685,7 +4754,7 @@ class ElixirASTTransformer {
 					for (i in 0...catchClauses.length) {
 						var clause = catchClauses[i];
 						var newPattern = transformPattern(clause.pattern, transformer, isBoundary);
-						var newClauseBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
+						var newClauseBody = transformChild(clause.body, transformer, isBoundary);
 						if (newPattern != clause.pattern || newClauseBody != clause.body) {
 							if (newCatchClauses == catchClauses)
 								newCatchClauses = catchClauses.copy();
@@ -4693,18 +4762,18 @@ class ElixirASTTransformer {
 							changed = true;
 						}
 					}
-				} var newAfterBlock = afterBlock != null ? transformNodeScopedInternal(afterBlock, transformer,
-					isBoundary) : null; var newElseBlock = elseBlock != null ? transformNodeScopedInternal(elseBlock, transformer,
+				} var newAfterBlock = afterBlock != null ? transformChild(afterBlock, transformer,
+					isBoundary) : null; var newElseBlock = elseBlock != null ? transformChild(elseBlock, transformer,
 					isBoundary) : null; changed || newAfterBlock != afterBlock || newElseBlock != elseBlock ? makeASTWithMeta(ETry(newBody, newRescueClauses,
 					newCatchClauses, newAfterBlock, newElseBlock), ast.metadata, ast.pos) : ast;
 
-			case ERaise(exception, attributes): var newException = transformNodeScopedInternal(exception, transformer,
-					isBoundary); var newAttributes = attributes != null ? transformNodeScopedInternal(attributes, transformer,
+			case ERaise(exception, attributes): var newException = transformChild(exception, transformer,
+					isBoundary); var newAttributes = attributes != null ? transformChild(attributes, transformer,
 					isBoundary) : null; newException != exception || newAttributes != attributes ? makeASTWithMeta(ERaise(newException, newAttributes),
 					ast.metadata, ast.pos) : ast;
 
 			case EThrow(value):
-				var newValue = transformNodeScopedInternal(value, transformer, isBoundary);
+				var newValue = transformChild(value, transformer, isBoundary);
 				newValue != value ? makeASTWithMeta(EThrow(newValue), ast.metadata, ast.pos) : ast;
 
 			// Traverse anonymous functions and clause bodies
@@ -4714,82 +4783,81 @@ class ElixirASTTransformer {
 				for (i in 0...clauses.length) {
 					var clause = clauses[i];
 					var argsResult = transformPatterns(clause.args, transformer, isBoundary);
-					var newGuard = clause.guard != null ? transformNodeScopedInternal(clause.guard, transformer, isBoundary) : null;
-					var newBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
-					if (argsResult.changed || newGuard != clause.guard || newBody != clause.body) {
+					var newGuard = clause.guard != null ? transformChild(clause.guard, transformer, isBoundary) : null;
+					var newBody = transformChild(clause.body, transformer, isBoundary);
+					if (argsResult != clause.args || newGuard != clause.guard || newBody != clause.body) {
 						if (!changed) {
 							newClauses = clauses.copy();
 							changed = true;
 						}
-						newClauses[i] = {args: argsResult.array, guard: newGuard, body: newBody};
+						newClauses[i] = {args: argsResult, guard: newGuard, body: newBody};
 					}
 				}
 				changed ? makeASTWithMeta(EFn(newClauses), ast.metadata, ast.pos) : ast;
 
-			case EBinary(op, left, right): var newLeft = transformNodeScopedInternal(left, transformer,
-					isBoundary); var newRight = transformNodeScopedInternal(right, transformer,
+			case EBinary(op, left, right): var newLeft = transformChild(left, transformer,
+					isBoundary); var newRight = transformChild(right, transformer,
 					isBoundary); newLeft != left || newRight != right ? makeASTWithMeta(EBinary(op, newLeft, newRight), ast.metadata, ast.pos) : ast;
 
 			case EUnary(op, expr):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(EUnary(op, newExpr), ast.metadata, ast.pos) : ast;
 
 			case EParen(expr):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(EParen(newExpr), ast.metadata, ast.pos) : ast;
 
-			case ECall(target, funcName, args): var newTarget = target != null ? transformNodeScopedInternal(target, transformer,
+			case ECall(target, funcName, args): var newTarget = target != null ? transformChild(target, transformer,
 					isBoundary) : null; var argsResult = transformArray(args, transformer,
-					isBoundary); newTarget != target || argsResult.changed ? makeASTWithMeta(ECall(newTarget, funcName, argsResult.array), ast.metadata,
-					ast.pos) : ast;
+					isBoundary); newTarget != target || argsResult != args ? makeASTWithMeta(ECall(newTarget, funcName, argsResult), ast.metadata, ast.pos) : ast;
 
 			case EMacroCall(macroName, args, doBlock): var argsResult = transformArray(args, transformer,
-					isBoundary); var newDoBlock = transformNodeScopedInternal(doBlock, transformer,
-					isBoundary); argsResult.changed || newDoBlock != doBlock ? makeASTWithMeta(EMacroCall(macroName, argsResult.array, newDoBlock),
-					ast.metadata, ast.pos) : ast;
-
-			case ERemoteCall(module, funcName, args): var newModule = transformNodeScopedInternal(module, transformer,
-					isBoundary); var argsResult = transformArray(args, transformer,
-					isBoundary); newModule != module || argsResult.changed ? makeASTWithMeta(ERemoteCall(newModule, funcName, argsResult.array), ast.metadata,
+					isBoundary); var newDoBlock = transformChild(doBlock, transformer,
+					isBoundary); argsResult != args || newDoBlock != doBlock ? makeASTWithMeta(EMacroCall(macroName, argsResult, newDoBlock), ast.metadata,
 					ast.pos) : ast;
 
-			case EPipe(left, right): var newLeft = transformNodeScopedInternal(left, transformer,
-					isBoundary); var newRight = transformNodeScopedInternal(right, transformer,
+			case ERemoteCall(module, funcName, args): var newModule = transformChild(module, transformer,
+					isBoundary); var argsResult = transformArray(args, transformer,
+					isBoundary); newModule != module || argsResult != args ? makeASTWithMeta(ERemoteCall(newModule, funcName, argsResult), ast.metadata,
+					ast.pos) : ast;
+
+			case EPipe(left, right): var newLeft = transformChild(left, transformer,
+					isBoundary); var newRight = transformChild(right, transformer,
 					isBoundary); newLeft != left || newRight != right ? makeASTWithMeta(EPipe(newLeft, newRight), ast.metadata, ast.pos) : ast;
 
 			case EField(target, field):
-				var newTarget = transformNodeScopedInternal(target, transformer, isBoundary);
+				var newTarget = transformChild(target, transformer, isBoundary);
 				newTarget != target ? makeASTWithMeta(EField(newTarget, field), ast.metadata, ast.pos) : ast;
 
-			case EAccess(target, key): var newTarget = transformNodeScopedInternal(target, transformer,
-					isBoundary); var newKey = transformNodeScopedInternal(key, transformer,
+			case EAccess(target, key): var newTarget = transformChild(target, transformer,
+					isBoundary); var newKey = transformChild(key, transformer,
 					isBoundary); newTarget != target || newKey != key ? makeASTWithMeta(EAccess(newTarget, newKey), ast.metadata, ast.pos) : ast;
 
-			case ERange(start, end, exclusive, step): var newStart = transformNodeScopedInternal(start, transformer,
-					isBoundary); var newEnd = transformNodeScopedInternal(end, transformer,
-					isBoundary); var newStep = step != null ? transformNodeScopedInternal(step, transformer,
+			case ERange(start, end, exclusive, step): var newStart = transformChild(start, transformer,
+					isBoundary); var newEnd = transformChild(end, transformer,
+					isBoundary); var newStep = step != null ? transformChild(step, transformer,
 					isBoundary) : null; newStart != start || newEnd != end || newStep != step ? makeASTWithMeta(ERange(newStart, newEnd, exclusive, newStep),
 					ast.metadata, ast.pos) : ast;
 
 			case EList(elements):
 				var elementsResult = transformArray(elements, transformer, isBoundary);
-				elementsResult.changed ? makeASTWithMeta(EList(elementsResult.array), ast.metadata, ast.pos) : ast;
+				elementsResult != elements ? makeASTWithMeta(EList(elementsResult), ast.metadata, ast.pos) : ast;
 
-			case ECons(head, tail): var newHead = transformNodeScopedInternal(head, transformer,
-					isBoundary); var newTail = transformNodeScopedInternal(tail, transformer,
+			case ECons(head, tail): var newHead = transformChild(head, transformer,
+					isBoundary); var newTail = transformChild(tail, transformer,
 					isBoundary); newHead != head || newTail != tail ? makeASTWithMeta(ECons(newHead, newTail), ast.metadata, ast.pos) : ast;
 
 			case ETuple(elements):
 				var elementsResult = transformArray(elements, transformer, isBoundary);
-				elementsResult.changed ? makeASTWithMeta(ETuple(elementsResult.array), ast.metadata, ast.pos) : ast;
+				elementsResult != elements ? makeASTWithMeta(ETuple(elementsResult), ast.metadata, ast.pos) : ast;
 
 			case EMap(pairs):
 				var changed = false;
 				var newPairs = pairs;
 				for (i in 0...pairs.length) {
 					var pair = pairs[i];
-					var newKey = transformNodeScopedInternal(pair.key, transformer, isBoundary);
-					var newValue = transformNodeScopedInternal(pair.value, transformer, isBoundary);
+					var newKey = transformChild(pair.key, transformer, isBoundary);
+					var newValue = transformChild(pair.value, transformer, isBoundary);
 					if (newKey != pair.key || newValue != pair.value) {
 						if (!changed) {
 							newPairs = pairs.copy();
@@ -4805,7 +4873,7 @@ class ElixirASTTransformer {
 				var newFields = fields;
 				for (i in 0...fields.length) {
 					var field = fields[i];
-					var newValue = transformNodeScopedInternal(field.value, transformer, isBoundary);
+					var newValue = transformChild(field.value, transformer, isBoundary);
 					if (newValue != field.value) {
 						if (!changed) {
 							newFields = fields.copy();
@@ -4817,12 +4885,12 @@ class ElixirASTTransformer {
 				changed ? makeASTWithMeta(EStruct(module, newFields), ast.metadata, ast.pos) : ast;
 
 			case EStructUpdate(struct, fields):
-				var newStruct = transformNodeScopedInternal(struct, transformer, isBoundary);
+				var newStruct = transformChild(struct, transformer, isBoundary);
 				var changed = newStruct != struct;
 				var newFields = fields;
 				for (i in 0...fields.length) {
 					var field = fields[i];
-					var newValue = transformNodeScopedInternal(field.value, transformer, isBoundary);
+					var newValue = transformChild(field.value, transformer, isBoundary);
 					if (newValue != field.value) {
 						if (newFields == fields)
 							newFields = fields.copy();
@@ -4837,7 +4905,7 @@ class ElixirASTTransformer {
 				var newPairs = pairs;
 				for (i in 0...pairs.length) {
 					var pair = pairs[i];
-					var newValue = transformNodeScopedInternal(pair.value, transformer, isBoundary);
+					var newValue = transformChild(pair.value, transformer, isBoundary);
 					if (newValue != pair.value) {
 						if (!changed) {
 							newPairs = pairs.copy();
@@ -4853,8 +4921,8 @@ class ElixirASTTransformer {
 				var newSegments = segments;
 				for (i in 0...segments.length) {
 					var segment = segments[i];
-					var newValue = transformNodeScopedInternal(segment.value, transformer, isBoundary);
-					var newSize = segment.size != null ? transformNodeScopedInternal(segment.size, transformer, isBoundary) : null;
+					var newValue = transformChild(segment.value, transformer, isBoundary);
+					var newSize = segment.size != null ? transformChild(segment.size, transformer, isBoundary) : null;
 					if (newValue != segment.value || newSize != segment.size) {
 						if (!changed) {
 							newSegments = segments.copy();
@@ -4876,7 +4944,7 @@ class ElixirASTTransformer {
 				// WHAT: Recursively transform expr to rename any EVar nodes
 				// HOW: Pattern stays unchanged (creates new binding), expr transforms
 				var newPattern = transformPattern(pattern, transformer,
-					isBoundary); var newExpr = transformNodeScopedInternal(expr, transformer,
+					isBoundary); var newExpr = transformChild(expr, transformer,
 					isBoundary); newPattern != pattern || newExpr != expr ? makeASTWithMeta(EMatch(newPattern, newExpr), ast.metadata, ast.pos) : ast;
 
 			case EFor(generators, filters, body, into, uniq):
@@ -4885,7 +4953,7 @@ class ElixirASTTransformer {
 				for (i in 0...generators.length) {
 					var generator = generators[i];
 					var newPattern = transformPattern(generator.pattern, transformer, isBoundary);
-					var newExpr = transformNodeScopedInternal(generator.expr, transformer, isBoundary);
+					var newExpr = transformChild(generator.expr, transformer, isBoundary);
 					if (newPattern != generator.pattern || newExpr != generator.expr) {
 						if (newGenerators == generators)
 							newGenerators = generators.copy();
@@ -4894,39 +4962,40 @@ class ElixirASTTransformer {
 					}
 				}
 				var filtersResult = transformArray(filters, transformer, isBoundary);
-				var newBody = transformNodeScopedInternal(body, transformer, isBoundary);
-				var newInto = into != null ? transformNodeScopedInternal(into, transformer, isBoundary) : null;
+				var newBody = transformChild(body, transformer, isBoundary);
+				var newInto = into != null ? transformChild(into, transformer, isBoundary) : null;
 				changed
-				|| filtersResult.changed
+				|| filtersResult != filters
 				|| newBody != body
-				|| newInto != into ? makeASTWithMeta(EFor(newGenerators, filtersResult.array, newBody, newInto, uniq), ast.metadata, ast.pos) : ast;
+				|| newInto != into ? makeASTWithMeta(EFor(newGenerators, filtersResult, newBody, newInto, uniq), ast.metadata, ast.pos) : ast;
 
 			case EPin(expr):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(EPin(newExpr), ast.metadata, ast.pos) : ast;
 
 			case ECapture(expr, arity):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(ECapture(newExpr, arity), ast.metadata, ast.pos) : ast;
 
 			case EUse(module, options):
-				var optionsResult = options != null ? transformArray(options, transformer, isBoundary) : {array: [], changed: false};
-				optionsResult.changed ? makeASTWithMeta(EUse(module, optionsResult.array), ast.metadata, ast.pos) : ast;
+				var optionsResult = options != null ? transformArray(options, transformer, isBoundary) : null;
+				optionsResult != options ? makeASTWithMeta(EUse(module, (optionsResult != null ? optionsResult : [])), ast.metadata, ast.pos) : ast;
 
 			case EModuleAttribute(name, value):
-				var newValue = transformNodeScopedInternal(value, transformer, isBoundary);
+				var newValue = transformChild(value, transformer, isBoundary);
 				newValue != value ? makeASTWithMeta(EModuleAttribute(name, newValue), ast.metadata, ast.pos) : ast;
 
 			case EQuote(options, expr): var optionsResult = options != null ? transformArray(options, transformer,
-					isBoundary) : {array: [], changed: false}; var newExpr = transformNodeScopedInternal(expr, transformer,
-					isBoundary); optionsResult.changed || newExpr != expr ? makeASTWithMeta(EQuote(optionsResult.array, newExpr), ast.metadata, ast.pos) : ast;
+					isBoundary) : null; var newExpr = transformChild(expr, transformer,
+					isBoundary); optionsResult != options || newExpr != expr ? makeASTWithMeta(EQuote((optionsResult != null ? optionsResult : []), newExpr),
+					ast.metadata, ast.pos) : ast;
 
 			case EUnquote(expr):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(EUnquote(newExpr), ast.metadata, ast.pos) : ast;
 
 			case EUnquoteSplicing(expr):
-				var newExpr = transformNodeScopedInternal(expr, transformer, isBoundary);
+				var newExpr = transformChild(expr, transformer, isBoundary);
 				newExpr != expr ? makeASTWithMeta(EUnquoteSplicing(newExpr), ast.metadata, ast.pos) : ast;
 
 			case EReceive(clauses, after):
@@ -4935,8 +5004,8 @@ class ElixirASTTransformer {
 				for (i in 0...clauses.length) {
 					var clause = clauses[i];
 					var newPattern = transformPattern(clause.pattern, transformer, isBoundary);
-					var newGuard = clause.guard != null ? transformNodeScopedInternal(clause.guard, transformer, isBoundary) : null;
-					var newBody = transformNodeScopedInternal(clause.body, transformer, isBoundary);
+					var newGuard = clause.guard != null ? transformChild(clause.guard, transformer, isBoundary) : null;
+					var newBody = transformChild(clause.body, transformer, isBoundary);
 					if (newPattern != clause.pattern || newGuard != clause.guard || newBody != clause.body) {
 						if (!changed) {
 							newClauses = clauses.copy();
@@ -4947,8 +5016,8 @@ class ElixirASTTransformer {
 				}
 				var newAfter = after;
 				if (after != null) {
-					var newTimeout = transformNodeScopedInternal(after.timeout, transformer, isBoundary);
-					var newBody = transformNodeScopedInternal(after.body, transformer, isBoundary);
+					var newTimeout = transformChild(after.timeout, transformer, isBoundary);
+					var newBody = transformChild(after.body, transformer, isBoundary);
 					if (newTimeout != after.timeout || newBody != after.body) {
 						newAfter = {timeout: newTimeout, body: newBody};
 						changed = true;
@@ -4956,12 +5025,12 @@ class ElixirASTTransformer {
 				}
 				changed ? makeASTWithMeta(EReceive(newClauses, newAfter), ast.metadata, ast.pos) : ast;
 
-			case ESend(target, message): var newTarget = transformNodeScopedInternal(target, transformer,
-					isBoundary); var newMessage = transformNodeScopedInternal(message, transformer,
+			case ESend(target, message): var newTarget = transformChild(target, transformer,
+					isBoundary); var newMessage = transformChild(message, transformer,
 					isBoundary); newTarget != target || newMessage != message ? makeASTWithMeta(ESend(newTarget, newMessage), ast.metadata, ast.pos) : ast;
 
 			case EReceiverEffect(effect):
-				var operation = transformNodeScopedInternal(effect.operation, transformer, isBoundary);
+				var operation = transformChild(effect.operation, transformer, isBoundary);
 				operation != effect.operation ? makeASTWithMeta(EReceiverEffect({
 					receiver: effect.receiver,
 					operation: operation,
@@ -4973,7 +5042,7 @@ class ElixirASTTransformer {
 			case EFragment(tag, attributes, children): var changed = false; var newAttributes = attributes; if (attributes != null) {
 					for (i in 0...attributes.length) {
 						var attribute = attributes[i];
-						var newValue = transformNodeScopedInternal(attribute.value, transformer, isBoundary);
+						var newValue = transformChild(attribute.value, transformer, isBoundary);
 						if (newValue != attribute.value) {
 							if (!changed) {
 								newAttributes = attributes.copy();
@@ -4990,8 +5059,8 @@ class ElixirASTTransformer {
 						}
 					}
 				} var childrenResult = children != null ? transformArray(children, transformer,
-					isBoundary) : {array: [], changed: false}; changed || childrenResult.changed ? makeASTWithMeta(EFragment(tag, newAttributes,
-					childrenResult.array), ast.metadata, ast.pos) : ast;
+					isBoundary) : null; changed || childrenResult != children ? makeASTWithMeta(EFragment(tag, newAttributes,
+					(childrenResult != null ? childrenResult : [])), ast.metadata, ast.pos) : ast;
 
 			// Raw Elixir code injection - NEVER transform
 			case ERaw(code):
@@ -5002,7 +5071,7 @@ class ElixirASTTransformer {
 
 			case EDefmodule(name, body):
 				// Transform the module body recursively
-				var newBody = transformNodeScopedInternal(body, transformer, isBoundary);
+				var newBody = transformChild(body, transformer, isBoundary);
 				newBody != body ? makeASTWithMeta(EDefmodule(name, newBody), ast.metadata, ast.pos) : ast;
 
 			case EAtom(_) | EString(_) | EStringLiteral(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_) | EVar(_) | EUnderscore |
@@ -5010,11 +5079,17 @@ class ElixirASTTransformer {
 				ast;
 		};
 
-		if (skipCurrentCallback)
+		if (skipCurrentCallback || transformer == null)
 			return transformed;
 
 		// Apply the transformation to this node
 		var finalResult = transformer(transformed);
+
+		// Keep the node when the callback only copied it: same constructor, same child
+		// objects, same scalars, same metadata object, same position. The parent then
+		// sees an unchanged child and keeps its own identity as well.
+		if (finalResult != transformed && ElixirASTShallowEquality.sameNode(transformed, finalResult))
+			return transformed;
 
 		// CRITICAL FIX: Prevent infinite recursion
 		// Special handling for atoms which were causing infinite loops
@@ -6032,8 +6107,9 @@ class ElixirASTTransformer {
 	 * - Runs the one fused traversal engine once over the whole tree. The
 	 *   engine asks its boundary predicate about each node before it reads the
 	 *   node's children, so the predicate is the preorder visit; it always
-	 *   answers "not a boundary", so every child is entered. The transform
-	 *   callback returns each node unchanged, so no node is rebuilt.
+	 *   answers "not a boundary", so every child is entered. It passes no
+	 *   transform callback (`null`), which the engine reads as "keep every node",
+	 *   so no node is rebuilt and no identity callback is called per node.
 	 * - The visited nodes and their order are the same as the old
 	 *   `visitor(node)` then `iterateAST(node, ...)` recursion. There is still no
 	 *   second child switch.
@@ -6045,15 +6121,10 @@ class ElixirASTTransformer {
 	public static function visitPreorder(root:ElixirAST, visitor:ElixirAST->Void):Void {
 		if (root == null || root.def == null)
 			return;
-		transformNodeScopedInternal(root, keepNode, node -> {
+		transformNodeScopedInternal(root, null, node -> {
 			visitor(node);
 			return false;
 		});
-	}
-
-	/** Identity transform callback used by read-only traversals. */
-	static function keepNode(node:ElixirAST):ElixirAST {
-		return node;
 	}
 
 	/**

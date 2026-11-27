@@ -183,6 +183,121 @@ words before and 5,274 M after.
 The fresh todo-app output tree is byte-identical before and after (125 files), and a warm build after
 edits equals a fresh build. The pipeline call made 3,433 walks for this one module.
 
+### Engine cost per node
+
+A profile of the same `TodoLive` edit (on `5aa5fdf0a`) found that 295 of its 555 pass runs return a
+new tree object with no structural change, and that these runs allocate 499 M of the pipeline's
+767 M words. The first guess was that rebuilt nodes cause this allocation. A measurement disproved
+it: making the engine keep a node that a callback only copied (below) changed the pipeline's
+allocation by +0.2%. Most of the allocation is the cost of the walks themselves. In the Haxe macro
+interpreter every function call allocates a frame of about 30 words, and an anonymous record about
+18 words. A no-op `transformNode` cost about 260 words per node on a synthetic module.
+
+The traversal engine now avoids work it does not need:
+
+- **Leaf children inline.** Most nodes are leaves (`EVar`, `EAtom`, literals). The engine handles a
+  leaf child in place (`transformChild`, an inline function) instead of calling itself just to find
+  that the leaf has no children. A leaf still gets the same calls in the same order: the boundary
+  predicate, then the callback. `ERaw` is not handled this way, because the engine gives it to the
+  callback only when it is a boundary.
+- **No result records.** The child-array helpers return the array itself when nothing changed, and a
+  copy when something changed, instead of an `{array, changed}` record for each array.
+- **Fewer closures for patterns.** `PVar` and `PWildcard` hold no AST, so the engine returns them at
+  once, with no closure. Every other pattern still gets one closure from the engine.
+  `ElixirPatternChildren.mapImmediate` copies a pattern, an array, or a record only when one of its
+  children changed, and it no longer makes two closures and a new pattern value per call.
+- **Walks without an identity callback.** `visitPreorder` (behind `ASTUtils.walk`) passes no
+  transform callback; the engine reads `null` as "keep every node".
+- **Copies kept as the original.** When a callback returns a one-level copy of its input (same
+  constructor, the same child objects, the same scalar values, the same metadata object, and the same
+  position), the engine keeps the input (`ElixirASTShallowEquality.sameNode`). Its parent then sees an
+  unchanged child and is not rebuilt either. This does not cut allocation, but on `TodoLive` it makes
+  183 more pass runs return their input object (403 of 555 instead of 220). The other 112 no-change
+  rebuilds come from passes with hand-written recursion that copy whole subtrees; a one-level check
+  cannot see those.
+
+What a kept copy changes, and what it does not: a kept node and its copy have the same `def` values,
+the same metadata object, and the same position, so the printer and every later pass read the same
+values. Only object identity differs. A metadata write in place lands in the same object either way.
+Three guards keep this narrow:
+
+- A node whose metadata is `null` is never treated as a copy, because a later `node.metadata = {}`
+  would then write to a node that the input tree also holds.
+- An `EFloat` copy always counts as a change: in Haxe `-0.0 == 0.0` is true, but the two print
+  differently.
+- New arrays and clause records count as the same when every entry is the same object or value. This
+  is safe only while no pass changes a payload array or a clause record in place: the kept node is the
+  input node, so a pass that edits the arrays of a returned node, expecting a fresh copy, would also
+  edit the input tree.
+
+Object identity does change, so code that **reads identity to make a decision** can behave
+differently. The first version of this change did change generated code this way.
+`HeexStringReturnToSigilTransforms.convertStringReturns` read `newBody != body` to decide whether a
+function body had taken part in the `~H` conversion. Its helper rebuilds every `if` and parenthesis,
+so before, such a body always looked changed. With copies kept, a `render/1` that only delegates
+behind an `if` looked unchanged, and the `render/1` fallback replaced the whole body with a `~H`
+sigil. A helper with `_assigns` and a plain `if` kept `_assigns` instead of being renamed, and a
+parenthesized HTML string body became `~H`. The pass now uses an explicit flag: the body counts as
+rebuilt when its callback returned a different object for any node, which is exactly the old
+identity answer. `test/snapshot/phoenix/heex_render_delegation_identity` and a pass-level check in
+`npm run test:ast-children` hold the output of `5aa5fdf0a` for these cases.
+
+To find every other such caller, a temporary instrument (not committed) recorded each
+`transformNode` or `transformNodeUntil` call that returned its input only because a copy was kept,
+with the caller's file and line. It ran over the whole snapshot corpus and a fresh todo-app build. It
+found 308 distinct call sites:
+
+- 299 return the result directly. 229 of them are pass functions that the registry names, whose
+  result goes to the pass runner; the runner does not branch on identity (legacy passes report
+  `Unknown`). The other 70 (helpers, and passes that the registry names in another way) were traced to
+  every caller. Four of those callers compare the result with their input:
+  - `HeexStringReturnToSigilTransforms.convertStringReturns`: changes output; fixed with the flag
+    above.
+  - `ReduceWhileSentinelCleanupTransforms.transformPass` and
+    `StaticVarMutationRewriteTransforms.transformPass`: identity only chooses between returning the
+    node and rebuilding it with the same children, the same shape, metadata and position, so the
+    output is the same either way.
+  - `BinderTransforms.rewriteInScope` callers: the same output, for a simpler reason.
+    `rewriteInScope` is hand-written recursion; its only engine use is `transformAST`, where every
+    child is a boundary, so no copy is ever kept and its identity result is the same on both engines.
+
+`ReduceMetasHeadRepairTransforms.pass` also compares a result with its input (`newBody !=
+clause.body`) and rebuilds with fresh metadata when they differ. It is safe today because the
+callbacks of `repairInBody` never return a copy; a comment at that site says so.
+- 9 store the result in a variable that is never compared by identity.
+
+Code that keys a map by node objects was read by hand. `TempVariableTransforms` and
+`AssignmentExtractionTransforms` collect nodes before they run, and their callbacks return either the
+node itself or a real rewrite, never a copy, so what they see does not change.
+`TemplateHelpers.convertWithLiteralTemplateSource` maps new `EString` nodes back to their
+`EStringLiteral` source by identity, and returns its input when `convert` returned the same tree.
+When `convert` changes nothing, both the old path (map back) and the new one (return the input) give
+the input tree, because no `convert` callback copies an `EString` leaf. The audit covers the code
+paths that the corpus and the todo-app reach; a pass that reads identity on a path no fixture reaches
+would not be listed.
+
+`npm run test:ast-children` checks, for every AST constructor except `EFloat`, that a callback that
+copies every node gives back the input object, and that a real change (another name, another child,
+fresh or copied metadata, a dropped attribute span, `-0.0` for `0.0`) is still a change. It also checks
+that the engine's inline leaf list names exactly the constructors with no AST and no pattern children,
+except `ERaw`.
+
+Measured on 2026-11-25 on the todo-app, after an edit of one string in `TodoLive.hx`. The `TodoLive`
+pass pipeline ran 12 times in one warm compiler process, taking turns between the old engine and the
+new one (a temporary copy of the old engine, not committed). The one-minute load was 55 to 67 on 12
+cores:
+
+| Measurement for one `TodoLive` pass pipeline | Old engine | New engine |
+| --- | ---: | ---: |
+| Interpreter allocation (minor heap words, exact) | 767.7 M | 537.8 M (-30%) |
+| CPU time, median of 6 runs (indicative: measured on a busy machine) | 3.83 s | 3.24 s (-15%) |
+
+After the explicit flag in `HeexStringReturnToSigilTransforms`, the same paired run on 2026-11-26
+(load 26 to 45) gave 767.7 M and 537.6 M words, and CPU medians of 2.57 s and 2.21 s (-14%).
+
+The fresh todo-app output tree is byte-identical before and after (125 files, `_GeneratedFiles.json`
+included).
+
 ### Why grouped, granular, and all-pass builds do not drift
 
 Scoped execution is not a second compiler or a source-versus-package difference. Source checkouts and

@@ -538,73 +538,110 @@ class HeexStringReturnToSigilTransforms {
 		}
 	}
 
-	static function transformBody(ret:ElixirAST, ensureAssigns:Bool):ElixirAST {
+	/**
+	 * Rewrites a function body toward `~H` and reports whether any node of it was rebuilt.
+	 *
+	 * WHY
+	 * - `convertStringReturns` treats a rebuilt body as "the body already took part in the
+	 *   conversion": it then renames `_assigns` to `assigns` and does not apply its top-level and
+	 *   `render/1` fallbacks. That decision must not depend on object identity. The shared
+	 *   traversal engine keeps a node when a callback returns only a copy of it, so a rebuilt
+	 *   `if` or parenthesis with unchanged children comes back as the same object.
+	 *
+	 * HOW
+	 * - `rebuilt` is true when the callback of `transformBody` returned a different object for at
+	 *   least one node. This is exactly when the engine returned a new body before it kept copies:
+	 *   every `if` and parenthesis counts, as before.
+	 *
+	 * EXAMPLE
+	 * - `def render(assigns), do: if assigns.on, do: A.f(assigns), else: B.f(assigns)` reports
+	 *   `rebuilt: true`, so the `render/1` fallback does not replace the body with a `~H` sigil.
+	 */
+	static function rewriteBody(ret:ElixirAST, ensureAssigns:Bool):{ast:ElixirAST, rebuilt:Bool} {
+		var rebuilt = false;
+		var ast = transformBody(ret, ensureAssigns, () -> rebuilt = true);
+		return {ast: ast, rebuilt: rebuilt};
+	}
+
+	/**
+	 * Returns `ret` with its final return points converted to `~H` where they are HTML strings.
+	 * Calls `onRebuild` each time the callback returns a different object for a node.
+	 */
+	static function transformBody(ret:ElixirAST, ensureAssigns:Bool, onRebuild:() -> Void):ElixirAST {
 		return ElixirASTTransformer.transformNode(ret, function(n:ElixirAST):ElixirAST {
-			return switch (n.def) {
-				case EIf(cond, thenB, elseB):
-					// Do not convert arbitrary inner if-expressions to ~H to avoid producing
-					// Phoenix.LiveView.Rendered locals. Only the final return point is eligible.
-					var newThen = transformBody(thenB, ensureAssigns);
-					var newElse = elseB != null ? transformBody(elseB, ensureAssigns) : null;
-					makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
-				case EBlock(stmts):
-					if (stmts.length == 0)
-						return n;
-					var last = stmts[stmts.length - 1];
-
-					// If the function returns a local variable that was just bound to an HTML-like
-					// string, convert the binding itself to ~H so subsequent HEEx passes (control tags,
-					// interpolation rewrites) operate on the template content.
-					switch (last.def) {
-						case EVar(varName):
-							var rewritten = tryConvertReturnedVarBindingToHeex(stmts, varName);
-							if (rewritten != null) {
-								var updated = rewritten;
-								if (ensureAssigns)
-									updated.insert(updated.length - 1, makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))));
-								return makeASTWithMeta(EBlock(updated), n.metadata, n.pos);
-							}
-						default:
-					}
-
-					var convertedLast = last;
-					// If the last expression is an if with string branches, convert it to ~H.
-					var tryIf = tryConvertIfToHeex(last);
-					if (tryIf != null) {
-						convertedLast = tryIf;
-					} else {
-						// Try converting HXX.hxx("...") call to ~H directly when present as final expr
-						var tryHxx = tryConvertHxxCallToHeex(last);
-						if (tryHxx != null) {
-							convertedLast = tryHxx;
-						} else {
-							// If final expr is a variable bound to an HTML-like string earlier, wrap it into ~H with raw(var)
-							var tryVar = tryConvertVarToHeex(stmts, last);
-							convertedLast = tryVar != null ? tryVar : toHeex(last);
-						}
-					}
-					if (convertedLast == last)
-						return n;
-					var newStmts = stmts.copy();
-					// If assigns is required and not provided by params, inject minimal map
-					if (ensureAssigns)
-						newStmts.insert(newStmts.length - 1, makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))));
-					newStmts[newStmts.length - 1] = convertedLast;
-					makeASTWithMeta(EBlock(newStmts), n.metadata, n.pos);
-				case EParen(inner):
-					// Do not convert arbitrary parenthesized strings to ~H here to avoid
-					// turning local string bindings into Phoenix.LiveView.Rendered.
-					// Restrict ~H conversion to final returns (EBlock last expr) and
-					// top-level if-branches converted by tryConvertIfToHeex.
-					makeASTWithMeta(EParen(transformBody(inner, ensureAssigns)), n.metadata, n.pos);
-				case EString(_):
-					// Avoid blanket conversion of inner string literals. They may be bound to
-					// locals and later interpolated into larger HTML strings or ~H at the call-site.
-					n;
-				default:
-					n;
-			}
+			var out = rewriteBodyNode(n, ensureAssigns, onRebuild);
+			if (out != n)
+				onRebuild();
+			return out;
 		});
+	}
+
+	/** The per-node rule of `transformBody`. */
+	static function rewriteBodyNode(n:ElixirAST, ensureAssigns:Bool, onRebuild:() -> Void):ElixirAST {
+		return switch (n.def) {
+			case EIf(cond, thenB, elseB):
+				// Do not convert arbitrary inner if-expressions to ~H to avoid producing
+				// Phoenix.LiveView.Rendered locals. Only the final return point is eligible.
+				var newThen = transformBody(thenB, ensureAssigns, onRebuild);
+				var newElse = elseB != null ? transformBody(elseB, ensureAssigns, onRebuild) : null;
+				makeASTWithMeta(EIf(cond, newThen, newElse), n.metadata, n.pos);
+			case EBlock(stmts):
+				if (stmts.length == 0)
+					return n;
+				var last = stmts[stmts.length - 1];
+
+				// If the function returns a local variable that was just bound to an HTML-like
+				// string, convert the binding itself to ~H so subsequent HEEx passes (control tags,
+				// interpolation rewrites) operate on the template content.
+				switch (last.def) {
+					case EVar(varName):
+						var rewritten = tryConvertReturnedVarBindingToHeex(stmts, varName);
+						if (rewritten != null) {
+							var updated = rewritten;
+							if (ensureAssigns)
+								updated.insert(updated.length - 1, makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))));
+							return makeASTWithMeta(EBlock(updated), n.metadata, n.pos);
+						}
+					default:
+				}
+
+				var convertedLast = last;
+				// If the last expression is an if with string branches, convert it to ~H.
+				var tryIf = tryConvertIfToHeex(last);
+				if (tryIf != null) {
+					convertedLast = tryIf;
+				} else {
+					// Try converting HXX.hxx("...") call to ~H directly when present as final expr
+					var tryHxx = tryConvertHxxCallToHeex(last);
+					if (tryHxx != null) {
+						convertedLast = tryHxx;
+					} else {
+						// If final expr is a variable bound to an HTML-like string earlier, wrap it into ~H with raw(var)
+						var tryVar = tryConvertVarToHeex(stmts, last);
+						convertedLast = tryVar != null ? tryVar : toHeex(last);
+					}
+				}
+				if (convertedLast == last)
+					return n;
+				var newStmts = stmts.copy();
+				// If assigns is required and not provided by params, inject minimal map
+				if (ensureAssigns)
+					newStmts.insert(newStmts.length - 1, makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))));
+				newStmts[newStmts.length - 1] = convertedLast;
+				makeASTWithMeta(EBlock(newStmts), n.metadata, n.pos);
+			case EParen(inner):
+				// Do not convert arbitrary parenthesized strings to ~H here to avoid
+				// turning local string bindings into Phoenix.LiveView.Rendered.
+				// Restrict ~H conversion to final returns (EBlock last expr) and
+				// top-level if-branches converted by tryConvertIfToHeex.
+				makeASTWithMeta(EParen(transformBody(inner, ensureAssigns, onRebuild)), n.metadata, n.pos);
+			case EString(_):
+				// Avoid blanket conversion of inner string literals. They may be bound to
+				// locals and later interpolated into larger HTML strings or ~H at the call-site.
+				n;
+			default:
+				n;
+		}
 	}
 
 	static function isTemplateProducerCall(mod:Null<ElixirAST>, fnName:String):Bool {
@@ -876,14 +913,20 @@ class HeexStringReturnToSigilTransforms {
 					// Only convert helpers that already take assigns/_assigns.
 					if (!hasAssignsParam && !hasUnderscoredAssigns)
 						return n;
-					var newBody = transformBody(body, false);
+					// Decide with the explicit flag, not with `newBody != body`: the engine keeps a
+					// node that the callback only copied, so a rebuilt body can be the same object.
+					var rewrite = rewriteBody(body, false);
+					var newBody = rewrite.ast;
+					var bodyChanged = rewrite.rebuilt;
 					// If no change and body itself is a string (or parens-wrapped string), convert to ~H
-					if (newBody == body) {
+					if (!bodyChanged) {
 						var topLevel = toHeex(body);
-						if (topLevel != body)
+						if (topLevel != body) {
 							newBody = topLevel;
+							bodyChanged = true;
+						}
 					}
-					if (newBody != body) {
+					if (bodyChanged) {
 						if (!hasAssignsParam && hasUnderscoredAssigns) {
 							// Rename `_assigns` → `assigns` in the parameter list to satisfy HEEx
 							var tmp:Array<EPattern> = [];
