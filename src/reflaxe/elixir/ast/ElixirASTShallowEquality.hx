@@ -84,162 +84,169 @@ class ElixirASTShallowEquality {
 			return false;
 		return switch (left) {
 			case EModule(name, attributes, body): switch (right) {
-					case EModule(name2, attributes2, body2): name == name2 && sameAttributes(attributes, attributes2) && sameNodes(body, body2);
+					case EModule(otherName, otherAttributes, otherBody): name == otherName && sameAttributes(attributes,
+							otherAttributes) && sameNodes(body, otherBody);
 					default: false;
 				}
 			case EDefmodule(name, doBlock): switch (right) {
-					case EDefmodule(name2, doBlock2): name == name2 && doBlock == doBlock2;
+					case EDefmodule(otherName, otherDoBlock): name == otherName && doBlock == otherDoBlock;
 					default: false;
 				}
 			case EDef(name, args, guards, body): switch (right) {
-					case EDef(name2, args2, guards2, body2): name == name2 && samePatterns(args, args2) && guards == guards2 && body == body2;
+					case EDef(otherName, otherArgs, otherGuards, otherBody): name == otherName && samePatterns(args,
+							otherArgs) && guards == otherGuards && body == otherBody;
 					default: false;
 				}
 			case EDefp(name, args, guards, body): switch (right) {
-					case EDefp(name2, args2, guards2, body2): name == name2 && samePatterns(args, args2) && guards == guards2 && body == body2;
+					case EDefp(otherName, otherArgs, otherGuards, otherBody): name == otherName && samePatterns(args,
+							otherArgs) && guards == otherGuards && body == otherBody;
 					default: false;
 				}
 			case EDefmacro(name, args, guards, body): switch (right) {
-					case EDefmacro(name2, args2, guards2, body2): name == name2 && samePatterns(args, args2) && guards == guards2 && body == body2;
+					case EDefmacro(otherName, otherArgs, otherGuards, otherBody): name == otherName && samePatterns(args,
+							otherArgs) && guards == otherGuards && body == otherBody;
 					default: false;
 				}
 			case EDefmacrop(name, args, guards, body): switch (right) {
-					case EDefmacrop(name2, args2, guards2, body2): name == name2 && samePatterns(args, args2) && guards == guards2 && body == body2;
+					case EDefmacrop(otherName, otherArgs, otherGuards, otherBody): name == otherName && samePatterns(args,
+							otherArgs) && guards == otherGuards && body == otherBody;
 					default: false;
 				}
 			case ECase(expr, clauses): switch (right) {
-					case ECase(expr2, clauses2): expr == expr2 && sameCaseClauses(clauses, clauses2);
+					case ECase(otherExpr, otherClauses): expr == otherExpr && sameCaseClauses(clauses, otherClauses);
 					default: false;
 				}
 			case ECond(clauses): switch (right) {
-					case ECond(clauses2): sameCondClauses(clauses, clauses2);
+					case ECond(otherClauses): sameCondClauses(clauses, otherClauses);
 					default: false;
 				}
 			case EMatch(pattern, expr): switch (right) {
-					case EMatch(pattern2, expr2): pattern == pattern2 && expr == expr2;
+					case EMatch(otherPattern, otherExpr): pattern == otherPattern && expr == otherExpr;
 					default: false;
 				}
 			case EWith(clauses, doBlock, elseBlock): switch (right) {
-					case EWith(clauses2, doBlock2, elseBlock2): sameWithClauses(clauses, clauses2) && doBlock == doBlock2 && elseBlock == elseBlock2;
+					case EWith(otherClauses, otherDoBlock, otherElseBlock): sameWithClauses(clauses,
+							otherClauses) && doBlock == otherDoBlock && elseBlock == otherElseBlock;
 					default: false;
 				}
 			case EIf(condition, thenBranch, elseBranch): switch (right) {
-					case EIf(condition2, thenBranch2, elseBranch2): condition == condition2 && thenBranch == thenBranch2 && elseBranch == elseBranch2;
+					case EIf(otherCondition, otherThenBranch, otherElseBranch): condition == otherCondition && thenBranch == otherThenBranch && elseBranch == otherElseBranch;
 					default: false;
 				}
 			case EUnless(condition, body, elseBranch): switch (right) {
-					case EUnless(condition2, body2, elseBranch2): condition == condition2 && body == body2 && elseBranch == elseBranch2;
+					case EUnless(otherCondition, otherBody, otherElseBranch): condition == otherCondition && body == otherBody && elseBranch == otherElseBranch;
 					default: false;
 				}
 			case ETry(body, rescue, catchClauses, afterBlock, elseBlock): switch (right) {
-					case ETry(body2, rescue2, catchClauses2, afterBlock2, elseBlock2):
-						body == body2
-						&& sameRescueClauses(rescue, rescue2)
-						&& sameCatchClauses(catchClauses, catchClauses2)
-						&& afterBlock == afterBlock2
-						&& elseBlock == elseBlock2;
+					case ETry(otherBody, otherRescue, otherCatchClauses, otherAfterBlock, otherElseBlock):
+						body == otherBody
+						&& sameRescueClauses(rescue, otherRescue)
+						&& sameCatchClauses(catchClauses, otherCatchClauses)
+						&& afterBlock == otherAfterBlock
+						&& elseBlock == otherElseBlock;
 					default: false;
 				}
 			case ERaise(exception, attributes): switch (right) {
-					case ERaise(exception2, attributes2): exception == exception2 && attributes == attributes2;
+					case ERaise(otherException, otherAttributes): exception == otherException && attributes == otherAttributes;
 					default: false;
 				}
 			case EThrow(value): switch (right) {
-					case EThrow(value2): value == value2;
+					case EThrow(otherValue): value == otherValue;
 					default: false;
 				}
 			case EList(elements): switch (right) {
-					case EList(elements2): sameNodes(elements, elements2);
+					case EList(otherElements): sameNodes(elements, otherElements);
 					default: false;
 				}
 			case ECons(head, tail): switch (right) {
-					case ECons(head2, tail2): head == head2 && tail == tail2;
+					case ECons(otherHead, otherTail): head == otherHead && tail == otherTail;
 					default: false;
 				}
 			case ETuple(elements): switch (right) {
-					case ETuple(elements2): sameNodes(elements, elements2);
+					case ETuple(otherElements): sameNodes(elements, otherElements);
 					default: false;
 				}
 			case EMap(pairs): switch (right) {
-					case EMap(pairs2): sameMapPairs(pairs, pairs2);
+					case EMap(otherPairs): sameMapPairs(pairs, otherPairs);
 					default: false;
 				}
 			case EStruct(module, fields): switch (right) {
-					case EStruct(module2, fields2): module == module2 && sameStructFields(fields, fields2);
+					case EStruct(otherModule, otherFields): module == otherModule && sameStructFields(fields, otherFields);
 					default: false;
 				}
 			case EStructUpdate(struct, fields): switch (right) {
-					case EStructUpdate(struct2, fields2): struct == struct2 && sameStructFields(fields, fields2);
+					case EStructUpdate(otherStruct, otherFields): struct == otherStruct && sameStructFields(fields, otherFields);
 					default: false;
 				}
 			case EKeywordList(pairs): switch (right) {
-					case EKeywordList(pairs2): sameKeywordPairs(pairs, pairs2);
+					case EKeywordList(otherPairs): sameKeywordPairs(pairs, otherPairs);
 					default: false;
 				}
 			case EBitstring(segments): switch (right) {
-					case EBitstring(segments2): sameSegments(segments, segments2);
+					case EBitstring(otherSegments): sameSegments(segments, otherSegments);
 					default: false;
 				}
 			case ECall(target, funcName, args): switch (right) {
-					case ECall(target2, funcName2, args2): target == target2 && funcName == funcName2 && sameNodes(args, args2);
+					case ECall(otherTarget, otherFuncName, otherArgs): target == otherTarget && funcName == otherFuncName && sameNodes(args, otherArgs);
 					default: false;
 				}
 			case EMacroCall(macroName, args, doBlock): switch (right) {
-					case EMacroCall(macroName2, args2, doBlock2): macroName == macroName2 && sameNodes(args, args2) && doBlock == doBlock2;
+					case EMacroCall(otherMacroName, otherArgs, otherDoBlock): macroName == otherMacroName && sameNodes(args,
+							otherArgs) && doBlock == otherDoBlock;
 					default: false;
 				}
 			case ERemoteCall(module, funcName, args): switch (right) {
-					case ERemoteCall(module2, funcName2, args2): module == module2 && funcName == funcName2 && sameNodes(args, args2);
+					case ERemoteCall(otherModule, otherFuncName, otherArgs): module == otherModule && funcName == otherFuncName && sameNodes(args, otherArgs);
 					default: false;
 				}
 			case EPipe(leftExpr, rightExpr): switch (right) {
-					case EPipe(leftExpr2, rightExpr2): leftExpr == leftExpr2 && rightExpr == rightExpr2;
+					case EPipe(otherLeftExpr, otherRightExpr): leftExpr == otherLeftExpr && rightExpr == otherRightExpr;
 					default: false;
 				}
 			case EBinary(op, leftExpr, rightExpr): switch (right) {
-					case EBinary(op2, leftExpr2, rightExpr2): op == op2 && leftExpr == leftExpr2 && rightExpr == rightExpr2;
+					case EBinary(otherOp, otherLeftExpr, otherRightExpr): op == otherOp && leftExpr == otherLeftExpr && rightExpr == otherRightExpr;
 					default: false;
 				}
 			case EUnary(op, expr): switch (right) {
-					case EUnary(op2, expr2): op == op2 && expr == expr2;
+					case EUnary(otherOp, otherExpr): op == otherOp && expr == otherExpr;
 					default: false;
 				}
 			case EField(target, field): switch (right) {
-					case EField(target2, field2): target == target2 && field == field2;
+					case EField(otherTarget, otherField): target == otherTarget && field == otherField;
 					default: false;
 				}
 			case EAccess(target, key): switch (right) {
-					case EAccess(target2, key2): target == target2 && key == key2;
+					case EAccess(otherTarget, otherKey): target == otherTarget && key == otherKey;
 					default: false;
 				}
 			case ERange(start, end, exclusive, step): switch (right) {
-					case ERange(start2, end2, exclusive2, step2): start == start2 && end == end2 && exclusive == exclusive2 && step == step2;
+					case ERange(otherStart, otherEnd, otherExclusive, otherStep): start == otherStart && end == otherEnd && exclusive == otherExclusive && step == otherStep;
 					default: false;
 				}
 			case EReceiverEffect(effect): switch (right) {
-					case EReceiverEffect(effect2): effect == effect2 || (effect != null
-							&& effect2 != null
-							&& effect.receiver == effect2.receiver
-							&& effect.operation == effect2.operation
-							&& effect.resultShape == effect2.resultShape
-							&& effect.valueProjection == effect2.valueProjection
-							&& effect.writeback == effect2.writeback);
+					case EReceiverEffect(otherEffect): effect == otherEffect || (effect != null
+							&& otherEffect != null
+							&& effect.receiver == otherEffect.receiver
+							&& effect.operation == otherEffect.operation
+							&& effect.resultShape == otherEffect.resultShape
+							&& effect.valueProjection == otherEffect.valueProjection
+							&& effect.writeback == otherEffect.writeback);
 					default: false;
 				}
 			case EAtom(value): switch (right) {
-					case EAtom(value2): value == value2;
+					case EAtom(otherValue): value == otherValue;
 					default: false;
 				}
 			case EString(value): switch (right) {
-					case EString(value2): value == value2;
+					case EString(otherValue): value == otherValue;
 					default: false;
 				}
 			case EStringLiteral(value): switch (right) {
-					case EStringLiteral(value2): value == value2;
+					case EStringLiteral(otherValue): value == otherValue;
 					default: false;
 				}
 			case EInteger(value): switch (right) {
-					case EInteger(value2): value == value2;
+					case EInteger(otherValue): value == otherValue;
 					default: false;
 				}
 			case EFloat(_):
@@ -247,7 +254,7 @@ class ElixirASTShallowEquality {
 				// differently. A float copy therefore always counts as a change.
 				false;
 			case EBoolean(value): switch (right) {
-					case EBoolean(value2): value == value2;
+					case EBoolean(otherValue): value == otherValue;
 					default: false;
 				}
 			case ENil: switch (right) {
@@ -255,15 +262,15 @@ class ElixirASTShallowEquality {
 					default: false;
 				}
 			case ECharlist(value): switch (right) {
-					case ECharlist(value2): value == value2;
+					case ECharlist(otherValue): value == otherValue;
 					default: false;
 				}
 			case EVar(name): switch (right) {
-					case EVar(name2): name == name2;
+					case EVar(otherName): name == otherName;
 					default: false;
 				}
 			case EPin(expr): switch (right) {
-					case EPin(expr2): expr == expr2;
+					case EPin(otherExpr): expr == otherExpr;
 					default: false;
 				}
 			case EUnderscore: switch (right) {
@@ -271,107 +278,111 @@ class ElixirASTShallowEquality {
 					default: false;
 				}
 			case EFor(generators, filters, body, into, uniq): switch (right) {
-					case EFor(generators2, filters2, body2, into2, uniq2):
-						sameGenerators(generators, generators2)
-						&& sameNodes(filters, filters2)
-						&& body == body2
-						&& into == into2
-						&& uniq == uniq2;
+					case EFor(otherGenerators, otherFilters, otherBody, otherInto, otherUniq):
+						sameGenerators(generators, otherGenerators)
+						&& sameNodes(filters, otherFilters)
+						&& body == otherBody
+						&& into == otherInto
+						&& uniq == otherUniq;
 					default: false;
 				}
 			case EFn(clauses): switch (right) {
-					case EFn(clauses2): sameFnClauses(clauses, clauses2);
+					case EFn(otherClauses): sameFnClauses(clauses, otherClauses);
 					default: false;
 				}
 			case ECapture(expr, arity): switch (right) {
-					case ECapture(expr2, arity2): expr == expr2 && arity == arity2;
+					case ECapture(otherExpr, otherArity): expr == otherExpr && arity == otherArity;
 					default: false;
 				}
 			case EAlias(module, as): switch (right) {
-					case EAlias(module2, as2): module == module2 && as == as2;
+					case EAlias(otherModule, otherAs): module == otherModule && as == otherAs;
 					default: false;
 				}
 			case EImport(module, only, except, warn): switch (right) {
-					case EImport(module2, only2, except2, warn2): module == module2 && sameImportOptions(only,
-							only2) && sameImportOptions(except, except2) && warn == warn2;
+					case EImport(otherModule, otherOnly, otherExcept, otherWarn):
+						module == otherModule
+						&& sameImportOptions(only, otherOnly)
+						&& sameImportOptions(except, otherExcept)
+						&& warn == otherWarn;
 					default: false;
 				}
 			case EUse(module, options): switch (right) {
-					case EUse(module2, options2): module == module2 && sameNodes(options, options2);
+					case EUse(otherModule, otherOptions): module == otherModule && sameNodes(options, otherOptions);
 					default: false;
 				}
 			case ERequire(module, as): switch (right) {
-					case ERequire(module2, as2): module == module2 && as == as2;
+					case ERequire(otherModule, otherAs): module == otherModule && as == otherAs;
 					default: false;
 				}
 			case EQuote(options, expr): switch (right) {
-					case EQuote(options2, expr2): sameNodes(options, options2) && expr == expr2;
+					case EQuote(otherOptions, otherExpr): sameNodes(options, otherOptions) && expr == otherExpr;
 					default: false;
 				}
 			case EUnquote(expr): switch (right) {
-					case EUnquote(expr2): expr == expr2;
+					case EUnquote(otherExpr): expr == otherExpr;
 					default: false;
 				}
 			case EUnquoteSplicing(expr): switch (right) {
-					case EUnquoteSplicing(expr2): expr == expr2;
+					case EUnquoteSplicing(otherExpr): expr == otherExpr;
 					default: false;
 				}
 			case EReceive(clauses, after): switch (right) {
-					case EReceive(clauses2, after2): sameCaseClauses(clauses,
-							clauses2) && (after == after2
-							|| (after != null && after2 != null && after.timeout == after2.timeout && after.body == after2.body));
+					case EReceive(otherClauses, otherAfter): sameCaseClauses(clauses,
+							otherClauses) && (after == otherAfter
+							|| (after != null && otherAfter != null && after.timeout == otherAfter.timeout && after.body == otherAfter.body));
 					default: false;
 				}
 			case ESend(target, message): switch (right) {
-					case ESend(target2, message2): target == target2 && message == message2;
+					case ESend(otherTarget, otherMessage): target == otherTarget && message == otherMessage;
 					default: false;
 				}
 			case EBlock(expressions): switch (right) {
-					case EBlock(expressions2): sameNodes(expressions, expressions2);
+					case EBlock(otherExpressions): sameNodes(expressions, otherExpressions);
 					default: false;
 				}
 			case EParen(expr): switch (right) {
-					case EParen(expr2): expr == expr2;
+					case EParen(otherExpr): expr == otherExpr;
 					default: false;
 				}
 			case EDo(body): switch (right) {
-					case EDo(body2): sameNodes(body, body2);
+					case EDo(otherBody): sameNodes(body, otherBody);
 					default: false;
 				}
 			case EModuleAttribute(name, value): switch (right) {
-					case EModuleAttribute(name2, value2): name == name2 && value == value2;
+					case EModuleAttribute(otherName, otherValue): name == otherName && value == otherValue;
 					default: false;
 				}
 			case EModuledoc(content): switch (right) {
-					case EModuledoc(content2): content == content2;
+					case EModuledoc(otherContent): content == otherContent;
 					default: false;
 				}
 			case EDoc(content): switch (right) {
-					case EDoc(content2): content == content2;
+					case EDoc(otherContent): content == otherContent;
 					default: false;
 				}
 			case ESpec(signature): switch (right) {
-					case ESpec(signature2): signature == signature2;
+					case ESpec(otherSignature): signature == otherSignature;
 					default: false;
 				}
 			case ETypeDef(name, definition): switch (right) {
-					case ETypeDef(name2, definition2): name == name2 && definition == definition2;
+					case ETypeDef(otherName, otherDefinition): name == otherName && definition == otherDefinition;
 					default: false;
 				}
 			case ESigil(type, content, modifiers): switch (right) {
-					case ESigil(type2, content2, modifiers2): type == type2 && content == content2 && modifiers == modifiers2;
+					case ESigil(otherType, otherContent, otherModifiers): type == otherType && content == otherContent && modifiers == otherModifiers;
 					default: false;
 				}
 			case ERaw(code): switch (right) {
-					case ERaw(code2): code == code2;
+					case ERaw(otherCode): code == otherCode;
 					default: false;
 				}
 			case EAssign(name): switch (right) {
-					case EAssign(name2): name == name2;
+					case EAssign(otherName): name == otherName;
 					default: false;
 				}
 			case EFragment(tag, attributes, children): switch (right) {
-					case EFragment(tag2, attributes2, children2): tag == tag2 && sameAttributes(attributes, attributes2) && sameNodes(children, children2);
+					case EFragment(otherTag, otherAttributes, otherChildren): tag == otherTag && sameAttributes(attributes,
+							otherAttributes) && sameNodes(children, otherChildren);
 					default: false;
 				}
 		};
